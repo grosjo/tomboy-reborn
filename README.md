@@ -35,7 +35,7 @@ Status
 ------
 - NextCloud sync working. Need further testing
 - Daily usage working
-
+- This is a ALPHA release - do NOT use in production for now
 
 Debugging/Support
 -----------------
