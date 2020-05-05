@@ -4,7 +4,7 @@ object SearchForm: TSearchForm
   Top = 611
   Width = 824
   ActiveControl = Edit1
-  Caption = 'tomboy-ng Search'
+  Caption = 'Tomboy Reborn Search'
   ClientHeight = 401
   ClientWidth = 824
   OnCloseQuery = FormCloseQuery

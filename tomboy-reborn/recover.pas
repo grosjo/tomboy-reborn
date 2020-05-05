@@ -188,10 +188,10 @@ begin
     MainUnit.MainForm.ShowHelpNote('recover.note');
     (*
     DocsDir := AppendPathDelim(ExtractFileDir(Application.ExeName));                     // UNTESTED
-    {$ifdef LINUX}DocsDir := '/usr/share/doc/tomboy-ng/'; {$endif}
+    {$ifdef LINUX}DocsDir := '/usr/share/doc/tomboy-reborn/'; {$endif}
     {$ifdef DARWIN}
     DocsDir := ExtractFileDir(ExtractFileDir(Application.ExeName))+'/Resources/';
-    //DocsDir := '/Applications/tomboy-ng.app/Contents/SharedSupport/';
+    //DocsDir := '/Applications/tomboy-reborn.app/Contents/SharedSupport/';
     {$endif}  // untested
     // showmessage('About to open ' + DocsDir + 'recover.note');
     MainUnit.MainForm.SingleNoteMode(DocsDir + 'recover.note', False, True);
@@ -219,9 +219,9 @@ begin
             // + Snapshot + ' ' + DateTimeToStr(FileDateToDateTime(FileAge(SnapDir + Snapshot))) + ' ?'
             , mtConfirmation, [mrYes, mrNo], 0) then exit;
     CleanAndUnzip(NoteDir, SnapDir + Snapshot);
-    if FileExists(NoteDir + 'config' + PathDelim + 'tomboy-ng.cfg') then begin
-        CopyFile(NoteDir + 'config' + PathDelim + 'tomboy-ng.cfg', ConfigDir + 'tomboy-ng.cfg');
-        DeleteFile(NoteDir + 'config' + PathDelim + 'tomboy-ng.cfg');
+    if FileExists(NoteDir + 'config' + PathDelim + 'tomboy-reborn.cfg') then begin
+        CopyFile(NoteDir + 'config' + PathDelim + 'tomboy-reborn.cfg', ConfigDir + 'tomboy-reborn.cfg');
+        DeleteFile(NoteDir + 'config' + PathDelim + 'tomboy-reborn.cfg');
         if FileExists(NoteDir + 'config' + PathDelim + 'manifest.xml') then begin
             CopyFile(NoteDir + 'config' + PathDelim + 'manifest.xml', ConfigDir + 'manifest.xml');
             DeleteFile(NoteDir + 'config' + PathDelim + 'manifest.xml');
@@ -283,8 +283,8 @@ begin
     FindClose(Info);
     if FileExists(FullDestDir + 'config' + PathDelim + 'manifest.xml') then
         DeleteFile(FullDestDir + 'config' + PathDelim + 'manifest.xml');
-    if FileExists(FullDestDir + 'config' + PathDelim + 'tomboy-ng.cfg') then
-        DeleteFile(FullDestDir + 'config' + PathDelim + 'tomboy-ng.cfg');
+    if FileExists(FullDestDir + 'config' + PathDelim + 'tomboy-reborn.cfg') then
+        DeleteFile(FullDestDir + 'config' + PathDelim + 'tomboy-reborn.cfg');
     ZipFile := TUnZipper.Create;
     try
         ZipFile.FileName := FullZipName;
@@ -303,8 +303,8 @@ begin
     FindClose(Info);
     if FileExists(FullDestDir + 'config' + PathDelim + 'manifest.xml') then
         fpchmod(FullDestDir + 'config' + PathDelim + 'manifest.xml', &644);
-    if FileExists(FullDestDir + 'config' + PathDelim + 'tomboy-ng.cfg') then
-        fpchmod(FullDestDir + 'config' + PathDelim + 'tomboy-ng.cfg', &644);
+    if FileExists(FullDestDir + 'config' + PathDelim + 'tomboy-reborn.cfg') then
+        fpchmod(FullDestDir + 'config' + PathDelim + 'tomboy-reborn.cfg', &644);
     {$endif}
 end;
 
@@ -381,9 +381,9 @@ begin
                 // debugln('Zipping note [' + FullSourceDir + Info.Name + ']');
                 Zip.Entries.AddFileEntry(FullSourceDir + Info.Name, Info.Name);
       	    until FindNext(Info) <> 0;
-            if FileExists(ConfigDir + 'tomboy-ng.cfg')
-                then Zip.Entries.AddFileEntry(ConfigDir + 'tomboy-ng.cfg', 'config' + PathDelim + 'tomboy-ng.cfg')
-            else Debugln('ERROR - cannot locate ' + ConfigDir + 'tomboy-ng.cfg');
+            if FileExists(ConfigDir + 'tomboy-reborn.cfg')
+                then Zip.Entries.AddFileEntry(ConfigDir + 'tomboy-reborn.cfg', 'config' + PathDelim + 'tomboy-reborn.cfg')
+            else Debugln('ERROR - cannot locate ' + ConfigDir + 'tomboy-reborn.cfg');
             if FileExists(ConfigDir + 'manifest.xml')
                 then Zip.Entries.AddFileEntry(ConfigDir + 'manifest.xml', 'config' + PathDelim + 'manifest.xml')
             else if DebugMode then debugln('NOTE : Local Manifest not found ' + ConfigDir + 'manifest.xml');

@@ -152,13 +152,13 @@ type
         HelpList : TStringList;
         CommsClient : TSimpleIPCClient;
         CommsServer : TSimpleIPCServer;
-        // Don't assign if desktop is KDE and Qt5, it stuffs up in November 2019
+        // Dont assign if desktop is KDE and Qt5, it stuffs up in November 2019
         AssignPopupToTray : boolean;
         CmdLineErrorMsg : string;
         // Allow user to dismiss (ie hide) the opening window. Set false if we have a note error or -g on commandline
         AllowDismiss : boolean;
 //        procedure AddItemToAMenu(TheMenu: TMenu; Item: string; mtTag: TMenuTarget; OC: TNotifyEvent; MenuKind: TMenuKind);
-        // Returns true if we are a second instance of tomboy-ng, if false then
+        // Returns true if we are a second instance of tomboy-reborn, if false then
         // SimpleIPC server is started, listening for some other second instance.
         function AreWeClient(): boolean;
         function CommandLineError() : boolean;
@@ -342,8 +342,8 @@ end;
 
 RESOURCESTRING
     {$ifdef DARWIN}
-    rsMacHelp1 = 'eg   open tomboy-ng.app';
-    rsMacHelp2 = 'eg   open tomboy-ng.app --args -o Note.txt|.note';
+    rsMacHelp1 = 'eg   open tomboy-reborn.app';
+    rsMacHelp2 = 'eg   open tomboy-reborn.app --args -o Note.txt|.note';
     {$endif}
     rsHelpDelay = 'Delay startup 2 sec to allow OS to settle';
     rsHelpLang = 'Force Language, supported es, nl';
@@ -450,12 +450,12 @@ begin
     end;
     if Application.HasOption('version') then begin
         Enabled := False;
-        debugln('tomboy-ng version ' + Version_String);
+        debugln('tomboy-reborn version ' + Version_String);
         closeASAP := True;
         exit();
      end;
      if not HaveCMDParam() then        // Will deal with it in OnShow()
-         if AreWeClient() then begin        // Only for a normal tomboy-ng session
+         if AreWeClient() then begin        // Only for a normal tomboy-reborn session
              closeASAP := True;
              exit();
          end;
@@ -471,7 +471,7 @@ begin
     UseTrayMenu := false;
     {$endif}
     {$ifdef WINDOWS}HelpNotesPath := AppendPathDelim(ExtractFileDir(Application.ExeName));{$endif}
-    {$ifdef LINUX}  HelpNotesPath := '/usr/share/doc/tomboy-ng/';    {$endif}
+    {$ifdef LINUX}  HelpNotesPath := '/usr/share/doc/tomboy-reborn/';    {$endif}
     {$ifdef DARWIN} HelpNotesPath := ExtractFileDir(ExtractFileDir(Application.ExeName))+'/Resources/';{$endif}
     AltHelpNotesPath := HelpNotesPath + ALTHELP + PathDelim;        // Overridden in Sett for Linux
     if UseTrayMenu then begin
@@ -537,7 +537,7 @@ function  TMainForm.AreWeClient() : boolean;
 begin
     Result := false;
     CommsClient  := TSimpleIPCClient.Create(Nil);
-    CommsClient.ServerID:='tomboy-ng';
+    CommsClient.ServerID:='tomboy-reborn';
     if CommsClient.ServerRunning then begin
         CommsClient.Active := true;
         CommsClient.SendStringMessage('SHOWSEARCH');
@@ -547,7 +547,7 @@ begin
     end else begin
         freeandnil(CommsClient );
         CommsServer  := TSimpleIPCServer.Create(Nil);
-        CommsServer.ServerID:='tomboy-ng';
+        CommsServer.ServerID:='tomboy-reborn';
         CommsServer.OnMessageQueued:=@CommMessageReceived;
         CommsServer.Global:=True;                  // anyone can connect
         CommsServer.StartServer({$ifdef WINDOWS}False{$else}True{$endif});  // start listening, threaded
@@ -557,7 +557,7 @@ end;
 
 
 resourcestring
-  // rsAnotherInstanceRunning = 'Another instance of tomboy-ng appears to be running. Will exit.';
+  // rsAnotherInstanceRunning = 'Another instance of tomboy-reborn appears to be running. Will exit.';
   rsFailedToIndex = 'Failed to index one or more notes.';
   rsCannotDismiss1 = 'Sadly, on this OS or because of a Bad Note,';
   rsCannotDismiss2 = 'I cannot let you dismiss this window';
@@ -778,9 +778,9 @@ begin
 end;
 
 RESOURCESTRING
-    rsAbout1 = 'This is tomboy-ng, a rewrite of Tomboy Notes using Lazarus';
-    rsAbout2 = 'and FPC. While its ready for production';
-    rsAbout3 = 'use, you still need to be careful and have good backups.';
+    rsAbout1 = 'This is Tomboy Reborn, a rewrite of Tomboy Notes using Lazarus';
+    rsAbout2 = 'and FPC. This si Alpha Release';
+    rsAbout3 = 'You need to be careful and have good backups.';
     rsAboutVer = 'Version';
     rsAboutBDate = 'Build date';
     rsAboutCPU = 'TargetCPU';

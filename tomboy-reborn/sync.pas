@@ -1,6 +1,6 @@
 unit sync;
 {
-    A Unit to manage tomboy-ng sync behaviour.
+    A Unit to manage Tomboy Reborn sync behaviour.
     Copyright (C) 2018 David Bannon
     See attached licence file.
 }

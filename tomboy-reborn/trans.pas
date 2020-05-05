@@ -1,6 +1,6 @@
 unit trans;
 
-{ Contains parent, abstract class that does Transport part of tomboy-ng sync.
+{ Contains parent, abstract class that does Transport part of Tomboy Reborn sync.
   It moves files around, one way or another, determined by its children.
   *  Copyright (C) 2018 David Bannon
   *  See attached licence file.

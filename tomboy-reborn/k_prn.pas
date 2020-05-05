@@ -22,13 +22,6 @@ unit K_Prn;
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 }
 
-{ Intended specificially to print tomboy-ng notes but will not too far from a
-  generic (text only) KMemo print unit.
-  Note tomboy-ng won't ever have a blank line at the top, could be messy if
-  you try and print a KMemo with a leading TKMemoParagraph. See KMemoRead()
-
-}
-
 {$mode objfpc}{$H+}
 
 interface

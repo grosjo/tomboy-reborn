@@ -87,7 +87,7 @@ uses
     sslsockets;      // for TSSLSocketHandler etc
 
 const
-    DownLoadPath = 'https://github.com/tomboy-notes/tomboy-ng/raw/master/doc/';
+    DownLoadPath = 'https://github.com/grosjo/tomboy-reborn/raw/master/doc/';
 
 resourcestring
     RS_Spanish = 'Spanish';

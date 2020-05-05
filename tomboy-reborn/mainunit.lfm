@@ -1,10 +1,10 @@
 object MainForm: TMainForm
   Left = 369
   Height = 376
-  Hint = 'If the green tomboy-ng icon is visible in your System Tray, you can dismiss this window.'
+  Hint = 'If the green tomboy-reborn icon is visible in your System Tray, you can dismiss this window.'
   Top = 321
   Width = 459
-  Caption = 'tomboy-ng'
+  Caption = 'tomboy-reborn'
   ClientHeight = 376
   ClientWidth = 459
   OnClose = FormClose
@@ -149,7 +149,7 @@ object MainForm: TMainForm
     AnchorSideRight.Side = asrBottom
     Left = 124
     Height = 31
-    Hint = 'Dismiss this window but leave tomboy-ng running'
+    Hint = 'Dismiss this window but leave tomboy-reborn running'
     Top = 2
     Width = 45
     BorderSpacing.Left = 2
@@ -300,7 +300,7 @@ object MainForm: TMainForm
     Height = 22
     Top = 43
     Width = 224
-    Caption = 'Welcome to tomboy-ng !'
+    Caption = 'Welcome to Tomboy Reborn !'
     Font.Height = -18
     Font.Name = 'Lucida Grande'
     ParentColor = False
@@ -467,7 +467,7 @@ object MainForm: TMainForm
     AnchorSideBottom.Side = asrBottom
     Left = 169
     Height = 29
-    Hint = 'Close tomboy-ng'
+    Hint = 'Close Tomboy Reborn'
     Top = 3
     Width = 288
     Anchors = [akTop, akLeft, akRight, akBottom]

@@ -23,17 +23,6 @@ unit SearchUnit;
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
 }
 
-{	This is NO LONGER the Main unit (ie the main form) for tomboy-ng. It always exists while
-	RTomboy is running, when you cannot see it, its because its hidden. This
-	form will put its icon in the System Tray and its resposible for acting
-	on any of the menu choices from that tray icon.
-    The form, and therefore the application, does not close if the user clicks
-	the (typically top right) close box, just hides. It does not close until
-	the user clicks 'close' from the System Tray Menu.
-
-	It also displays the Search box showing all notes.
-}
-
 {	HISTORY
 	20170928 Added a function that returns true if passed string is in the
 	current title list.

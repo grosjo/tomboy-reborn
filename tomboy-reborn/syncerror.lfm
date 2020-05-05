@@ -3,7 +3,7 @@ object FormSyncError: TFormSyncError
   Height = 240
   Top = 458
   Width = 512
-  Caption = 'tomboy-ng SyncError'
+  Caption = 'Tomboy Reborn SyncError'
   ClientHeight = 240
   ClientWidth = 512
   OnShow = FormShow

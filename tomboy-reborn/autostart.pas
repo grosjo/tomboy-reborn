@@ -15,7 +15,7 @@ type
 
   TAutoStartCtrl = class
     Private
-        procedure AutoOff(AppName : string);            // don't need appname Linux or windows, maybe MacOS ?
+        procedure AutoOff(AppName : string);            // dont need appname Linux or windows, maybe MacOS ?
         procedure AutoOn(AppName: string);
         {$ifdef WINDOWS}
         function WindowsDirectory(CSIDL : integer): string;
@@ -45,7 +45,7 @@ begin
     SHGetSpecialFolderLocation(0, CSIDL, PIDL) ;
     SHGetPathFromIDList(PIDL, DirArray) ;
     Result := DirArray;
-    // CSIDL_PROGRAM_FILES -> Where the tomboy-ng directory containg exe is.
+    // CSIDL_PROGRAM_FILES -> Where the tomboy-reborn directory containg exe is.
     // CSIDL_STARTUP  ->  Where we put our shortcut (or remove it from)
     // CSIDL_APPDATA  ->  top of ~/AppData\Roaming ...... (not needed here)
     // CSIDL_DESKTOPDIRECTORY  -> User's desktop.
@@ -69,7 +69,7 @@ begin
         else ErrorMessage := 'Cannot find ' + TargetName;
     {$endif}
     {$ifdef WINDOWS}
-        // Typically makes a link to c:\Programe Files\tomboy-ng\tomboy-ng64.exe  in
+        // Typically makes a link to c:\Programe Files\tomboy-reborn\tomboy-reborn64.exe  in
         // C:\Users\dbann\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\.
         if not FileExistsUTF8(TargetName) then begin
             ErrorMessage := 'Cannot find ' + TargetName;

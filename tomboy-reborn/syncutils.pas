@@ -1,6 +1,6 @@
 unit syncutils;
 {
-    A Unit to support the tomboy-ng sync unit
+    A Unit to support the Tomboy Reborn sync unit
     Copyright (C) 2018 David Bannon
     See attached licence file.
 

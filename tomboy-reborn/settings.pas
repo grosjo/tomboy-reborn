@@ -624,7 +624,7 @@ begin
     {$ENDIF}
     {$ifdef DARWIN}
     DicPath := '/Library/Spelling/';
-    DicPathAlt := '/Applications/tomboy-ng.app/Contents/Resources/';
+    DicPathAlt := '/Applications/tomboy-reborn.app/Contents/Resources/';
     {$endif}
     {$ifdef LINUX}
     DicPath := '/usr/share/hunspell/';
@@ -731,7 +731,7 @@ begin
     ConfigWriting := False;
 
     LocalConfig := GetDefaultConfigDir();   // sys dependant unless user has overridden
-    LabelSettingPath.Caption := LocalConfig + 'tomboy-ng.cfg';
+    LabelSettingPath.Caption := LocalConfig + 'tomboy-reborn.cfg';
     ExportPath := '';
     LabelLibrary.Caption := '';
     NoteDirectory := Sett.GetDefaultNoteDir;
@@ -1144,19 +1144,19 @@ end;
 function TSett.GetDefaultNoteDir : string;
 begin
     {$IFDEF UNIX}
-    Result := GetEnvironmentVariable('HOME') + '/.local/share/tomboy-ng/';
+    Result := GetEnvironmentVariable('HOME') + '/.local/share/tomboy-reborn/';
     {$ENDIF}
     {$IFDEF DARWIN}
     // try the correct place first, if not there, lets try the old, wrong place
     // if at neither, we go back to correct place.
     Result := GetEnvironmentVariable('HOME') + '/Library/Application Support/Tomboy-ng/Notes/';
     if DirectoryExistsUTF8(Result) then exit;
-    Result := GetEnvironmentVariable('HOME') + '/.local/share/tomboy-ng/';
+    Result := GetEnvironmentVariable('HOME') + '/.local/share/tomboy-reborn/';
     if not DirectoryExistsUTF8(Result) then
         Result := GetEnvironmentVariable('HOME') + '/Library/Application Support/Tomboy-ng/Notes/';
     {$ENDIF}
     {$IFDEF WINDOWS}
-    Result := GetEnvironmentVariable('APPDATA') + '\tomboy-ng\notes\';
+    Result := GetEnvironmentVariable('APPDATA') + '\tomboy-reborn\notes\';
     // %APPDATA%\Tomboy\notes\
     {$ENDIF}
 end;
@@ -1370,7 +1370,7 @@ var
 begin
     // This is being called at startup, it should only be called when user changes it.
     if not visible then exit;
-     Auto := TAutoStartCtrl.Create('tomboy-ng', CheckAutostart.Checked);
+     Auto := TAutoStartCtrl.Create('tomboy-reborn', CheckAutostart.Checked);
      if Auto.ErrorMessage <> '' then
         ShowMessage('Error setting autstart' + Auto.ErrorMessage);
      FreeAndNil(Auto);
