@@ -49,4 +49,5 @@ Thanks
 
 Thank you to @davidbannon for letting me dig into its own software to built this one.
 
-Thank you to @cweiske for his extremely usefull piece of software on NextCloud side
+Thank you to @cweiske for his extremely usefull piece of software on NextCloud side. https://github.com/cweiske/grauphel
+
