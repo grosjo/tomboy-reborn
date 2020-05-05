@@ -725,7 +725,7 @@
     </RequiredPackages>
     <Units Count="32">
       <Unit0>
-        <Filename Value="Tomboy_NG.lpr"/>
+        <Filename Value="tomboy-reborn.lpr"/>
         <IsPartOfProject Value="True"/>
       </Unit0>
       <Unit1>

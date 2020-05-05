@@ -13,8 +13,8 @@ uses
     {$ENDIF}{$ENDIF}
     Interfaces, 
     Forms, printer4lazarus, SearchUnit, settings, SyncGUI, Notebook, Spelling,
-    Mainunit, BackupView, recover, tomdroid, markdown, Index, autostart,
-    hunspell, sync, syncutils, transandroid, helpnotes, ResourceStr, SyncError,
+    Mainunit, BackupView, recover, markdown, Index, autostart,
+    hunspell, sync, syncutils, helpnotes, ResourceStr, SyncError,
     colours, ncsetup;
 
 {$R *.res}
@@ -29,7 +29,6 @@ begin
     Application.CreateForm(TSett, Sett);
     Application.CreateForm(TSearchForm, SearchForm);
     Application.CreateForm(TFormSync, FormSync);
-    Application.CreateForm(TFormTomdroid, FormTomdroid);
     Application.CreateForm(TFormMarkdown, FormMarkdown);
     Application.CreateForm(TFormHelpNotes, FormHelpNotes);
     Application.CreateForm(TFormSyncError, FormSyncError);

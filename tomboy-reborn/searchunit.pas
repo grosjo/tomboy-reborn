@@ -252,8 +252,7 @@ uses MainUnit,      // Opening form, manages startup and Menus
     LazFileUtils,   // LazFileUtils needed for TrimFileName(), cross platform stuff
     sync,           // because we need it to manhandle local manifest when a file is deleted
     process,        // Linux, we call wmctrl to move note to current workspace
-    NoteBook,
-    Tomdroid;
+    NoteBook;
 
 
 
@@ -633,9 +632,6 @@ begin
                             Sett.EnsureVisible(true);
                             Sett.Show;
                      end;
-        mtTomdroid : if FormTomdroid.Visible then
-                        FormTomdroid.BringToFront
-                     else FormTomdroid.ShowModal;
         mtHelp :      begin
                         if HelpNotes.FileNameForTitle(TMenuItem(Sender).Caption, FileName) then
                             MainForm.ShowHelpNote(FileName)

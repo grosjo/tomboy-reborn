@@ -167,7 +167,7 @@ begin
 
         // AUTORIZE
         SetupStatus.Caption := 'OAuth: Asking user to autorize';
-        u:= oauth.authorizeUrl + '?oauth_token=' + oauth.Token + '&client=TomboyNG&oauth_callback=' + oauth.URLEncode(oauth.callbackUrl);
+        u:= oauth.authorizeUrl + '?oauth_token=' + oauth.Token + '&client=TomboyReborn&oauth_callback=' + oauth.URLEncode(oauth.callbackUrl);
         NCAuth.Caption := 'Cancel OAuth';
         URL.Enabled:= false;
 
@@ -198,7 +198,7 @@ web := nil;
   listening :=false;
   if(restok = oauth.Token) then begin
     oauth.Verifier := resverif;
-    AResponse.Contents.Text := '<h2>Congratulation, your TomboyNG is authenticated</h2>';
+    AResponse.Contents.Text := '<h2>Congratulation, your Tomboy Reborn is authenticated</h2>';
     //web.Synchronize(web,@AuthSuccess);
     Application.QueueAsyncCall(@AuthSuccess,0);
   end else begin
@@ -248,7 +248,7 @@ begin
   oauth.TokenSecret:= ExtractWord(2,s2,ts);
 
   success :=true;
-  SetupStatus.Caption := 'Congratulation, your TomboyNG is authenticated';
+  SetupStatus.Caption := 'Congratulation, your Tomboy Reborn is authenticated';
 
 end;
 

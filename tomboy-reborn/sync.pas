@@ -149,8 +149,8 @@ implementation
 
 { TSync }
 
-uses laz2_DOM, laz2_XMLRead, Trans, TransFile, TransAndroid, TransNext, LazLogger, LazFileUtils,
-    FileUtil, Settings, Tomdroid;
+uses laz2_DOM, laz2_XMLRead, Trans, TransFile, TransNext, LazLogger, LazFileUtils,
+    FileUtil, Settings;
 
 var
     Transport : TTomboyTrans;
@@ -664,11 +664,6 @@ begin
                 Transport.setParam('KEY', Sett.NCKey);
                 Transport.setParam('TOKEN', Sett.NCToken);
                 Transport.setParam('SECRET', Sett.NCSecret);
-                end;
-        SyncAndroid : begin
-            Transport := TAndSync.Create;
-                Transport.setParam('RemoteAddress', FormTomdroid.EditIPAddress.Text);
-                Transport.setParam('Password', FormTomdroid.EditPassword.Text);
                 end;
     end;
     Transport.NotesDir := NotesDir;

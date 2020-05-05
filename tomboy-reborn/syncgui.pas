@@ -131,7 +131,7 @@ implementation
   process.
 }
 
-uses LazLogger, SearchUnit, TB_SDiff, Sync,  LCLType, SyncError, ResourceStr;
+uses LazLogger, SearchUnit, SyncClash , Sync,  LCLType, SyncError, ResourceStr;
 
 {$R *.lfm}
 
@@ -146,23 +146,23 @@ end;
 
 function TFormSync.DefineDefaultAction(const ClashRec : TClashRecord) : TSyncAction;
 var
-    SDiff : TFormSDiff;
+    clash : TFormClash;
 begin
 
-    SDiff := TFormSDiff.Create(self);
+    clash := TFormClash.Create(self);
 
-    SDiff.NoteID.Caption := 'Note ID ; '+ ClashRec.LocalNote^.ID;
-    SDiff.TitleLocal.Caption := ClashRec.LocalNote^.Title;
-    SDiff.ChangeLocal.Caption := ClashRec.LocalNote^.LastChange;
-    SDiff.TitleRemote.Caption := ClashRec.RemoteNote^.Title;
-    SDiff.ChangeRemote.Caption := ClashRec.RemoteNote^.LastChange;
+    clash.NoteID.Caption := 'Note ID ; '+ ClashRec.LocalNote^.ID;
+    clash.TitleLocal.Caption := ClashRec.LocalNote^.Title;
+    clash.ChangeLocal.Caption := ClashRec.LocalNote^.LastChange;
+    clash.TitleRemote.Caption := ClashRec.RemoteNote^.Title;
+    clash.ChangeRemote.Caption := ClashRec.RemoteNote^.LastChange;
 
-    SDiff.MemoLocal.ReadOnly := true;
-    SDiff.MemoLocal.Text := SDiff.RemoveXml(ClashRec.LocalNote^.Content);
-    SDiff.MemoRemote.ReadOnly := true;
-    SDiff.MemoRemote.Text := SDiff.RemoveXml(ClashRec.RemoteNote^.Content);
+    clash.MemoLocal.ReadOnly := true;
+    clash.MemoLocal.Text := clash.RemoveXml(ClashRec.LocalNote^.Content);
+    clash.MemoRemote.ReadOnly := true;
+    clash.MemoRemote.Text := clash.RemoveXml(ClashRec.RemoteNote^.Content);
 
-    case SDiff.ShowModal of
+    case clash.ShowModal of
             mrYes      : Result := SynDownLoad;
             mrNo       : Result := SynUpLoadEdit;
             mrNoToAll  : Result := SynAllLocal;
@@ -173,7 +173,7 @@ begin
     else
             Result := SynUnSet;   // Should not get there
     end;
-    SDiff.Free;
+    clash.Free;
     Application.ProcessMessages;
 end;
 

@@ -106,14 +106,6 @@ uses
     Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Menus, ExtCtrls,
     StdCtrls, LCLTranslator, DefaultTranslator, Buttons, simpleipc;
 
-// These are choices for main and main popup menus.
-// type TMenuTarget = (mtSep=1, mtNewNote, mtSearch, mtAbout=10, mtSync, mtSettings, mtHelp, mtQuit, mtTomdroid, mtRecent);
-
-// These are the possible kinds of main menu items
-// type TMenuKind = (mkFileMenu, mkRecentMenu, mkHelpMenu);
-
-
-
 
 type
 
@@ -143,7 +135,6 @@ type
         LabelNoDismiss2: TLabel;
         LabelNotesFound: TLabel;
         TrayIcon: TTrayIcon;
-        //procedure ApplicationProperties1EndSession(Sender: TObject);
         procedure ButtMenuClick(Sender: TObject);
         procedure ButtonCloseClick(Sender: TObject);
         procedure ButtonConfigClick(Sender: TObject);
@@ -156,9 +147,7 @@ type
         procedure FormResize(Sender: TObject);
         procedure FormShow(Sender: TObject);
         procedure LabelErrorClick(Sender: TObject);
-        // procedure MMHelpTomboyClick(Sender: TObject);
         procedure TrayIconClick(Sender: TObject);
-        procedure TrayMenuTomdroidClick(Sender: TObject);
     private
         HelpList : TStringList;
         CommsClient : TSimpleIPCClient;
@@ -235,8 +224,7 @@ uses LazLogger, LazFileUtils, LazUTF8,
     {$endif}   // Stop linux clearing clipboard on app exit.
     {uAppIsRunning, }
     Editbox,    // Used only in SingleNoteMode
-    Note_Lister,
-    Tomdroid {$ifdef windows}, registry{$endif};
+    Note_Lister;
 
 var
     HelpNotes : TNoteLister;
@@ -781,12 +769,6 @@ end;
 procedure TMainForm.TrayIconClick(Sender: TObject);
 begin
     PopupMenuTray.PopUp();
-end;
-
-procedure TMainForm.TrayMenuTomdroidClick(Sender: TObject);
-begin
-    if FormTomdroid.Visible then FormTomdroid.BringToFront
-    else FormTomdroid.ShowModal;
 end;
 
 procedure TMainForm.RecentMenuClicked(Sender: TObject);
