@@ -6,9 +6,9 @@ What is this?
 
 This project intends to provide a "drop-in", straightforward replacement of deprecated , but extremely usefull Gnome Tomboy
 
-This effort came after reviewing existing efforts (tomboy-ng, QOwnNotes, ..), but all lacking teh basic features of legacy Tomboy : Simplicity, security and network synchornisation.
+This effort came after reviewing existing efforts (tomboy-ng, QOwnNotes, ..), but all lacking the basic features of legacy Tomboy : Simplicity, security and network synchronisation.
 
-This is a fork from tomboy-ng, after obvious mis-alignement of users need and software objectives
+This is a fork from tomboy-ng, after obvious mis-alignement of users need and software objectives with tomboy-ng author.
 
 
 Prerequisites
@@ -47,5 +47,6 @@ Please submit requests/bugs via the [GitHub issue tracker](https://github.com/gr
 Thanks
 ------
 
-Thank you to @davidbannon for letting me dig into its own software to built this one
+Thank you to @davidbannon for letting me dig into its own software to built this one.
+
 Thank you to @cweiske for his extremely usefull piece of software on NextCloud side
