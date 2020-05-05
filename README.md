@@ -17,8 +17,8 @@ Prerequisites
 Tomboy Reborn is built on Linux, Windows or Mac using
 
     Free Pascal Compiler - https://freepascal.org/ - version 3.0.4 or later.
-    Lazarus - https://www.lazarus-ide.org/ - version 2.0.6 (earlier versions may have some specific bugs, can be patched but easier to use 2.0.6). If you use Lazarus Fixes no patches are required.
-    kcontrols - https://bitbucket.org/tomkrysl/kcontrols - apply the kmemo_paste_text patch in tomboy-ng's patches directory. Failure to apply will mess with copying and pasting formatted text.
+    Lazarus - https://www.lazarus-ide.org/ - version 2.0.6 or later
+    kcontrols - https://bitbucket.org/tomkrysl/kcontrols - included in the default "plugs-ins" of lazarus
 
 
 Compiling
