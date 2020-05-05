@@ -4,7 +4,7 @@ Tomboy Reborn
 What is this?
 -------------
 
-This project intends to provide a "drop-in", straightforward replacement of deprecated , but extremely usefull Gnome Tomboy
+This project intends to provide a "drop-in", straightforward replacement of deprecated , but extremely usefull, /Gnome Tomboy/
 
 This effort came after reviewing existing efforts (tomboy-ng, QOwnNotes, ..), but all lacking the basic features of legacy Tomboy : Simplicity, security and network synchronisation.
 
