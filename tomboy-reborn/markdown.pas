@@ -93,7 +93,7 @@ var
 
 implementation
 
-uses settings, Clipbrd;
+uses TRsettings, Clipbrd;
 {$R *.lfm}
 
 { TFormMarkdown }

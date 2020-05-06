@@ -66,7 +66,7 @@ implementation
 
 { TFormIndex }
 
-uses Settings;
+uses TRSettings;
 
 procedure TFormIndex.FormShow(Sender: TObject);
 var

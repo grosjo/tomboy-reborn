@@ -1,6 +1,7 @@
-unit TRsyncclash;
+unit TRclashUI;
+
 { History
-    2020/05 Reshape Tomboy-ng
+    2020/05 Reshape Tomboy-reborn
 }
 
 {$mode objfpc}{$H+}
@@ -9,7 +10,7 @@ interface
 
 uses
     Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-    ExtCtrls, ComCtrls, Buttons, kmemo;
+    ExtCtrls, ComCtrls, Buttons;
 type
 
     { TFormClash }

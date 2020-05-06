@@ -1,69 +1,14 @@
-unit TRsyncGUI;
-{
- * Copyright (C) 2017 David Bannon
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-}
-
-{	History
-	2017/12/06	Marked FileSync debug mode off to quieten console output a little
-	2017/12/30  Changed above DebugMode to VerboseMode
-	2017/12/30  We now call IndexNotes() after a sync. Potentially slow.
-	2017/12/30  Added a seperate procedure to do manual Sync, its called
-				by a timer to ensure we can see dialog before it starts.
-	2018/01/01  Added ID in sync report to make it easier to track errors.
-	2018/01/01  Set goThumbTracking true so contents of scroll box glide past as
-    			you move the "Thumb Slide".
-	2018/01/01  Changed ModalResult for cancel button to mrCancel
-	2018/01/08  Tidied up message box text displayed when a sync conflict happens.
-	2018/01/25  Changes to support Notebooks
-    2018/01/04  Forced a screen update before manual sync so user knows whats happening.
-    2018/04/12  Added ability to call MarkNoteReadOnly() to cover case where user has unchanged
-                note open while sync process downloads or deletes that note from disk.
-    2018/04/13  Taught MarkNoteReadOnly() to also delete ref in NoteLister to a sync deleted note
-    2018/05/12  Extensive changes - MainUnit is now just that. Only change here relates
-                to naming of MainUnit and SearchUnit.
-    2018/05/21  Show any sync errors as hints in the StringGrid.
-    2018/06/02  Honor a cli --debug-sync
-    2018/06/14  Update labels when transitioning from Testing Sync to Manual Sync
-    2018/08/14  Added SDiff to replace clumbsy dialog when sync clash happens.
-    2018/08/18  Improved test/reporting of file access during sync
-    2018/10/25  New sync model. Much testing, support for Tomdroid.
-    2018/10/28  Much tweaking and bug fixing.
-    2018/10/29  Tell TB_Sdiff about note title before showing it.
-    2018/10/30  Don't show SyNothing in sync report
-    2018/11/04  Added support to update in memory NoteList after a sync.
-    2019/05/19  Display strings all (?) moved to resourcestrings
-    2020/02/20  Added capability to sync without showing GUI.
-}
+unit TRsyncUI;
 
 {$mode objfpc}{$H+}
-
-
 
 
 interface
 
 uses
-		Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-		StdCtrls, Grids, Syncutils, LazFileUtils, TRsettings;
+		Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs,
+                ExtCtrls, StdCtrls, Grids, Syncutils, LazFileUtils,
+                LazLogger,  LCLType, SyncError, ResourceStr;
 
 type
 
@@ -131,7 +76,7 @@ implementation
   process.
 }
 
-uses LazLogger, SearchUnit, TRsyncclash , Sync,  LCLType, SyncError, ResourceStr;
+uses TRsettings, TRsearchUnit, TRsync,  TRclashUI;
 
 {$R *.lfm}
 

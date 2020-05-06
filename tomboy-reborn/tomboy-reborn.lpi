@@ -849,7 +849,7 @@
         <IsPartOfProject Value="True"/>
       </Unit18>
       <Unit19>
-        <Filename Value="sync.pas"/>
+        <Filename Value="TRsync.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit19>
       <Unit20>

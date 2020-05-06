@@ -9,9 +9,9 @@ unit TRsettings;
 interface
 
 uses
-    Classes, SysUtils, {FileUtil,} Forms, Controls, Graphics, Dialogs, StdCtrls,
-    Buttons, ComCtrls, ExtCtrls, Grids, Menus, EditBtn, FileUtil,
-    ncsetup, LCLIntf, md5, Types, Syncutils;
+    Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
+    Buttons, ComCtrls, ExtCtrls, Menus, EditBtn, FileUtil,
+    ncsetup, LCLIntf, md5, Syncutils;
 
 // Types;
 
@@ -108,7 +108,6 @@ type
 	procedure ButtonSetColoursClick(Sender: TObject);
         procedure ButtonFixedFontClick(Sender: TObject);
         procedure ButtonFontClick(Sender: TObject);
-        procedure ButtonHelpNotesClick(Sender: TObject);
         procedure ButtonSetDictionaryClick(Sender: TObject);
 	procedure ButtonSetNotePathClick(Sender: TObject);
         procedure ButtonSetSpellLibraryClick(Sender: TObject);
@@ -244,12 +243,12 @@ implementation
 uses IniFiles, LazLogger,
     LazFileUtils,   // LazFileUtils needed for TrimFileName(), cross platform stuff;
     Note_Lister,	// List notes in BackUp and Snapshot tab
-    SearchUnit,		// So we can call IndexNotes() after altering Notes Dir
-    syncGUI,
-    recover,        // Recover lost or damaged files
+    TRsearchUnit,		// So we can call IndexNotes() after altering Notes Dir
+    TRsyncUI,
+    //recover,        // Recover lost or damaged files
     mainunit,       // so we can call ShowHelpNote()
     hunspell,       // spelling check
-    helpnotes,      // All user to download non-English help Notes
+    //helpnotes,      // All user to download non-English help Notes
     LCLType,        // Keycodes ....
     Autostart,
     Colours,
@@ -1086,11 +1085,6 @@ begin
     ButtonFont.Hint := UsualFont;
 end;
 
-procedure TSett.ButtonHelpNotesClick(Sender: TObject);
-begin
-    FormHelpNotes.show;
-end;
-
 
 
 RESOURCESTRING
@@ -1126,7 +1120,6 @@ end;
 }
 
 RESOURCESTRING
-    rsSnapshotCreated = 'created, do you want to copy it elsewhere ?';
     rsErrorCopyFile = 'Failed to copy file, does destination dir exist ?';
 
 

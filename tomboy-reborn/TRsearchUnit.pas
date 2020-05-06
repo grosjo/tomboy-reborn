@@ -1,103 +1,5 @@
 unit TRsearchUnit;
 
-{
- * Copyright (C) 2017 David Bannon
- *
- * Permission is hereby granted, free of charge, to any person obtaining 
- * a copy of this software and associated documentation files (the 
- * "Software"), to deal in the Software without restriction, including 
- * without limitation the rights to use, copy, modify, merge, publish, 
- * distribute, sublicense, and/or sell copies of the Software, and to 
- * permit persons to whom the Software is furnished to do so, subject to 
- * the following conditions: 
- *  
- * The above copyright notice and this permission notice shall be 
- * included in all copies or substantial portions of the Software. 
- *  
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE 
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION 
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
-}
-
-{	HISTORY
-	20170928 Added a function that returns true if passed string is in the
-	current title list.
-	20171005 - Added an ifdef Darwin to RecentNotes() to address a OSX bug that prevented
-    the recent file names being updated.
-	2017/10/10 - added a refresh button, need to make it auto but need to look at
-	timing implication for people with very big note sets first.
-
-	2017/10/10 - added the ability to update the stringlist when a new note is
-	created or an older one updated. So, recent notes list under TrayIcon is now
-	updated whenever a save is made.
-
-	2017/11/07 - switched over to using NoteLister, need to remove a lot of unused code.
-
-	2017/11/28 - fixed a bug I introduced while restructuring  OpenNote to better
-	handle a note being auto saved. This bug killed the Link button in EditNote
-	2017/11/29 - check to see if NoteLister is still valid before passing
-	on updates to a Note's status. If we are quiting, it may not be.
-	2017/12/03 Added code to clear Search box when it gets focus. Issue #9
-	2017/12/05 Added tests that we have a Notes Directory before opening a new note
-	or the search box. Issue #23.
-	2017/12/27 Changes flowing from this no longer being the main form.
-		1. Setting is now main form. This is to deal with a Cocoa issue where we
-			we cannot Hide() in the OnShow event.
-	2017/12/28 Ensured recent items in popup menu are marked as empty before user
-				sets a notes dir.
-	2017/12/29  DeleteNote() now moves file into Backup/.
-	2017/12/30  Removed commented out code relting to calling Manual Sync
-	2018/01/01  Added a check to see if FormSync is already visible before calling ShowModal
-	2018/01/01  Added code to mark a previously sync'ed and now deleted note in local manifest.
-	2018/01/01  Set goThumbTracking true so contents of scroll box glide past as
-    			you move the "Thumb Slide".
-	2018/01/01  Moved call to enable/disable the sync menu item into RecentMenu();
-    2018/01/25  Changes to support Notebooks
-    2018/01/39  Altered the Mac only function that decides when we should update
-                the traymenu recent used list.
-    2018/02/04  Don't show or populate the TrayIcon for Macs. Hooked into Sett's Main Menu
-                for Mac and now most IconTray/Main menu items are responded to in Sett.
-    2018/02/04  Now control MMSync when we do the Popup One.
-    2018/04/12  Added ability to call MarkNoteReadOnly() to cover case where user has unchanged
-                note open while sync process downloads or deletes that note from disk.
-    2018/04/13  Taught MarkNoteReadOnly() to also delete ref in NoteLister to a sync deleted note
-    2018/05/12  Extensive changes - MainUnit is now just that. Name of this unit changed.
-    2018/05/20  Alterations to way we startup, wrt mainform status report.  Mark
-    2018/06/04  NoteReadOnly() now checks if NoteLister is valid before calling.
-    2018/07/04  Pass back some info about how the note indexing went.
-    2018/08/18  Can now set search option, Case Sensitive, Any Combination from here.
-    2018/08/18  Update Mainform line about notes found whenever IndexNotes() is called.
-    2018/11/04  Added ProcessSyncUpdates to keep in memory model in line with on disk and recently used list
-    2018/11/25  Now uses Sync.DeleteFromLocalManifest(), called when a previously synced not is deleted, TEST !
-    2018/12/29  Small improvements in time to save a file.
-    2019/02/01  OpenNote() now assignes a new note to the notebook if one is open (ie ButtonNotebookOptions is enabled)
-    2019/02/09  Move autosize stringgrid1 (back?) into UseList()
-    2019/02/16  Clear button now calls UseList() to ensure autosize happens.
-    2019/03/13  Now pass editbox the searchterm (if any) so it can move cursor to first occurance in note
-    2019/04/07  Restructured Main and Popup menus. Untested Win/Mac.
-    2019/04/13  Don't call note_lister.GetNotes more than absolutly necessary.
-    2019/04/15  One Clear Filters button to replace Clea and Show All Notes. Checkboxes Mode instead of menu
-    2019/04/16  Fixed resizing atifacts on stringGrids by turning off 'Flat' property, Linux !
-    2019/08/18  Removed AnyCombo and CaseSensitive checkboxes and replaced with SearchOptionsMenu, easier translations
-    2019/11/19  When reshowing an open note, bring it to current workspace, Linux only. Test on Wayland !
-    2019/12/11  Heavily restructured Startup, Main Menu everywhere !
-    2019/12/12  Commented out #868 that goRowHighlight to stringgridnotebook, ugly black !!!!!
-    2019/12/19  Restored the File Menu names to the translate system.
-    2020/01/24  Fixed a Qt5 startup issue, don't fill in RecentItems in menu before File & Help are there.
-    2020/01/29  A lot of tweaks around UseList(), MMenu Recent no longer from StringGrid, ctrl updates to speed up.
-    2020/01/31  LoadStringGrid*() now uses the Lazarus column mode.
-                Better ctrl of Search Term highlight (but still highlit when makeing form re-visible).
-                Drop Create Date and Filename from Search results string grid.
-                But I still cannot control the little green triangles in stringgrid headings indicating sort.
-    2020/02/01  Dont refresh the string grids automatically, turn on the refresh button for user to do it.
-    2020/02/19  hilight selected notebook name.
-    2020/03/09  Make sure 'x' (put in by a bug) is not a valid sync repo path.
-}
-
 {$mode objfpc}{$H+}
 
 interface
@@ -115,43 +17,43 @@ type TMenuKind = (mkFileMenu, mkRecentMenu, mkHelpMenu, mkAllMenu);
 
 type        { TSearchForm }
     TSearchForm = class(TForm)
-			ButtonNotebookOptions: TButton;
-			ButtonClearFilters: TButton;
-		ButtonRefresh: TButton;
+        ButtonNotebookOptions: TButton;
+	ButtonClearFilters: TButton;
+	ButtonRefresh: TButton;
         CheckCaseSensitive: TCheckBox;
         Edit1: TEdit;
-		MenuEditNotebookTemplate: TMenuItem;
-		MenuDeleteNotebook: TMenuItem;
+	MenuEditNotebookTemplate: TMenuItem;
+	MenuDeleteNotebook: TMenuItem;
         MenuRenameNoteBook: TMenuItem;
-		MenuNewNoteFromTemplate: TMenuItem;
-		Panel1: TPanel;
-		PopupMenuNotebook: TPopupMenu;
+	MenuNewNoteFromTemplate: TMenuItem;
+	Panel1: TPanel;
+	PopupMenuNotebook: TPopupMenu;
         ButtonMenu: TSpeedButton;
-		Splitter1: TSplitter;
+	Splitter1: TSplitter;
         StatusBar1: TStatusBar;
         StringGrid1: TStringGrid;
-		StringGridNotebooks: TStringGrid;
+	StringGridNotebooks: TStringGrid;
         SelectDirectoryDialog1: TSelectDirectoryDialog;
         procedure ButtonMenuClick(Sender: TObject);
-		procedure ButtonNotebookOptionsClick(Sender: TObject);
-  		procedure ButtonRefreshClick(Sender: TObject);
-		procedure ButtonClearFiltersClick(Sender: TObject);
+	procedure ButtonNotebookOptionsClick(Sender: TObject);
+  	procedure ButtonRefreshClick(Sender: TObject);
+	procedure ButtonClearFiltersClick(Sender: TObject);
         procedure CheckCaseSensitiveChange(Sender: TObject);
         procedure Edit1Enter(Sender: TObject);
-		procedure Edit1Exit(Sender: TObject);
+	procedure Edit1Exit(Sender: TObject);
         procedure Edit1KeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-		procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
+	procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
         procedure FormCreate(Sender: TObject);
-		procedure FormDestroy(Sender: TObject);
+	procedure FormDestroy(Sender: TObject);
         procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-		procedure FormShow(Sender: TObject);
-		procedure MenuDeleteNotebookClick(Sender: TObject);
-		procedure MenuEditNotebookTemplateClick(Sender: TObject);
+	procedure FormShow(Sender: TObject);
+	procedure MenuDeleteNotebookClick(Sender: TObject);
+	procedure MenuEditNotebookTemplateClick(Sender: TObject);
         procedure MenuRenameNoteBookClick(Sender: TObject);
-		procedure MenuNewNoteFromTemplateClick(Sender: TObject);
+	procedure MenuNewNoteFromTemplateClick(Sender: TObject);
         procedure SpeedButton1Click(Sender: TObject);
         procedure StringGrid1Resize(Sender: TObject);
-		procedure StringGridNotebooksClick(Sender: TObject);
+	procedure StringGridNotebooksClick(Sender: TObject);
         procedure StringGrid1DblClick(Sender: TObject);
         // Recieves 2 lists from Sync subsystem, one listing deleted notes ID, the
         // other downloded note ID. Adjusts Note_Lister according and marks any
@@ -239,7 +141,7 @@ uses MainUnit,      // Opening form, manages startup and Menus
     TRsettings,		// Manages settings.
     LCLType,		// For the MessageBox
     LazFileUtils,   // LazFileUtils needed for TrimFileName(), cross platform stuff
-    sync,           // because we need it to manhandle local manifest when a file is deleted
+    TRsync,           // because we need it to manhandle local manifest when a file is deleted
     process,        // Linux, we call wmctrl to move note to current workspace
     NoteBook;
 

@@ -93,7 +93,7 @@ implementation
 
 uses Graphics,     		// For some font style defs
     LazUTF8,
-    Settings,			// User settings and some defines across units.
+    TRSettings,			// User settings and some defines across units.
     LazLogger;
 
 procedure TBLoadNote.LoadFile(FileName : ANSIString; RM : TKMemo);

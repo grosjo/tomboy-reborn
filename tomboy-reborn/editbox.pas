@@ -475,8 +475,8 @@ uses //RichMemoUtils,     // Provides the InsertFontText() procedure.
     LazUTF8,
     //LCLType,			// For the MessageBox
     keditcommon,        // Holds some editing defines
-    settings,			// User settings and some defines used across units.
-    SearchUnit,         // Is the main starting unit and the search tool.
+    TRsettings,			// User settings and some defines used across units.
+    TRSearchUnit,         // Is the main starting unit and the search tool.
 
 	LoadNote,           // Will know how to load a Tomboy formatted note.
     {SyncGUI,}

@@ -214,8 +214,8 @@ implementation
 
 
 uses LazLogger, LazFileUtils, LazUTF8,
-    settings,
-    SearchUnit,
+    TRsettings,
+    TRSearchUnit,
     {$ifdef LCLGTK2}
     gtk2, gdk2,          // required to fix a bug that clears clipboard contents at close.
     {$endif}

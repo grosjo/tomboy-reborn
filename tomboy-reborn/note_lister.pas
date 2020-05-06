@@ -267,7 +267,7 @@ type
 
 implementation
 
-uses  laz2_DOM, laz2_XMLRead, LazFileUtils, LazUTF8, settings, LazLogger, SyncUtils;
+uses  laz2_DOM, laz2_XMLRead, LazFileUtils, LazUTF8, TRsettings, LazLogger, SyncUtils;
 { Projectinspector, double click Required Packages and add LCL }
 
 { TNoteBookList }

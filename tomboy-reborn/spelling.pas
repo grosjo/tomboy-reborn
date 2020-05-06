@@ -89,7 +89,7 @@ var
 
 implementation
 
-uses hunspell, settings, LazUTF8, LazLogger;
+uses hunspell, TRsettings, LazUTF8, LazLogger;
 
 const
   SetofDelims = [#10, #13, ' '..'@', '['..'`', '{'..'~'];   // all askii visible char ??
