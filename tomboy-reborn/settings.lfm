@@ -24,10 +24,10 @@ object Sett: TSett
     Height = 399
     Top = 0
     Width = 630
-    ActivePage = TabSync
+    ActivePage = TabDisplay
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderSpacing.Bottom = 2
-    TabIndex = 2
+    TabIndex = 1
     TabOrder = 0
     OnChange = PageControl1Change
     object TabBasic: TTabSheet
@@ -108,7 +108,7 @@ object Sett: TSett
         ClientWidth = 604
         TabOrder = 0
         object CheckShowSearchAtStart: TCheckBox
-          Left = 24
+          Left = 264
           Height = 23
           Top = 96
           Width = 142
@@ -117,10 +117,10 @@ object Sett: TSett
           TabOrder = 0
         end
         object CheckShowSplash: TCheckBox
-          Left = 24
+          Left = 96
           Height = 23
           Hint = 'Always shown if error loading notes.'
-          Top = 56
+          Top = 96
           Width = 140
           Caption = 'Show Splash at Start'
           Checked = True
@@ -130,32 +130,23 @@ object Sett: TSett
           State = cbChecked
           TabOrder = 1
         end
-        object CheckShowTomdroid: TCheckBox
-          Left = 272
-          Height = 23
-          Top = 56
-          Width = 226
-          Caption = 'Show Tomdroid Sync (experimental)'
-          OnChange = onCheckShowTomdroid
-          TabOrder = 2
-        end
         object CheckAutostart: TCheckBox
-          Left = 24
+          Left = 16
           Height = 23
-          Top = 16
+          Top = 8
           Width = 129
           Caption = 'Autostart at Logon'
           OnChange = CheckAutostartChange
-          TabOrder = 3
+          TabOrder = 2
         end
         object CheckCaseSensitive: TCheckBox
-          Left = 272
+          Left = 432
           Height = 23
-          Top = 16
+          Top = 96
           Width = 159
           Caption = 'Search is case Sensitive'
           OnChange = onCheckCaseSensitive
-          TabOrder = 4
+          TabOrder = 3
         end
       end
     end
@@ -263,19 +254,6 @@ object Sett: TSett
         OnChange = onChange
         TabOrder = 3
       end
-      object ButtonHelpNotes: TButton
-        AnchorSideLeft.Control = GroupBox5
-        AnchorSideTop.Control = CheckManyNotebooks
-        AnchorSideTop.Side = asrBottom
-        Left = 32
-        Height = 31
-        Top = 313
-        Width = 240
-        BorderSpacing.Top = 15
-        Caption = 'Help Notes Language'
-        OnClick = ButtonHelpNotesClick
-        TabOrder = 4
-      end
       object ButtonFont: TButton
         Left = 344
         Height = 25
@@ -285,7 +263,7 @@ object Sett: TSett
         OnClick = ButtonFontClick
         ParentShowHint = False
         ShowHint = True
-        TabOrder = 5
+        TabOrder = 4
       end
       object ButtonFixedFont: TButton
         Left = 347
@@ -296,11 +274,9 @@ object Sett: TSett
         OnClick = ButtonFixedFontClick
         ParentShowHint = False
         ShowHint = True
-        TabOrder = 6
+        TabOrder = 5
       end
       object ButtonSetColours: TButton
-        AnchorSideLeft.Control = ButtonHelpNotes
-        AnchorSideRight.Control = ButtonHelpNotes
         AnchorSideRight.Side = asrBottom
         Left = 32
         Height = 25
@@ -309,7 +285,7 @@ object Sett: TSett
         Anchors = [akLeft, akRight]
         Caption = 'Set Colours'
         OnClick = ButtonSetColoursClick
-        TabOrder = 7
+        TabOrder = 6
       end
     end
     object TabSync: TTabSheet
@@ -916,6 +892,7 @@ object Sett: TSett
     Anchors = [akRight, akBottom]
     BorderSpacing.Bottom = 3
     Caption = 'Close'
+    OnClick = SpeedButHideClick
   end
   object SpeedButtTBMenu: TSpeedButton
     AnchorSideTop.Control = SpeedButHide

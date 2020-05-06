@@ -1,103 +1,7 @@
 unit settings;
-{
- * Copyright (C) 2017 David Bannon
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-}
-
-{	This form represents all the settings and will have most (?) of the constants.
-
-	Makes sense for all units to 'use' this unit, ideally in the implmentation
-	section.
-}
 
 {	HISTORY
-	2017/9/27 - Created
-
-	2017/10/10 - added ability to set fonts to small, medium and big
-
-	2017/10/15 - gave the setting form Tabs, lot less cluttered.
-
-	2017/11/25 - added a button to notes path config to use the 'default' path
-	that is, similar to what tomboy does. Code to make that path.
-
-	2017/11/28 - put a ; after a line of windows only code.
-
-	2017/12/08 - changed size of Mediun normal font, one size smaller
-	2017/12/28 - extensive changes so this form is now Main form. This is
-				because Cocoa cannot handle Hide() in main form OnShow event.
-				This makes more sense anyway.
-	2017/12/28 - Small change to force a Note Directory if user browses away
-				from Settings screen that urges them to set it first ! Sigh...
-	2017/12/29  Further force of a Note Directory.
-	2017/12/30  We now set Search box lablepath after setting up a NotesPath
-				Added a caption to tell user we are setting up sync.
-	2017/12/30  Added a call to IndexNotes after setting up sync, potentially slow.
-	2018/01/25  Changes to support Notebooks
-    2018/02/04  Added a Main menu because Macs work better with one.
-    2018/02/09  Added a means save export path but only until app exits, not saved to disk.
-    2018/02/14  Added check boxes to control search box
-    2018/02/23  Added capabily to configure spell check.
-    2018/03/18  Added a close button (really a hide button) and an ifdef to close
-                on the Mac when ever asked to do so. Have disabled close icon but seems
-                it still works on Linux but not mac, so thats OK (but funny).
-                Issue #25 relates, untested.
-	2018/03/24	Added some checks to make sure spell libary and dictionary mentioned
-				in config file is still valid.
-    2018/05/12  Extensive changes - MainUnit is now just that.
-    2018/05/20  NeedRefresh to indicate when need to refresh menus and mainform status.
-    2018/05/23  Added /usr/share/myspell/ to linux dictionary search path.
-                Enabled Save button after dictionary selection.
-    2018/06/06  Substantial changes. Now create config dir at form creation.
-                User no longer manually saves, config file is updated at each change.
-                Extensive checks of config and notes directory before proceeding.
-    2018/06/14  Moved call to CheckSpelling() from OnShow to OnCreate.
-                Select MediumFont in default settings.
-    2018/07/22  Removed an errant editbox that somehow appeared over small font button.
-    2018/08/18  Now call SpellCheck() after loading settings. Note, if settings file
-                has an old library name and hunspell can find a new one, nothing is updated !
-    2018/08/23  Ensured that an ini file without a notedir returns a sensible value, TEST
-    2018/10/28  Much changes, support Backup management, snapshots and new sync Model.
-    2018/11/01  Ensure we have a valid Spell, even after a hide !
-    2018/11/05  Set default tab.
-    2018/11/29  Change Spelling UI when selecting Library and Dictionary
-    2018/12/03  Added show splash screen to settings, -g or an indexing error will force show
-    2018/12/03  disable checkshowTomdroid on all except Linux
-    2019/03/19  Added setting option to show search box at startup
-    2019/04/07  Restructured Main and Popup menus. Untested Win/Mac.
-    2019/04/13  Almost rid of NeedRefresh, SearchForm.IndexNotes() instead.
-    2019/04/27  Fix for Huge display font.
-    2019/05/06  Support saving pos and open on startup in note.
-    2019/05/14  Display strings all (?) moved to resourcestrings
-    2019/06/11  Moved some checkboxes and renamed 'Display' to 'Notes'.
-    2019/09/6   Button to download Help Notes in non-English
-    2019/09/07  User can now select a note font.
-    2019/12/18  Moved LinkScanRange to EditBox
-    2019/12/20  Ensure we have UsualFont set to something even during first start.
-    2019/12/24  Ensure we don't try to sync if its not yet setup.
-    2020/03/02  Force our guess fixed font if no config file.
-    2020/03/08  Don't call search refreshMenu(mkFileMenu after an initial sync, no need
-    2020/03/30  Added code to allow user to set display colours.
-    2020/04/07  As well as forcing Linux AltHelpNotes into config dir, must also do Windows !
-    2020/04/08  Added some code to support SyncNextCloud, see define SHOW_NET_SYNC top of implementation section.
-    2020/04/10  Added Net and File sync mode to settings file, make labels consistent
+	2020/05/06 - Reshaping @DavidBannon work to adpat to real needs
 }
 
 {$mode objfpc}{$H+}
@@ -136,7 +40,6 @@ type
 	  ButtonSetColours: TButton;
           ButtonFixedFont: TButton;
           ButtonFont: TButton;
-          ButtonHelpNotes: TButton;
           ButtonSetSpellLibrary: TButton;
           ButtonSetDictionary: TButton;
           ButtonManualSnap: TButton;
@@ -153,7 +56,6 @@ type
           CheckShowSplash: TCheckBox;
 	  CheckShowExtLinks: TCheckBox;
 	  CheckShowIntLinks: TCheckBox;
-          CheckShowTomdroid: TCheckBox;
           CheckSnapEnabled: TCheckBox;
           CheckSnapMonthly: TCheckBox;
           FontDialog1: TFontDialog;
@@ -238,10 +140,8 @@ type
         procedure ButtonSyncHelpClick(Sender: TObject);
         procedure CheckAutostartChange(Sender: TObject);
         procedure CheckBoxAutoSyncChange(Sender: TObject);
-        //procedure CheckManyNotebooksChange(Sender: TObject);
         procedure onChange(Sender: TObject);
 	procedure onCheckCaseSensitive(Sender: TObject);
-	procedure onCheckShowTomdroid(Sender: TObject);
 	procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
         procedure FormCreate(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
@@ -253,12 +153,13 @@ type
 	procedure PageControl1Change(Sender: TObject);
         procedure RadioConflictChange(Sender: TObject);
 	procedure SpeedButHelpClick(Sender: TObject);
+        procedure SpeedButHideClick(Sender: TObject);
         procedure SpeedButtTBMenuClick(Sender: TObject);
 	procedure ButtonFileSetupClick(Sender: TObject);
         procedure StringGridBackUpDblClick(Sender: TObject);
         procedure RadioSyncChange(Sender: TObject);
         procedure TabBasicContextPopup(Sender: TObject; MousePos: TPoint;
-          var Handled: Boolean);
+        var Handled: Boolean);
         procedure TabSnapshotResize(Sender: TObject);
         procedure TabSpellResize(Sender: TObject);
         procedure TimerAutoSyncTimer(Sender: TObject);
@@ -325,8 +226,7 @@ type
         ConfigWriting : boolean;
 
         AllowClose : Boolean;           // review need for this
-        // Indicates we should re-index notes when form hides
-        //NeedRefresh : Boolean;
+
         FontSmall  : Integer;
      	FontLarge  : Integer;
      	FontHuge   : Integer;
@@ -337,7 +237,7 @@ type
         { The dir expected to hold config file and, possibly local manifest }
         LocalConfig : string;
         { relevent only when using file sync }
-        // RemoteRepo  : string;
+
 
         SyncOption : TSyncOption;
         { Indicates we have done a config, not necessarily a valid one }
@@ -346,10 +246,10 @@ type
         ShowIntLinks : boolean;
         { Says Notes should be treated as read only, a safe choice }
         NotesReadOnly : boolean;
-            { Indicates Spell is configured and LabelLibrary and LabelDic should
+        { Indicates Spell is configured and LabelLibrary and LabelDic should
             contain valid full file names.}
         SpellConfig : boolean;
-            { Triggers a Sync, if its not all setup aready and working, user show and error }
+        { Triggers a Sync, if its not all setup aready and working, user show and error }
         procedure Synchronise();
         property ExportPath : ANSIString Read fExportPath write fExportPath;
         // Called after notes are indexed, if settings so indicate, will start auto timer.
@@ -449,6 +349,11 @@ end;
 procedure TSett.SpeedButHelpClick(Sender: TObject);
 begin
         MainForm.ShowHelpNote('sync-ng.note');
+end;
+
+procedure TSett.SpeedButHideClick(Sender: TObject);
+begin
+  FormHide(Sender);
 end;
 
 
