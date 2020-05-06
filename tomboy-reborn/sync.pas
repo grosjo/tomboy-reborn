@@ -1,4 +1,4 @@
-unit sync;
+unit TRsync;
 {
     A Unit to manage Tomboy Reborn sync behaviour.
     Copyright (C) 2018 David Bannon
@@ -150,7 +150,7 @@ implementation
 { TSync }
 
 uses laz2_DOM, laz2_XMLRead, Trans, TransFile, TransNext, LazLogger, LazFileUtils,
-    FileUtil, Settings;
+    FileUtil, TRsettings;
 
 var
     Transport : TTomboyTrans;

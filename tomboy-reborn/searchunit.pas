@@ -1,4 +1,4 @@
-unit SearchUnit;
+unit TRsearchUnit;
 
 {
  * Copyright (C) 2017 David Bannon
@@ -236,7 +236,7 @@ implementation
 
 uses MainUnit,      // Opening form, manages startup and Menus
     EditBox,
-    settings,		// Manages settings.
+    TRsettings,		// Manages settings.
     LCLType,		// For the MessageBox
     LazFileUtils,   // LazFileUtils needed for TrimFileName(), cross platform stuff
     sync,           // because we need it to manhandle local manifest when a file is deleted

@@ -1,9 +1,5 @@
 program Tomboy_Reborn;
 
-{ History
-	27/12/2017 - Altered order to make the settings form the main one instead of RTSearch
-}
-
 {$mode objfpc}{$H+}
 
 uses
@@ -12,18 +8,53 @@ uses
     cthreads,
     {$ENDIF}{$ENDIF}
     Interfaces, 
-    Forms, printer4lazarus, SearchUnit, settings, SyncGUI, Notebook, Spelling,
-    Mainunit, BackupView, recover, markdown, Index, autostart,
+    Forms, printer4lazarus, TRcommon, SearchUnit, TRsettings, TrSyncGUI,
+    Notebook, Spelling, Mainunit, recover, markdown, Index, autostart,
     hunspell, sync, syncutils, helpnotes, ResourceStr, SyncError,
     colours, ncsetup;
 
 {$R *.res}
 
+var
+	ConfigDir : String;
+	NotesDir : String;
+	ConfigFile : String;
+
+
+function GetDefaultConfigDir() : string;
+begin
+    Result := '';
+    if Application.HasOption('config-dir') then
+        Result := Application.GetOptionValue('config-dir');
+    if Result = '' then begin
+        {$ifdef DARWIN}
+        // First we try the right place, if there use it, else try unix place, if
+        // its not there, go back to right place.
+        Result := GetEnvironmentVariable('HOME') + '/Library/Application Support/Tomboy-Reborn/Config';
+        if not DirectoryExistsUTF8(Result) then begin
+            Result := GetAppConfigDirUTF8(False);
+            if not DirectoryExistsUTF8(Result) then  // must be new install, put in right place
+                Result := GetEnvironmentVariable('HOME') + '/Library/Application Support/Tomboy-Reborn/Config';
+        end;
+        {$else}
+        Result := GetAppConfigDirUTF8(False);
+        {$endif}
+    end;
+    Result := AppendPathDelim(ChompPathDelim(Result));
+    {$ifndef DARWIN}
+    MainForm.SetAltHelpPath(Result);
+    {$endif}
+end;
+
 begin
     Application.Scaled:=True;
-    Application.Title:='tomboy-reborn';
+    Application.Title:='Tomboy Reborn';
     RequireDerivedFormResource:=True;
     Application.Initialize;
+
+    ConfigDir := GetDefaultConfigDir();
+    ConfigFile := ConfigDir + 'tomboy-reborn.cfg';
+
     Application.CreateForm(TMainForm, MainForm);
     Application.CreateForm(TFormNCSetup, FormNCSetup);
     Application.CreateForm(TSett, Sett);

@@ -1,4 +1,4 @@
-unit settings;
+unit TRsettings;
 
 {	HISTORY
 	2020/05/06 - Reshaping @DavidBannon work to adpat to real needs
@@ -10,7 +10,7 @@ interface
 
 uses
     Classes, SysUtils, {FileUtil,} Forms, Controls, Graphics, Dialogs, StdCtrls,
-    Buttons, ComCtrls, ExtCtrls, Grids, Menus, EditBtn, FileUtil, BackUpView,
+    Buttons, ComCtrls, ExtCtrls, Grids, Menus, EditBtn, FileUtil,
     ncsetup, LCLIntf, md5, Types, Syncutils;
 
 // Types;
@@ -109,12 +109,10 @@ type
         procedure ButtonFixedFontClick(Sender: TObject);
         procedure ButtonFontClick(Sender: TObject);
         procedure ButtonHelpNotesClick(Sender: TObject);
-        procedure ButtonManualSnapClick(Sender: TObject);
         procedure ButtonSetDictionaryClick(Sender: TObject);
 	procedure ButtonSetNotePathClick(Sender: TObject);
         procedure ButtonSetSpellLibraryClick(Sender: TObject);
-	procedure ButtonSyncHelpClick(Sender: TObject);
-        procedure CheckAutostartChange(Sender: TObject);
+	procedure CheckAutostartChange(Sender: TObject);
         procedure CheckBoxAutoSyncChange(Sender: TObject);
         procedure onChange(Sender: TObject);
 	procedure onCheckCaseSensitive(Sender: TObject);
@@ -122,8 +120,7 @@ type
         procedure FormCreate(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
         procedure FormHide(Sender: TObject);
-        procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState
-            );
+        procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure FormShow(Sender: TObject);
         procedure ListBoxDicClick(Sender: TObject);
 	procedure PageControl1Change(Sender: TObject);
@@ -133,8 +130,6 @@ type
         procedure SpeedButtTBMenuClick(Sender: TObject);
 	procedure ButtonFileSetupClick(Sender: TObject);
         procedure RadioSyncChange(Sender: TObject);
-        procedure TabBasicContextPopup(Sender: TObject; MousePos: TPoint;
-        var Handled: Boolean);
         procedure TabSpellResize(Sender: TObject);
         procedure TimerAutoSyncTimer(Sender: TObject);
         procedure SetColours;
@@ -144,7 +139,6 @@ type
         procedure setSyncTested(b : boolean);
     private
         UserSetColours : boolean;
-
         SyncFirstRun : boolean;
 
 
@@ -370,12 +364,6 @@ begin
 
     CheckBoxAutoSync.Enabled:= not RadioSyncNone.checked;
     ConfigSave('RadioSyncChange');
-end;
-
-procedure TSett.TabBasicContextPopup(Sender: TObject; MousePos: TPoint;
-  var Handled: Boolean);
-begin
-
 end;
 
 procedure TSett.TabSpellResize(Sender: TObject);
@@ -1140,33 +1128,6 @@ end;
 RESOURCESTRING
     rsSnapshotCreated = 'created, do you want to copy it elsewhere ?';
     rsErrorCopyFile = 'Failed to copy file, does destination dir exist ?';
-
-procedure TSett.ButtonManualSnapClick(Sender: TObject);
-var
-   FR : TFormRecover;
-   FullName : string;
-begin
-    FR := TFormRecover.Create(self);
-    try
-        FR.NoteDir := NoteDirectory;
-        FR.ConfigDir:= AppendPathDelim(Sett.LocalConfig);
-        FullName := FR.CreateSnapshot(True, False);
-        if mrYes = QuestionDlg('Snapshot created', FullName + ' ' + rsSnapShotCreated
-                    , mtConfirmation, [mrYes, mrNo], 0) then
-            if SelectSnapDir.Execute then
-                if not CopyFile(FullName, TrimFilename(SelectSnapDir.FileName + PathDelim) + ExtractFileNameOnly(FullName) + '.zip') then
-                    showmessage(rsErrorCopyFile + ' ' + TrimFilename(SelectSnapDir.FileName + PathDelim) + ExtractFileNameOnly(FullName) + '.zip');
-    finally
-        FR.Free;
-    end;
-end;
-
-
-
-procedure TSett.ButtonSyncHelpClick(Sender: TObject);
-begin
-    MainForm.ShowHelpNote('sync-ng.note');
-end;
 
 
 

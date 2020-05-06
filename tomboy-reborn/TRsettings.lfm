@@ -34,7 +34,6 @@ object Sett: TSett
       Caption = 'Basic'
       ClientHeight = 345
       ClientWidth = 620
-      OnContextPopup = TabBasicContextPopup
       object LabelSettingPath: TLabel
         Left = 128
         Height = 15

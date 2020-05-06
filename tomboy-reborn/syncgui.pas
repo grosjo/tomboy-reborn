@@ -1,4 +1,4 @@
-unit SyncGUI;
+unit TRsyncGUI;
 {
  * Copyright (C) 2017 David Bannon
  *
@@ -63,7 +63,7 @@ interface
 
 uses
 		Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-		StdCtrls, Grids, Syncutils, LazFileUtils, settings;
+		StdCtrls, Grids, Syncutils, LazFileUtils, TRsettings;
 
 type
 
@@ -131,7 +131,7 @@ implementation
   process.
 }
 
-uses LazLogger, SearchUnit, SyncClash , Sync,  LCLType, SyncError, ResourceStr;
+uses LazLogger, SearchUnit, TRsyncclash , Sync,  LCLType, SyncError, ResourceStr;
 
 {$R *.lfm}
 

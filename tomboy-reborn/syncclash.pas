@@ -1,4 +1,4 @@
-unit syncclash;
+unit TRsyncclash;
 { History
     2020/05 Reshape Tomboy-ng
 }

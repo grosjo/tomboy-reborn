@@ -764,6 +764,7 @@
         <ComponentName Value="Sett"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+        <UnitName Value="TRsettings"/>
       </Unit6>
       <Unit7>
         <Filename Value="syncgui.pas"/>
@@ -771,7 +772,7 @@
         <ComponentName Value="FormSync"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="SyncGUI"/>
+        <UnitName Value="TRsyncGUI"/>
       </Unit7>
       <Unit8>
         <Filename Value="notebook.pas"/>
@@ -866,9 +867,10 @@
       <Unit23>
         <Filename Value="syncclash.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="FormClash"/>
+        <ComponentName Value="FormSDiff"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+        <UnitName Value="TRsyncclash"/>
       </Unit23>
       <Unit24>
         <Filename Value="trans.pas"/>
