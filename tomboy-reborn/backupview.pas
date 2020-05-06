@@ -207,8 +207,6 @@ begin
     if NeedUpDate then begin
         SearchForm.RefreshMenus(mkRecentMenu);
         SearchForm.ButtonRefresh.enabled := True;
-        // SearchForm.RecentMenu();
-        Sett.ButtonShowBackUp.click;
     end;
 end;
 

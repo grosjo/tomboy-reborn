@@ -534,10 +534,6 @@ begin
     AddItemMenu(AMenu, rsMenuQuit, mtQuit,  @FileMenuClicked, mkFileMenu);
 
     AddItemMenu(AMenu, rsMenuHelp, mtMainHelp,  nil, mkFileMenu);
-    {$ifdef LINUX}
-    if Sett.CheckShowTomdroid.Checked then
-        AddItemMenu(AMenu, 'Tomdroid', mtTomdroid,  @FileMenuClicked, mkFileMenu);
-    {$endif}
     AddItemMenu(AMenu, rsMenuSettings, mtSettings, @FileMenuClicked, mkFileMenu);
     AddItemMenu(AMenu, rsMenuSync, mtSync,  @FileMenuClicked, mkFileMenu);
     AddItemMenu(AMenu, rsMenuAbout, mtAbout, @FileMenuClicked, mkFileMenu);

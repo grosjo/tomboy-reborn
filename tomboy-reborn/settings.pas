@@ -23,6 +23,7 @@ type
           ButtDefaultNoteDir: TButton;
           ButtonNCSetup: TSpeedButton;
 	  CheckBoxAutoSync: TCheckBox;
+          GroupBox2: TGroupBox;
           Label16: TLabel;
           EditTimerSync: TEdit;
           GroupBox1: TGroupBox;
@@ -42,11 +43,6 @@ type
           ButtonFont: TButton;
           ButtonSetSpellLibrary: TButton;
           ButtonSetDictionary: TButton;
-          ButtonManualSnap: TButton;
-          ButtonSetSnapDir: TButton;
-          ButtonSnapDays: TButton;
-          ButtonSnapRecover: TButton;
-	  ButtonShowBackUp: TButton;
 
 	  ButtonSetNotePath: TButton;
           CheckAutoStart : TCheckBox;
@@ -56,14 +52,10 @@ type
           CheckShowSplash: TCheckBox;
 	  CheckShowExtLinks: TCheckBox;
 	  CheckShowIntLinks: TCheckBox;
-          CheckSnapEnabled: TCheckBox;
-          CheckSnapMonthly: TCheckBox;
           FontDialog1: TFontDialog;
 	  GroupBox4: TGroupBox;
 	  GroupBox5: TGroupBox;
 	  Label1: TLabel;
-          Label10: TLabel;
-          Label11: TLabel;
           Label12: TLabel;
           Label13: TLabel;
           Label14: TLabel;
@@ -74,13 +66,8 @@ type
           LabelLibrary: TLabel;
           LabelDicStatus: TLabel;
           LabelLibraryStatus: TLabel;
-          LabelSnapDir: TLabel;
 	  Label2: TLabel;
 	  Label3: TLabel;
-	  Label6: TLabel;
-	  Label7: TLabel;
-	  Label8: TLabel;
-	  Label9: TLabel;
 	  LabelNotesPath: TLabel;
 	  LabelSettingPath: TLabel;
           ListBoxDic: TListBox;
@@ -94,9 +81,6 @@ type
           OpenDialogLibrary: TOpenDialog;
           OpenDialogDictionary: TOpenDialog;
 	  PageControl1: TPageControl;
-	  Panel1: TPanel;
-	  Panel2: TPanel;
-          Panel3: TPanel;
           PopupDay: TPopupMenu;
           PMenuMain: TPopupMenu;
 	  RadioAlwaysAsk: TRadioButton;
@@ -112,14 +96,10 @@ type
 	  SpeedButHelp: TSpeedButton;
           SpeedButtTBMenu: TSpeedButton;
           ButtonFileSetup: TSpeedButton;
-	  StringGridBackUp: TStringGrid;
 	  TabBasic: TTabSheet;
-	  TabBackUp: TTabSheet;
           TabSpell: TTabSheet;
-	  TabSnapshot: TTabSheet;
 	  TabSync: TTabSheet;
 	  TabDisplay: TTabSheet;
-          TimeEdit1: TTimeEdit;
           TimerAutoSync: TTimer;
 
 
@@ -132,12 +112,8 @@ type
         procedure ButtonManualSnapClick(Sender: TObject);
         procedure ButtonSetDictionaryClick(Sender: TObject);
 	procedure ButtonSetNotePathClick(Sender: TObject);
-        procedure ButtonSetSnapDirClick(Sender: TObject);
         procedure ButtonSetSpellLibraryClick(Sender: TObject);
-	procedure ButtonShowBackUpClick(Sender: TObject);
-        procedure ButtonSnapDaysClick(Sender: TObject);
-        procedure ButtonSnapRecoverClick(Sender: TObject);
-        procedure ButtonSyncHelpClick(Sender: TObject);
+	procedure ButtonSyncHelpClick(Sender: TObject);
         procedure CheckAutostartChange(Sender: TObject);
         procedure CheckBoxAutoSyncChange(Sender: TObject);
         procedure onChange(Sender: TObject);
@@ -156,11 +132,9 @@ type
         procedure SpeedButHideClick(Sender: TObject);
         procedure SpeedButtTBMenuClick(Sender: TObject);
 	procedure ButtonFileSetupClick(Sender: TObject);
-        procedure StringGridBackUpDblClick(Sender: TObject);
         procedure RadioSyncChange(Sender: TObject);
         procedure TabBasicContextPopup(Sender: TObject; MousePos: TPoint;
         var Handled: Boolean);
-        procedure TabSnapshotResize(Sender: TObject);
         procedure TabSpellResize(Sender: TObject);
         procedure TimerAutoSyncTimer(Sender: TObject);
         procedure SetColours;
@@ -267,8 +241,6 @@ const
 
 
 implementation
-
-//{$define DISABLE_NET_SYNC}     // disable this define by, eg, putting a 'not' ahead of the '$'
 
 {$R *.lfm}
 
@@ -381,31 +353,6 @@ begin
        end;
 end;
 
-procedure TSett.StringGridBackUpDblClick(Sender: TObject);
-var
-    BV : TFormBackupView;
-    NoteTitle : ANSIstring;
-    FileName : string;
-begin
-	FileName := StringGridBackUp.Cells[3, StringGridBackUp.Row];
-    if FileName = '' then exit();
-  	if not FileExistsUTF8(NoteDirectory + 'Backup' + PathDelim + FileName) then begin
-      	showmessage('Cannot open ' + NoteDirectory + 'Backup' + PathDelim + FileName);
-      	exit();
-  	end;
-  	NoteTitle := StringGridBackup.Cells[0, StringGridBackUp.Row];
-//  	if length(NoteTitle) > 0 then
-//        OpenNote(NoteTitle, FullFileName);
-    BV := TFormBackupView.Create(self);
-    try
-        BV.FileName := FileName;
-        BV.NoteTitle := NoteTitle;
-        BV.ShowModal;
-        if BV.NotesChanged then ButtonShowBackUpClick(self);
-    finally
-        FreeandNil(BV);
-    end;
-end;
 
 function TSett.getSyncType() : TSyncTransport;
 begin
@@ -429,11 +376,6 @@ procedure TSett.TabBasicContextPopup(Sender: TObject; MousePos: TPoint;
   var Handled: Boolean);
 begin
 
-end;
-
-procedure TSett.TabSnapshotResize(Sender: TObject);
-begin
-    ButtonManualSnap.Width :=  (TabSnapshot.Width div 2) -10;
 end;
 
 procedure TSett.TabSpellResize(Sender: TObject);
@@ -609,12 +551,9 @@ end;
 
 procedure TSett.FormShow(Sender: TObject);
 begin
-    //CheckSpelling;
     if not assigned(Spell) then
         Spell := THunspell.Create(Application.HasOption('debug-spell'), LabelLibrary.Caption);
-        // user user has 'closed' (ie hide) then Spell was freed.
     Label15.Caption:='';
-    StringGridBackUp.Clean;
 end;
 
 // We only really close when told by RTSearch that The Exit Menu choice from TrayIcon was clicked.
@@ -650,14 +589,10 @@ begin
     CheckSpelling();
     PageControl1.ActivePage := TabBasic;
 
-    {$ifdef DISABLE_NET_SYNC}
     ButtonNCSetup.enabled := false;
     RadioSyncNC.enabled := false;
     LabelNCSyncURL.Hint := 'NextCloud / Grauphel will be in a future Release';
     LabelNCSyncURL.ShowHint := True;
-    {$endif}
-
-    CheckShowTomdroid.Enabled := {$ifdef LINUX}True{$else}False{$endif};
 end;
 
 procedure TSett.FormDestroy(Sender: TObject);
@@ -784,8 +719,6 @@ begin
         	    	('true' = Configfile.readstring('BasicSettings', 'ManyNotebooks', 'false'));
          CheckCaseSensitive.Checked :=
                 	('true' = Configfile.readstring('BasicSettings', 'CaseSensitive', 'false'));
-         CheckShowTomdroid.Checked :=
-               		('true' = Configfile.readstring('BasicSettings', 'ShowTomdroid', 'false'));
          CheckShowSplash.Checked :=
                 	('true' = Configfile.ReadString('BasicSettings', 'ShowSplash', 'true'));
          CheckAutostart.Checked :=
@@ -860,7 +793,6 @@ begin
          LabelLibrary.Caption := ConfigFile.readstring('Spelling', 'Library', '');
          LabelDic.Caption := ConfigFile.readstring('Spelling', 'Dictionary', '');
          SpellConfig := (LabelLibrary.Caption <> '') and (LabelDic.Caption <> '');     // indicates it worked once...
-	 LabelSnapDir.Caption := ConfigFile.readstring('SnapSettings', 'SnapDir', NoteDirectory + 'Snapshot' + PathDelim);
 
          CheckBoxAutoSync.checked := ('true' = Configfile.ReadString('SyncSettings', 'Autosync', 'false'));
          EditTimerSync.Text := Configfile.ReadString('SyncSettings', 'AutosyncElapse', '10');
@@ -871,7 +803,6 @@ begin
          ConfigFile.free;
 
          CheckDirectory(NoteDirectory);
-         CheckDirectory(LabelSnapDir.Caption);
 
          LabelNotespath.Caption := NoteDirectory;
          ShowIntLinks := CheckShowIntLinks.Checked;
@@ -892,7 +823,6 @@ begin
         CheckShowExtLinks.Checked := True;
         CheckBoxAutoSync.Checked := False;
         EditTimerSync.Text := '10';
-        LabelSnapDir.Caption := NoteDirectory + 'Snapshot' + PathDelim;
         UsualFont := GetFontData(Self.Font.Handle).Name;
         FixedFont := DefaultFixedFont;
         LabelFileSync.Caption := rsSyncNotConfig;
@@ -972,7 +902,6 @@ begin
                 ConfigFile.writestring('BasicSettings', 'ShowIntLinks', 'true')
             else ConfigFile.writestring('BasicSettings', 'ShowIntLinks', 'false');
             ConfigFile.writestring('BasicSettings', 'ShowExtLinks',      MyBoolStr(CheckShowExtLinks.Checked));
-            ConfigFile.writestring('BasicSettings', 'ShowTomdroid',      MyBoolStr(CheckShowTomdroid.Checked));
             ConfigFile.WriteString('BasicSettings', 'ShowSplash',        MyBoolStr(CheckShowSplash.Checked));
             ConfigFile.WriteString('BasicSettings', 'Autostart',         MyBoolStr(CheckAutostart.Checked));
             ConfigFile.WriteString('BasicSettings', 'ShowSearchAtStart', MyBoolStr(CheckShowSearchAtStart.Checked));
@@ -1220,7 +1149,6 @@ begin
     FR := TFormRecover.Create(self);
     try
         FR.NoteDir := NoteDirectory;
-        FR.SnapDir := LabelSnapDir.Caption;
         FR.ConfigDir:= AppendPathDelim(Sett.LocalConfig);
         FullName := FR.CreateSnapshot(True, False);
         if mrYes = QuestionDlg('Snapshot created', FullName + ' ' + rsSnapShotCreated
@@ -1234,33 +1162,6 @@ begin
 end;
 
 
-
-procedure TSett.ButtonSetSnapDirClick(Sender: TObject);
-begin
-    SelectSnapDir.FileName := LabelSnapDir.Caption;
-    if SelectSnapDir.Execute then begin
-		LabelSnapDir.Caption := TrimFilename(SelectSnapDir.FileName + PathDelim);
-    end;
-    CheckDirectory(LabelSnapDir.Caption);
-end;
-
-procedure TSett.ButtonSnapRecoverClick(Sender: TObject);
-var
-   FR : TFormRecover;
-begin
-    FR := TFormRecover.Create(self);
-    try
-        FR.NoteDir := NoteDirectory;
-        FR.SnapDir := LabelSnapDir.Caption;
-        FR.ConfigDir:= AppendPathDelim(Sett.LocalConfig);
-        // Danger Will Robertson ! We cannot assume LocalConfig has a trailing slash !
-        FR.Showmodal;
-        if FR.RequiresIndex then
-            SearchForm.IndexNotes();
-    finally
-        FR.Free;
-    end;
-end;
 
 procedure TSett.ButtonSyncHelpClick(Sender: TObject);
 begin
@@ -1344,24 +1245,6 @@ end;
 RESOURCESTRING
     rsDoubleclickNote = 'double click a note ...';
 
-procedure TSett.ButtonShowBackUpClick(Sender: TObject);
-var
-	NoteLister : TNoteLister;
-begin
-    NoteLister := TNoteLister.Create;
-    NoteLister.WorkingDir:= NoteDirectory + 'Backup' + PathDelim;
-    NoteLister.GetNotes();
-    NoteLister.LoadStGrid(StringGridBackUp, 4);
-    NoteLister.Free;
-    StringgridBackUp.AutoSizeColumns;
-    Label15.caption := rsDoubleClickNote;
-end;
-
-procedure TSett.ButtonSnapDaysClick(Sender: TObject);
-begin
-    PopupDay.PopUp();
-    TimeEdit1.Time := now();
-end;
 
 { Called by default }
 procedure TSett.onChange(Sender: TObject);
@@ -1370,13 +1253,6 @@ begin
     ConfigSave('onyChange '+Sender.ClassName());
 
     setFontSizes();
-end;
-
-procedure TSett.onCheckShowTomdroid(Sender: TObject);
-begin
-    SearchForm.RefreshMenus(mkFileMenu);
-    SearchForm.RefreshMenus(mkHelpMenu);
-    onChange(Sender);
 end;
 
 procedure TSett.onCheckCaseSensitive(Sender : TObject);

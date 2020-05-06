@@ -869,7 +869,6 @@
         <ComponentName Value="FormClash"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="syncclash"/>
       </Unit23>
       <Unit24>
         <Filename Value="trans.pas"/>
