@@ -1,48 +1,5 @@
 unit Notebook;
 
-{
- * Copyright (C) 2017 David Bannon
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-}
-
-{  This GUI based unit has a form to allow user to see and select what notebooks
-    the current note is a member of. It looks at settings to see if we are allowing
-    a particular note to be a member of more than one notebook. If not, will cancel
-    a previous choice if a user selects a new notebook.
-
-    This form is created dynamically and shown modal, the user can only open one
-    at a time. If shown non-modal, there is a danger form will get lost ....
-
-    History -
-    2018/01/30 -replaced the function that cancels previous Notebook selection when
-                a new one is made (if settings so demand). This one works on Macs
-                and is a better job on the other platforms too.
-    2018/04/13  Now call NotebookPick Form dynamically and ShowModal to ensure two notes don't share.
-    2018/05/12  Extensive changes - MainUnit is now just that. Only change here relates
-                to naming of MainUnit and SearchUnit.
-    2019/05/18  Corrected alignment Label1 and 3
-    2019/05/19  Display strings all (?) moved to resourcestrings
-    2020/02/19  Dont escape new notebook title as sent to notelister.
-}
-
 
 {$mode objfpc}{$H+}
 
@@ -50,7 +7,8 @@ interface
 
 uses
 		Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, CheckLst,
-		ExtCtrls, StdCtrls, Buttons, ComCtrls;
+		ExtCtrls, StdCtrls, Buttons, ComCtrls,
+                TRcommon;
 
 type
 
@@ -187,12 +145,12 @@ var
     InFile, OutFile: TextFile;
     {NoteDateSt, }InString, TempName, NextSeekString : string;
 begin
-  if not fileexists(Sett.NoteDirectory + FileName) then exit(false);     // if its not there, the note has just been deleted
-  TempName := AppendPathDelim(Sett.NoteDirectory) + 'tmp';
+  if not fileexists(NotesDir + FileName) then exit(false);     // if its not there, the note has just been deleted
+  TempName := AppendPathDelim(NotesDir) + 'tmp';
   if not DirectoryExists(TempName) then
       CreateDir(AppendPathDelim(tempname));
   TempName := tempName + pathDelim + FileName;
-  AssignFile(InFile, Sett.NoteDirectory + FileName);
+  AssignFile(InFile, NotesDir + FileName);
   AssignFile(OutFile, TempName);
   try
       try
@@ -245,7 +203,7 @@ begin
       exit(false);
   end;
   {$endif}
-  result := CopyFile(TempName, Sett.NoteDirectory + FileName);
+  result := CopyFile(TempName, NotesDir + FileName);
 end;
 
 function TNoteBookPick.RewriteTempate(const FileName, NewName : string) : boolean;
@@ -253,12 +211,12 @@ var
     InFile, OutFile: TextFile;
     InString, TempName, NextSeekString : string;
 begin
-  if not fileexists(Sett.NoteDirectory + FileName) then exit(false);     // if its not there, the note has just been deleted
-  TempName := AppendPathDelim(Sett.NoteDirectory) + 'tmp';
+  if not fileexists(NotesDir + FileName) then exit(false);     // if its not there, the note has just been deleted
+  TempName := AppendPathDelim(NotesDir) + 'tmp';
   if not DirectoryExists(TempName) then
       CreateDir(AppendPathDelim(tempname));
   TempName := tempName + pathDelim + FileName;
-  AssignFile(InFile, Sett.NoteDirectory + FileName);
+  AssignFile(InFile, NotesDir + FileName);
   AssignFile(OutFile, TempName);
   try
       try
@@ -323,7 +281,7 @@ begin
       exit(false);
   end;
   {$endif}
-  result := CopyFile(TempName, Sett.NoteDirectory + FileName);
+  result := CopyFile(TempName, NotesDir + FileName);
 end;
 
 

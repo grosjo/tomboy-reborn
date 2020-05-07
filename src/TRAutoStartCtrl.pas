@@ -1,7 +1,5 @@
-unit autostart;
-{
-    2019/05/24  Display strings all (?) moved to resourcestrings
-}
+unit TRAutoStartCtrl
+
 {$mode objfpc}{$H+}
 
 interface
@@ -48,7 +46,7 @@ begin
     // CSIDL_PROGRAM_FILES -> Where the tomboy-reborn directory containg exe is.
     // CSIDL_STARTUP  ->  Where we put our shortcut (or remove it from)
     // CSIDL_APPDATA  ->  top of ~/AppData\Roaming ...... (not needed here)
-    // CSIDL_DESKTOPDIRECTORY  -> User's desktop.
+    // CSIDL_DESKTOPDIRECTORY  -> Users desktop.
 end;
 {$endif}
 

@@ -387,9 +387,9 @@ type
         procedure ClearNearLink(const StartS, EndS: integer);
         function DoCalculate(CalcStr: string): string;
         procedure DoHousekeeping();
-        { Returns a long random file name, Not checked for clashes }
-        function GetAFilename() : ANSIString;
+
         procedure CheckForLinks(const StartScan : longint = 1; EndScan : longint = 0);
+
         { Returns with the title, that is the first line of note, returns False if title is empty }
         function GetTitle(out TheTitle: ANSIString): boolean;
         procedure ImportNote(FileName : string);
@@ -475,6 +475,7 @@ uses //RichMemoUtils,     // Provides the InsertFontText() procedure.
     LazUTF8,
     //LCLType,			// For the MessageBox
     keditcommon,        // Holds some editing defines
+    TRcommon,			// User settings and some defines used across units.
     TRsettings,			// User settings and some defines used across units.
     TRSearchUnit,         // Is the main starting unit and the search tool.
 
@@ -1488,10 +1489,7 @@ var
     {NoteDateSt, }InString, TempName : string;
 begin
   if not fileexists(NRec.FFName) then exit(false);     // if its not there, the note has just been deleted
-  TempName := AppendPathDelim(Sett.NoteDirectory) + 'tmp';
-  if not DirectoryExists(TempName) then
-      CreateDir(AppendPathDelim(tempname));
-  TempName := tempName + pathDelim + 'location.note';             //  generate a random name  ??
+  TempName := GetTempFile();
   AssignFile(InFile, NRec.FFName);
   AssignFile(OutFile, TempName);
   try
@@ -1526,7 +1524,9 @@ begin
     end;
   end;
   result := CopyFile(TempName, Nrec.FFName);    // wrap this in a Try
-  if result = false then debugln('ERROR moving [' + TempName + '] to [' + NRec.FFName + ']');
+  if result = false then debugln('ERROR copying [' + TempName + '] to [' + NRec.FFName + ']');
+  result := DeleteFile(TempName);
+  if result = false then debugln('ERROR deleting [' + TempName + '] ');
 end;
 
 procedure TEditBoxForm.FormDestroy(Sender: TObject);
@@ -2599,17 +2599,8 @@ begin
     Saver := Nil;
     if KMemo1.ReadOnly then exit();
   	if length(NoteFileName) = 0 then
-        NoteFileName := Sett.NoteDirectory + GetAFilename();
-    if Sett.NoteDirectory = CleanAndExpandDirectory(ExtractFilePath(NoteFileName)) then begin   // UTF8 OK
-        //debugln('Working in Notes dir ' + Sett.NoteDirectory + ' = ' + CleanAndExpandDirectory(ExtractFilePath(NoteFileName)));
-        if not NoteIDLooksOK(ExtractFileNameOnly(NoteFileName)) then
-            if mrYes = QuestionDlg('Invalid GUID', 'Give this note a new GUID Filename (recommended) ?', mtConfirmation, [mrYes, mrNo], 0) then begin
-                OldFileName := NoteFileName;
-                NoteFileName := Sett.NoteDirectory + GetAFilename();
-        end;
-    end; //else debugln('NOT Working in Notes dir ' + Sett.NoteDirectory + ' <> ' + CleanAndExpandDirectory(extractFilePath(NoteFileName)));
-    // We do not enforce the valid GUID file name rule if note is not in official Notes Dir
-    if TemplateIs <> '' then begin
+        NoteFileName := GetLocalNoteFile(GetNewID());
+        if TemplateIs <> '' then begin
         SL := TStringList.Create();
         SL.Add(TemplateIs);
         SearchForm.NoteLister.SetNotebookMembership(ExtractFileNameOnly(NoteFileName) + '.note', SL);
@@ -2669,15 +2660,6 @@ function TEditBoxForm.NewNoteTitle(): ANSIString;
 begin
   Result := 'New Note ' + FormatDateTime('YYYY-MM-DD hh:mm:ss.zzz', Now);
 end;
-
-function TEditBoxForm.GetAFilename() : ANSIString;
-var
-  GUID : TGUID;
-begin
-   CreateGUID(GUID);
-   Result := copy(GUIDToString(GUID), 2, 36) + '.note';
-end;
-
 
 
 end.

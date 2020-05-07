@@ -6,75 +6,74 @@ unit TRsyncUI;
 interface
 
 uses
-		Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs,
-                ExtCtrls, StdCtrls, Grids, Syncutils, LazFileUtils,
-                LazLogger,  LCLType, SyncError, ResourceStr;
+    Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs,
+    ExtCtrls, StdCtrls, Grids, LazFileUtils,
+    LazLogger,  LCLType,
+    TRcommon, TRtexts, SyncError;
 
 type
 
-		{ TFormSync }
+    { TFormSync }
 
-  TFormSync = class(TForm)
-		ButtonSave: TButton;
-		ButtonCancel: TButton;
-		ButtonClose: TButton;
-		Label1: TLabel;
-		Label2: TLabel;
-		Memo1: TMemo;
-		Panel1: TPanel;
-		Panel2: TPanel;
-		Panel3: TPanel;
-		Splitter3: TSplitter;
-		StringGridReport: TStringGrid;
-                                        { Runs a sync without showing form. Ret False if error or its not setup.
-                                          Caller must ensure that Sync is config and that the Sync dir is available.
-                                          If clash, user will see dialog. }
-                function RunSyncHidden() : boolean;
-		procedure ButtonCancelClick(Sender: TObject);
-		procedure ButtonCloseClick(Sender: TObject);
-    		procedure ButtonSaveClick(Sender: TObject);
-		procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
-                procedure FormHide(Sender: TObject);
-                { At Show, depending on SetUpSync, we'll either go ahead and do it, any
-                  error is fatal or, if True, walk user through process. }
-				procedure FormShow(Sender: TObject);
-                procedure StringGridReportGetCellHint(Sender: TObject; ACol, ARow: Integer;
+TFormSync = class(TForm)
+    ButtonSave: TButton;
+    ButtonCancel: TButton;
+    ButtonClose: TButton;
+    Label1: TLabel;
+    Label2: TLabel;
+    Memo1: TMemo;
+    Panel1: TPanel;
+    Panel2: TPanel;
+    Panel3: TPanel;
+    Splitter3: TSplitter;
+    StringGridReport: TStringGrid;
+
+    { Runs a sync without showing form. Ret False if error or its not setup.
+      Caller must ensure that Sync is config and that the Sync dir is available.
+      If clash, user will see dialog. }
+    function RunSyncHidden() : boolean;
+
+    procedure ButtonCancelClick(Sender: TObject);
+    procedure ButtonCloseClick(Sender: TObject);
+    procedure ButtonSaveClick(Sender: TObject);
+    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
+    procedure FormHide(Sender: TObject);
+
+    { At Show, depending on SetUpSync, we'll either go ahead and do it, any
+      error is fatal or, if True, walk user through process. }
+    procedure FormShow(Sender: TObject);
+    procedure StringGridReportGetCellHint(Sender: TObject; ACol, ARow: Integer;
                                   var HintText: String);
-		private
-                FormShown : boolean;
-                LocalTimer : TTimer;
-                procedure AfterShown(Sender : TObject);
-                    // Display a summary of sync actions to user.
-                function DisplaySync(): string;
-                    { Called when user wants to join a (possibly uninitialised) Repo,
-                      will handle some problems with user's help. }
-                procedure DrySync();
-                    { Called to do a sync assuming its all setup. Any problem is fatal }
-                function DoSync(): boolean;
-                    { Populates the string grid with details of notes to be actioned }
-                procedure ShowReport;
-            	//procedure TestRepo();
-        		//procedure DoSetUp();
+private
+    FormShown : boolean;
+    LocalTimer : TTimer;
+    procedure AfterShown(Sender : TObject);
 
-		public
-                Busy : boolean; // indicates that there is some sort of sync in process now.
+    // Display a summary of sync actions to user.
+    function DisplaySync(): string;
 
-                LocalConfig, NoteDirectory : ANSIString;
+    { Called when user wants to join a (possibly uninitialised) Repo,
+      will handle some problems with user's help. }
+    procedure DrySync();
 
-                procedure MarkNoteReadOnly(const Filename : string; const WasDeleted : Boolean = False);
-                    { we will pass address of this function to Sync }
-                function DefineDefaultAction(const ClashRec : TClashRecord) : TSyncAction;
-		end;
+    { Called to do a sync assuming its all setup. Any problem is fatal }
+    function DoSync(): boolean;
+
+    { Populates the string grid with details of notes to be actioned }
+    procedure ShowReport;
+
+public
+    Busy : boolean; // indicates that there is some sort of sync in process now.
+    procedure MarkNoteReadOnly(const Filename : string; const WasDeleted : Boolean = False);
+
+    { we will pass address of this function to Sync }
+    function DefineDefaultAction(const ClashRec : TClashRecord) : TSyncAction;
+end;
 
 var
-		FormSync: TFormSync;
+   FormSync: TFormSync;
 
 implementation
-
-{ In SetupFileSync mode, does a superficial, non writing, test OnShow() user
-  can then click 'OK' and we'd do a real sync, exit and settings saved in calling
-  process.
-}
 
 uses TRsettings, TRsearchUnit, TRsync,  TRclashUI;
 
@@ -152,7 +151,6 @@ begin
     Memo1.Append(rsDoNothing + inttostr(DoNothing));
     Memo1.Append(rsUndecided + inttostr(Undecided));
     result := 'Uploads=' + inttostr(UpNew+UpEdit) + ' downloads=' + inttostr(Down) + ' deletes=' + inttostr(DelLoc + DelRem);
-    // debugln('Display Sync called, DoNothings is ' + inttostr(DoNothing));
 end;
 
     // User is only allowed to press Cancel or Save when this is finished.
@@ -164,15 +162,10 @@ begin
 
     freeandnil(ASync);
 
-    NoteDirectory := Sett.NoteDirectory;
-    LocalConfig := AppendPathDelim(Sett.LocalConfig);
-
     ASync := TSync.Create;
     Label1.Caption:= rsTestingRepo;
     Application.ProcessMessages;
     ASync.ClashFunction:= @DefineDefaultAction;
-    ASync.NotesDir:= NoteDirectory;
-    ASync.ConfigDir := LocalConfig;
     Async.SetTransport(Sett.getSyncType());
     SyncAvail := ASync.TestConnection();
     if SyncAvail <> SyncReady then begin
@@ -245,16 +238,10 @@ begin
     Label1.Caption := rsTestingSync;
     Application.ProcessMessages;
 
-    NoteDirectory := Sett.NoteDirectory;
-    LocalConfig := AppendPathDelim(Sett.LocalConfig);
-
     ASync := TSync.Create;
-
 
     try
         ASync.ClashFunction:= @DefineDefaultAction;
-        ASync.NotesDir:= NoteDirectory;
-	ASync.ConfigDir := LocalConfig;
         Async.SetTransport(Sett.getSyncType());
         SyncState := ASync.TestConnection();
         while SyncState <> SyncReady do begin
@@ -270,7 +257,7 @@ begin
         end;
         Label1.Caption:= rsRunningSync;
         Application.ProcessMessages;
-        //ASync.TestRun := False;
+
         ASync.StartSync(false);
         SearchForm.UpdateSyncStatus(rsLastSync + ' ' + FormatDateTime('YYYY-MM-DD hh:mm', now)  + ' ' + DisplaySync());
         ShowReport();

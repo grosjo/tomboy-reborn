@@ -15,7 +15,7 @@ unit trans;
 interface
 
 uses
-    Classes, SysUtils, SyncUtils;
+    Classes, SysUtils, TRcommon, SyncUtils;
 
 
 type
@@ -32,8 +32,7 @@ type
 
         { Set to '' is no errors. }
         ErrorString : string;
-        { Local notes directory }
-        NotesDir, ConfigDir : string;
+
         { The current server ID. Is set with a successful TestTransport call. }
         ServerID : string;
         { The current Server Rev, before we upload. Is set with a successful

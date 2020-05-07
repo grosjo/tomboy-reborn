@@ -15,7 +15,8 @@ unit transfile;
 interface
 
 uses
-    Classes, SysUtils, trans, SyncUtils, LazLogger;
+    Classes, SysUtils, LazLogger,
+    TRcommon, trans, SyncUtils;
 
 type
 

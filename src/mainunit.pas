@@ -104,7 +104,8 @@ interface
 
 uses
     Classes, SysUtils, Forms, Controls, Graphics, Dialogs, Menus, ExtCtrls,
-    StdCtrls, LCLTranslator, DefaultTranslator, Buttons, simpleipc;
+    StdCtrls, LCLTranslator, DefaultTranslator, Buttons, simpleipc,
+    TRcommon;
 
 
 type
@@ -614,7 +615,7 @@ begin
         SearchForm.Show;
     if SearchForm.NoteLister.FindFirstOOSNote(NoteTitle, NoteID) then
         repeat
-            SearchForm.OpenNote(NoteTitle, Sett.NoteDirectory + NoteID);
+            SearchForm.OpenNote(NoteTitle, GetLocalNoteFile(NoteID));
         until SearchForm.NoteLister.FindNextOOSNote(NoteTitle, NoteID) = false;
 end;
 

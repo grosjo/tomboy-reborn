@@ -1,4 +1,4 @@
-unit ncsetup;
+unit TRnextSetup;
 
 {$mode objfpc}{$H+}
 
@@ -6,7 +6,20 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, LCLIntf, StdCtrls,
-  fpjson, jsonparser, oauth, strutils, ncserver, fphttpserver, LazLogger;
+  fpjson, jsonparser, strutils, fphttpserver, LazLogger, HMAC,
+  ssockets, sslsockets, fpopenssl, fphttpclient, openssl,
+  TRcommon;
+
+type     { TRServer }
+   TRServer = class(TThread)
+   private
+      server: TFPHTTPServer;
+   public
+      destructor Destroy; override;
+      procedure Setup(APort: word; const OnRequest: THTTPServerRequestHandler);
+      procedure Execute(); override;
+      procedure Finish();
+   end;
 
 type    { TFormNCSetup }
   TFormNCSetup = class(TForm)
@@ -26,15 +39,21 @@ type    { TFormNCSetup }
     procedure AuthSuccess(i : Int64);
     procedure AuthFailure(i : Int64);
     procedure FormCreate(Sender: TObject);
-    procedure FormDestroy(Sender: TObject);
     procedure NCDoneChange(Sender: TObject);
   private
     success : boolean;
     listening : boolean;
-    oauth: TOAuth;
-    web: WebServer;
+    Key : String;
+    Token : String;
+    TokenSecret : String;
+    Verifier : String;
+    requestTokenUrl : String;
+    authorizeUrl : String;
+    accessTokenUrl : String;
+    web: TRServer;
     procedure DoHandleRequest(Sender: TObject; var ARequest: TFPHTTPConnectionRequest; var AResponse: TFPHTTPConnectionResponse);
   end;
+
 
 var
   FormNCSetup: TFormNCSetup;
@@ -43,19 +62,43 @@ implementation
 
 {$R *.lfm}
 
+{ TRServer }
+
+procedure TRServer.Setup(APort: word; const OnRequest: THTTPServerRequestHandler);
+ begin
+   server := TFPHTTPServer.Create(nil);
+   server.Port := APort;
+   server.OnRequest := OnRequest;
+   FreeOnTerminate := true;
+ end;
+
+destructor TRServer.Destroy;
+begin
+  server.Free;
+end;
+
+procedure TRServer.Execute;
+begin
+  try
+     server.Active := True;
+  except on E: Exception do writeln(E.Message);
+  end;
+end;
+
+procedure TRServer.Finish();
+begin
+   server.Active := False;
+end;
+
+
+
+
 { TFormNCSetup }
 
 procedure TFormNCSetup.FormCreate(Sender: TObject);
 begin
-     OAuth := TOAuth.Create();
      success :=false;
      listening := false;
-end;
-
-procedure TFormNCSetup.FormDestroy(Sender: TObject);
-begin
-   FreeAndNil(OAuth);
-//   if(FServer<>nil) then FreeAndNil(FServer);
 end;
 
 
@@ -66,27 +109,27 @@ end;
 
 function TFormNCSetup.getKey() : String;
 begin
-        Result := oauth.Key;
+        Result := Key;
 end;
 
 function TFormNCSetup.getToken() : String;
 begin
-        Result := oauth.Token;
+        Result := Token;
 end;
 
 function TFormNCSetup.getTokenSecret() : String;
 begin
-        Result := oauth.TokenSecret;
+        Result := TokenSecret;
 end;
 
 procedure TFormNCSetup.setKey(s : String);
 begin
-        oauth.Key := s;
+        Key := s;
 end;
 
 procedure TFormNCSetup.setToken(s : String);
 begin
-        oauth.Token :=s;
+        Token :=s;
 end;
 
 procedure TFormNCSetup.NCAuthClick(Sender: TObject);
@@ -115,7 +158,7 @@ begin
      SetupStatus.Caption := 'OAuth: Getting URLs settings';
      resturl := Trim(URL.Text) + '/api/1.0/';
      p := TstringList.Create();
-     res := oauth.WebGet(resturl,p);
+     res := WebGet(resturl,p);
      FreeAndNil(p);
      if(length(res)>0) then begin
         ok := true; s1 :=''; s2:=''; s3:='';
@@ -136,17 +179,17 @@ begin
         if((length(s1)<10) or (length(s2)<10) or (length(s3)<10)) then
         begin SetupStatus.Caption := 'Server returns invalid OAuth URLs'; exit; end;
 
-        oauth.requestTokenUrl := s1;
-        oauth.authorizeUrl    := s2;
-        oauth.accessTokenUrl  := s3;
+        requestTokenUrl := s1;
+        authorizeUrl    := s2;
+        accessTokenUrl  := s3;
 
         // REQUEST TOKEN
         SetupStatus.Caption := 'OAuth: Getting Request Token';
         p := TStringList.Create();
-        oauth.BaseParams(p,false);
-        oauth.ParamsSort(p);
-        oauth.Sign(oauth.requestTokenUrl, 'POST', p, '');
-        res := oauth.WebPost(oauth.requestTokenUrl,p);
+        OauthBaseParams(p,Key);
+        OauthParamsSort(p);
+        OauthSign(requestTokenUrl, 'POST', p, Key, '');
+        res := WebPost(requestTokenUrl,p);
         FreeAndNil(p);
 
         //Example : oauth_token=r36747eda81d3a14c&oauth_token_secret=s05507586554bb6bf&oauth_callback_confirmed=true
@@ -162,16 +205,16 @@ begin
         if( ExtractWord(1, s2, ts) <> 'oauth_token_secret' ) then begin SetupStatus.Caption := 'OAuth token Secret invalid'; ShowMessage(SetupStatus.Caption); exit; end;
         if( ExtractWord(1, s3, ts) <> 'oauth_callback_confirmed' ) then begin SetupStatus.Caption := 'OAuth not confirmed'; ShowMessage(SetupStatus.Caption); exit; end;
 
-        oauth.Token := ExtractWord(2, s1,ts);
-        oauth.TokenSecret:= ExtractWord(2,s2,ts);
+        Token := ExtractWord(2, s1,ts);
+        TokenSecret:= ExtractWord(2,s2,ts);
 
         // AUTORIZE
         SetupStatus.Caption := 'OAuth: Asking user to autorize';
-        u:= oauth.authorizeUrl + '?oauth_token=' + oauth.Token + '&client=TomboyReborn&oauth_callback=' + oauth.URLEncode(oauth.callbackUrl);
+        u:= authorizeUrl + '?oauth_token=' + Token + '&client=TomboyReborn&oauth_callback=' + URLEncode(OAuthCallbackUrl);
         NCAuth.Caption := 'Cancel OAuth';
         URL.Enabled:= false;
 
-        web := WebServer.Create(false);
+        web := TRServer.Create(false);
         web.Setup(8000,@DoHandleRequest);
         listening :=true;
         openUrl(u);
@@ -196,8 +239,8 @@ begin
   web.Finish();
 web := nil;
   listening :=false;
-  if(restok = oauth.Token) then begin
-    oauth.Verifier := resverif;
+  if(restok = Token) then begin
+    Verifier := resverif;
     AResponse.Contents.Text := '<h2>Congratulation, your Tomboy Reborn is authenticated</h2>';
     //web.Synchronize(web,@AuthSuccess);
     Application.QueueAsyncCall(@AuthSuccess,0);
@@ -226,10 +269,10 @@ begin
   // ACCESS TOKEN
   SetupStatus.Caption := 'OAuth: Getting Access Token';
   p := TStringList.Create();
-  oauth.BaseParams(p,true);
-  oauth.ParamsSort(p);
-  oauth.Sign(oauth.accessTokenUrl, 'POST', p, oauth.TokenSecret);
-  res := oauth.WebPost(oauth.accessTokenUrl,p);
+  OauthBaseParams(p,Key, Token, Verifier);
+  OauthParamsSort(p);
+  OauthSign(accessTokenUrl, 'POST', p, Key, TokenSecret);
+  res := WebPost(accessTokenUrl,p);
   FreeAndNil(p);
 
   ts:=['&'];
@@ -244,8 +287,8 @@ begin
   if( ExtractWord(1, s1, ts) <> 'oauth_token' ) then begin SetupStatus.Caption := 'OAuth: token invalid'; ShowMessage(SetupStatus.Caption); exit; end;
   if( ExtractWord(1, s2, ts) <> 'oauth_token_secret' ) then begin SetupStatus.Caption := 'OAuth token Secret invalid'; ShowMessage(SetupStatus.Caption); exit; end;
 
-  oauth.Token := ExtractWord(2, s1,ts);
-  oauth.TokenSecret:= ExtractWord(2,s2,ts);
+  Token := ExtractWord(2, s1,ts);
+  TokenSecret:= ExtractWord(2,s2,ts);
 
   success :=true;
   SetupStatus.Caption := 'Congratulation, your Tomboy Reborn is authenticated';

@@ -10,7 +10,8 @@ unit transnext;
 interface
 
 uses
-    Classes, LazLogger, SysUtils, Trans, SyncUtils, Dialogs, fpjson, jsonparser, oauth;
+    Classes, LazLogger, SysUtils, Dialogs, fpjson, jsonparser,
+    TRcommon, Trans, SyncUtils;
 
 type               { ----------- TNextSync ------------ }
 
@@ -18,9 +19,6 @@ type               { ----------- TNextSync ------------ }
 { TNextSync }
 
 TNextSync = Class(TTomboyTrans)
-    private
-        oauth: TOAuth;
-
     public
         constructor create;
         destructor Destroy; override;
@@ -31,6 +29,9 @@ TNextSync = Class(TTomboyTrans)
         function DoRemoteManifest(const RemoteManifest : string) : boolean; override;
         function IDLooksOK() : boolean; Override;
         function getPrefix(): string; Override;
+    private
+        Token, TokenSecret, Key : String;
+
  end;
 
 
@@ -41,12 +42,10 @@ implementation
 constructor TNextSync.create;
 begin
     inherited Create;
-    oauth := TOAuth.Create();
 end;
 
 destructor TNextSync.Destroy;
 begin
-    FreeAndNil(oauth);
     inherited Destroy;
 end;
 
@@ -66,18 +65,17 @@ var
   rev : integer;
 begin
     WriteLn('Next-TestTransport');
-    oauth.Token := getParam('TOKEN');
-    oauth.TokenSecret := getParam('SECRET');
-    oauth.Key := getParam('KEY');
-    oauth.callbackUrl := '';
+    Token := getParam('TOKEN');
+    TokenSecret := getParam('SECRET');
+    Key := getParam('KEY');
 
     // TESTING AUTH
     resturl := getParam('URL') + '/api/1.0/';
     p := TstringList.Create();
-    oauth.BaseParams(p,true);
-    oauth.ParamsSort(p);
-    oauth.Sign(resturl, 'GET', p,oauth.TokenSecret);
-    res := oauth.WebGet(resturl,p);
+    OauthBaseParams(p,Key,Token);
+    OauthParamsSort(p);
+    OauthSign(resturl, 'GET', p,Key,TokenSecret);
+    res := WebGet(resturl,p);
     debugln(res);
     FreeAndNil(p);
 
@@ -105,10 +103,10 @@ begin
     // YEAH
     setParam('URLUSER',res);
     p := TstringList.Create();
-    oauth.BaseParams(p,true);
-    oauth.ParamsSort(p);
-    oauth.Sign(res, 'GET', p,oauth.TokenSecret);
-    res := oauth.WebGet(res,p);
+    OauthBaseParams(p,Key,Token);
+    OauthParamsSort(p);
+    OauthSign(res, 'GET', p,Key,TokenSecret);
+    res := WebGet(res,p);
     debugln(res);
     FreeAndNil(p);
     ok := true;
@@ -178,12 +176,12 @@ begin
     res := getParam('URLNOTES');
     debugln(res);
     p := TstringList.Create();
-    oauth.BaseParams(p,true);
+    OauthBaseParams(p,Key,Token);
     p.Add('include_notes');
     p.Add('true');
-    oauth.ParamsSort(p);
-    oauth.Sign(res, 'GET', p,oauth.TokenSecret);
-    res := oauth.WebGet(res,p);
+    OauthParamsSort(p);
+    OauthSign(res, 'GET', p, Key, TokenSecret);
+    res := WebGet(res,p);
     FreeAndNil(p);
 
     if (res = '') then begin ErrorString :=  'Next-GetNotes: Unable to get initial data'; exit(false); end;
@@ -310,11 +308,11 @@ begin
     res := getParam('URLNOTES');
     debugln(res);
     p := TstringList.Create();
-    oauth.BaseParams(p,true);
+    OauthBaseParams(p,Key,Token);
 
-    oauth.ParamsSort(p);
-    oauth.Sign(res, 'PUT', p,oauth.TokenSecret);
-    res := oauth.WebPut(res,p,json);
+    OauthParamsSort(p);
+    OauthSign(res, 'PUT', p, Key, TokenSecret);
+    res := WebPut(res,p,json);
     FreeAndNil(p);
 
     debugln('RES PUSH = '+res);

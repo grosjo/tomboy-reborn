@@ -1,75 +1,11 @@
 unit SaveNote;
 
-{
- * Copyright (C) 2017 David Bannon
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-}
-
-{  This unit is responsible for saving a note in the Tomboy XML format.
-    After creation, the class needs to be told the current FontNormal
-	size and the CreatDate if any. If the supplied CreatDate is '', it will
-	stamp it Now().
-    All the work is done in the Save(..) function, it needs to be passed
-	the name of a file (that may or may not exist) and the KMemo its
-	getting its content from.
-}
-
-{	HISTORY
-	20170927 - added Hyperlink to blocks to be saved.
-	2017/11/4 - replaced GetLocalTime() with one from TB_Sync, it puts minutes
-				into the time offset figure, eg +11:00. Old notes written
-				with previous vesions will fail with file sync until rewritten.
-	2017/11/12  Added code to replace < and > with char codes.
-	2017/12/02	Fixed a bug were we were skipping newline where there were 2 in a row
-	2017/12/02  Extensive changes to ensure font setting spanning part of a bullet
-				list are saved correctly.
-	2017/12/02	Restructured AddTag to ensure tags laid out in correct order.
-	2017/12/02	changed the way that we ensure there are no hanging tags at end of
-				a note.
-	2017/12/10  Fix a bug in BulletList() whereby font changes were not preserving
-				previous queued format changes. Possibly. This is not robust code.
-	2018/01/01  Yet another bug fix for BulletList(), this time I've got it !
-	2018/01/25  Changes to support Notebooks
-    2018/01/31  Added code to reprocess &
-    2018/05/12  Extensive changes - MainUnit is now just that. Only change here relates
-                to naming of MainUnit and SearchUnit.
-    2018/06/26  Some <italic> tags an an 's' at the end.  Changed the test for when
-                FixedWidth turns on in AddTag().
-    2018/07/14  Fixed a misplaced 'end' in BulletList() that was skipping some of its tests.
-    2018/07/27  Call RemoveBadCharacters(Title) in Header()
-    2018/08/02  Fix to fixed width, better brackets and a 'not' where needed.
-    2018/08/15  ReplaceAngles() works with bytes, not char, so don't use UTF8Copy and UTF8Length ....
-    2018/12/04  Don't save hyperlinks's underline, its not real !
-    2018/12/29  Small improvements in time to save a file.
-    2019/04/29  Restore note's previous previous position and size.
-    2019/05/06  Support saving pos and open on startup in note.
-    2019/06/07  Removed unused, historical func to clean xml
-}
-
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-    Classes, SysUtils, KMemo, Graphics, LazLogger;
+    Classes, SysUtils, KMemo, Graphics, LazLogger, TRcommon;
 
 
 {type TNoteLocation = record
@@ -506,13 +442,13 @@ var
 begin
    CreateGUID(GUID);
    Title := NotebookName  + ' Template';
-   ID := copy(GUIDToString(GUID), 2, 36) + '.note';
+   ID := copy(GUIDToString(GUID), 2, 36) ;
    SearchForm.NoteLister.AddNoteBook(ID, NotebookName, True);
-   Ostream :=TFilestream.Create(Sett.NoteDirectory + ID, fmCreate);
+   Ostream :=TFilestream.Create(GetLocalNoteFile(ID), fmCreate);
    Loc.Y := '20'; Loc.X := '20'; Loc.Height := '200'; Loc.Width:='300';
    Loc.OOS := 'False'; Loc.CPos:='1';
    try
-   		Buff := Header();
+        Buff := Header();
         OStream.Write(Buff[1], length(Buff));
         Buff := Title + #10#10#10;
         OStream.Write(Buff[1], length(Buff));
@@ -672,7 +608,7 @@ begin
 
     {$define STAGEDWRITE}
     {$ifdef STAGEDWRITE}
-        TmpName := AppendPathDelim(Sett.NoteDirectory) + 'tmp';
+        TmpName := AppendPathDelim(NotesDir) + 'tmp';
         if not DirectoryExists(TmpName) then
            if not CreateDir(AppendPathDelim(tmpname)) then begin
                 NoteLoc.ErrorStr:='Failed Create Dir';

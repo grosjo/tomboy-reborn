@@ -723,7 +723,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="32">
+    <Units Count="33">
       <Unit0>
         <Filename Value="tomboy-reborn.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -759,12 +759,11 @@
         <UnitName Value="LoadNote"/>
       </Unit5>
       <Unit6>
-        <Filename Value="settings.pas"/>
+        <Filename Value="TRsettings.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="Sett"/>
+        <ComponentName Value="Settings"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="TRsettings"/>
       </Unit6>
       <Unit7>
         <Filename Value="syncgui.pas"/>
@@ -918,6 +917,11 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit31>
+      <Unit32>
+        <Filename Value="trtexts.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="TrTexts"/>
+      </Unit32>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

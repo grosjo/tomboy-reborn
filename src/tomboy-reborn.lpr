@@ -11,8 +11,7 @@ uses
     Spelling, Colours,
     TRcommon, TRsearchUnit, TRsettings, TRsyncUI,
     Mainunit, markdown, Index, SyncError,
-    hunspell, syncutils, ResourceStr,
-    ncsetup;
+    hunspell, syncutils, TRtexts, TRnextSetup;
 
 {$R *.res}
 
@@ -24,6 +23,7 @@ begin
 
     ConfigDir := GetDefaultConfigDir();
     ConfigFile := ConfigDir + 'tomboy-reborn.cfg';
+    NotesDir := GetDefaultNotesDir();
 
     Application.CreateForm(TMainForm, MainForm);
     Application.CreateForm(TFormNCSetup, FormNCSetup);
@@ -31,12 +31,8 @@ begin
     Application.CreateForm(TSearchForm, SearchForm);
     Application.CreateForm(TFormSync, FormSync);
     Application.CreateForm(TFormMarkdown, FormMarkdown);
-    //Application.CreateForm(TFormHelpNotes, FormHelpNotes);
     Application.CreateForm(TFormSyncError, FormSyncError);
     Application.CreateForm(TFormColours, FormColours);
-    // Application.CreateForm(TNoteBookPick, NoteBookPick);
-    // Application.CreateForm(TFormSpell, FormSpell);
-    // Application.CreateForm(TEditBoxForm, EditBoxForm);
     Application.Run;
 end.
 

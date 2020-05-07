@@ -1,41 +1,17 @@
 unit TRsync;
-{
-    A Unit to manage Tomboy Reborn sync behaviour.
-    Copyright (C) 2018 David Bannon
-    See attached licence file.
-}
+{   A Unit to manage Tomboy Reborn sync behaviour. }
+
 
 {$mode objfpc}{$H+}
 
-{
-
-HISTORY
-    2020/05/04  Complete re-structure
-    2018/10/18  Memory leak in CheckUsingLCD(), StartSync() should not call processClashes()
-                during a TestRun. Only during real thing.
-    2018/10/22  CheckMetaData() was returning wrong value.
-    2018/10/25  Much testing, support for Tomdroid.
-    2018/10/28  Much tweaking and bug fixing.
-    2018/10/29  Tell TB_Sdiff about note title before showing it.
-    2018/11/03  Call checkmetadata before resolving clashes.
-    2018/11/04  No longer call MarkNoteReadOnly as we now rely on searchForm.ProcessSyncUpdates
-    2018/11/05  Now set Notemeatdata LCD to LCD of local note when Clash handler sets SyUpLoadEdit
-    2018/11/25  Added DeleteFromLocalManifest(), called from search unit, TEST !
-    2018/06/05  Change to doing Tomboy's sync dir names, rev 431 is in ~/4/341
-    2019/07/19  Escape ' and " when using Title as an attribute in local manifest.
-    2020/02/27  Better detect when we try to sync and don't have a local manifest, useful for Tomdroid, check normal !
-}
 
 interface
+
 uses
-    Classes, SysUtils, SyncUtils;
+    Classes, SysUtils, SyncUtils, TRcommon;
 
 
-type                       { ----------------- T S Y N C --------------------- }
-
-  { TSync }
-
-  TSync = class
+type TSync = class
 
   private
 
@@ -107,8 +83,6 @@ type                       { ----------------- T S Y N C --------------------- }
    public
 
       ErrorString : string;
-      NotesDir : String;
-      ConfigDir : String;
 
       DeletedList, DownList, GridReportList : TStringList;
 
@@ -116,33 +90,31 @@ type                       { ----------------- T S Y N C --------------------- }
            that are not systematically resolved }
       ClashFunction : TClashFunction;
 
+      { Reports on contents of a created and filled list }
+      procedure ReportMetaData(out UpNew, UpEdit, Down, DelLoc, DelRem, CreateCopy, DoNothing, Undecided: integer);
 
+      { Selects a Trans layer, adjusts config dir, }
+      function SetTransport(Mode : TSyncTransport) : TSyncAvailable;
 
-       { Reports on contents of a created and filled list }
-       procedure ReportMetaData(out UpNew, UpEdit, Down, DelLoc, DelRem, CreateCopy, DoNothing, Undecided: integer);
-
-       { Selects a Trans layer, adjusts config dir, }
-       function SetTransport(Mode : TSyncTransport) : TSyncAvailable;
-
-       { May return : SyncXMLError, SyncNoRemoteDir, SyncNoRemoteWrite,
+      { May return : SyncXMLError, SyncNoRemoteDir, SyncNoRemoteWrite,
               SyncNoRemoteRepo, SyncBadRemote, SyncMismatch. Checks if the connecton
               looks viable, either (fileSync) it has right files there and write access
               OR (NetSync) network answers somehow (?). Reads local manifest if
               RepoAction=RepoUse and compares ts serverID with one found by
               Trans.testConnection. SyncReady means we can proceed to StartSync, else must
               do something first, setup new connect, consult user etc.}
-       function TestConnection() : TSyncAvailable;
+      function TestConnection() : TSyncAvailable;
 
-       { Do actual sync, but if TestRun=True just report on what you'd do.
+      { Do actual sync, but if TestRun=True just report on what you'd do.
               Assumes a Transport has been selected and remote address is set.
               We must already be a member of this sync, ie, its remote ID is recorded
               in our local manifest. }
-       function StartSync(isTest : boolean) : boolean;
+      function StartSync(isTest : boolean) : boolean;
 
-       function GetNoteTitle(const ID : ANSIString) : ANSIString;
+      function GetNoteTitle(const ID : ANSIString) : ANSIString;
 
-       constructor Create();
-       destructor Destroy(); override;
+      constructor Create();
+      destructor Destroy(); override;
   end;
 
 implementation
@@ -488,12 +460,12 @@ begin
         ID := NoteMetaData.Items[i]^.ID;
 
         DownList.Add(ID);
-        dest := GetLocalNotePath(NotesDir, ID);
-        backup := GetLocalNotePath(NotesDir +  'Backup');
+        dest := GetLocalNoteFile(ID);
+        backup := GetLocalBackupPath();
         if FileExists(dest) then
         begin
            ForceDirectories(backup);
-           if not CopyFile(dest, GetLocalNotePath(NotesDir +  'Backup',ID)) then
+           if not CopyFile(dest, GetLocalNoteFile(ID, backup)) then
                 begin
                     ErrorString := 'Failed to copy file '+ dest + ' to Backup ' + backup;
                     debugln(ErrorString);
@@ -524,8 +496,8 @@ begin
         ID := NoteMetaData.Items[i]^.ID;
         DeletedList.Add(ID);
 
-        s:= GetLocalNotePath(NotesDir,ID);
-        d:= GetLocalNotePath(NotesDir,'Backup' + Pathdelim + ID);
+        s:= GetLocalNoteFile(ID);
+        d:= GetLocalNoteFile(ID,GetLocalBackupPath());
 
         if FileExists(s) then
         begin
@@ -666,14 +638,12 @@ begin
                 Transport.setParam('SECRET', Sett.NCSecret);
                 end;
     end;
-    Transport.NotesDir := NotesDir;
 
     if TransportMode = SyncAndroid then
     begin
         ConfigDir := ConfigDir + 'android' + PathDelim;
         ForceDirectory(ConfigDir);
     end;
-    Transport.ConfigDir := ConfigDir;
 
     Result := Transport.SetTransport();
 
@@ -712,7 +682,7 @@ begin
     FreeAndNil(LocalMetaData);
     LocalMetaData := TNoteInfoList.Create;
     c :=0;
-    if FindFirst(GetLocalNotePath(NotesDir,'*'), faAnyFile, Info)=0 then
+    if FindFirst(GetLocalNoteFile('*'), faAnyFile, Info)=0 then
     repeat
         ID := copy(Info.Name, 1, 36);
         new(PNote);
@@ -722,7 +692,7 @@ begin
         PNote^.LastSyncGMT := 0;
         PNote^.LastSync := '';
 
-        s := GetLocalNotePath(NotesDir, ID);
+        s := GetLocalNoteFile(ID);
         if(FileToNote(s, PNote ))
         then begin
              LocalMetaData.Add(PNote);

@@ -6,7 +6,8 @@ interface
 
 uses
     Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ActnList,
-    Grids, ComCtrls, StdCtrls, ExtCtrls, Menus, Buttons, Note_Lister, lazLogger, ResourceStr;
+    Grids, ComCtrls, StdCtrls, ExtCtrls, Menus, Buttons, Note_Lister, lazLogger,
+    TRcommon, TRtexts;
 
 // These are choices for main popup menus.
 type TMenuTarget = (mtSep=1, mtNewNote, mtSearch, mtAbout=10, mtSync, mtTomdroid, mtSettings, mtMainHelp, mtHelp, mtQuit, mtRecent);
@@ -215,12 +216,9 @@ begin
         ButtonClearFiltersClick(self);
     end else begin
         NoteLister.DeleteNote(ShortFileName);
-     	NewName := Sett.NoteDirectory + 'Backup' + PathDelim + ShortFileName + '.note';
+     	NewName := GetLocalNoteFile(ShortFileName,GetLocalBackupPath());
 
-        if not DirectoryExists(Sett.NoteDirectory + 'Backup') then
-    		if not CreateDirUTF8(Sett.NoteDirectory + 'Backup') then
-            	DebugLn('Failed to make Backup dir, ' + Sett.NoteDirectory + 'Backup');
-    	if not RenameFileUTF8(FullFileName, NewName)
+        if not RenameFileUTF8(FullFileName, NewName)
     		then DebugLn('Failed to move ' + FullFileName + ' to ' + NewName);
     end;
     UseList();
@@ -309,8 +307,6 @@ begin
     if HelpNotes <> nil then
         freeandnil(HelpNotes);
     HelpNotes := TNoteLister.Create;     // freed in OnClose event.
-    HelpNotes.DebugMode := Application.HasOption('debug-index');
-    HelpNotes.WorkingDir:= MainForm.ActualHelpNotesPath;
     HelpNotes.GetNotes('', true);
 end;
 
@@ -501,28 +497,21 @@ begin
 
     case TMenuTarget(TMenuItem(Sender).Tag) of
         mtSep, mtRecent : showmessage('Oh, thats bad, should not happen');
-        mtNewNote : if (Sett.NoteDirectory = '') then
-                            ShowMessage(rsSetupNotesDirFirst)
+        mtNewNote : if (NotesDir = '') then ShowMessage(rsSetupNotesDirFirst)
                     else OpenNote();
-        mtSearch :  if Sett.NoteDirectory = '' then
-                            showmessage(rsSetupNotesDirFirst)
+        mtSearch :  if NotesDir = '' then showmessage(rsSetupNotesDirFirst)
                     else begin
-                            MoveWindowHere(Caption);
-                            EnsureVisible(true);
-                            Show;
+                         MoveWindowHere(Caption);
+                         EnsureVisible(true);
+                         Show;
                     end;
-        mtAbout :    MainForm.ShowAbout();
-        mtSync :     if(Sett.getSyncConfigured()) then Sett.Synchronise()
-                     else showmessage(rsSetupSyncFirst);
+        mtAbout :   MainForm.ShowAbout();
+        mtSync :    if(Sett.getSyncConfigured()) then Sett.Synchronise()
+                    else showmessage(rsSetupSyncFirst);
         mtSettings : begin
-                            MoveWindowHere(Sett.Caption);
-                            Sett.EnsureVisible(true);
-                            Sett.Show;
-                     end;
-        mtHelp :      begin
-                        if HelpNotes.FileNameForTitle(TMenuItem(Sender).Caption, FileName) then
-                            MainForm.ShowHelpNote(FileName)
-                        else showMessage(rsCannotFindNote + TMenuItem(Sender).Caption);
+                     MoveWindowHere(Sett.Caption);
+                     Sett.EnsureVisible(true);
+                     Sett.Show;
                     end;
         mtQuit :      MainForm.close;
     end;
@@ -609,8 +598,7 @@ begin
     if NoteLister <> Nil then
        freeandnil(NoteLister);
     NoteLister := TNoteLister.Create;
-    NoteLister.DebugMode := Application.HasOption('debug-index');
-    NoteLister.WorkingDir:=Sett.NoteDirectory;
+    //NoteLister.DebugMode := Application.HasOption('debug-index');
     Result := NoteLister.GetNotes();
     UseList();
     // TS2 := DateTimeToTimeStamp(Now);
@@ -792,7 +780,7 @@ begin
     if (NoteTitle <> '') then begin
         if FullFileName = '' then Begin
         	if NoteLister.FileNameForTitle(NoteTitle, NoteFileName) then
-            	NoteFileName := Sett.NoteDirectory + NoteFileName
+            	NoteFileName := NotesDir+ NoteFileName
             else NoteFileName := '';
 		end else NoteFileName := FullFileName;
         // if we have a Title and a Filename, it might be open aleady
@@ -837,7 +825,7 @@ begin
     // debugln('Clicked on row ' + inttostr(StringGrid1.Row));
     NoteTitle := StringGrid1.Cells[0, StringGrid1.Row];
     if NoteLister.FileNameForTitle(NoteTitle, FullFileName) then begin
-        FullFileName := Sett.NoteDirectory + FullFileName;
+        FullFileName := NotesDir + FullFileName;
   	    if not FileExistsUTF8(FullFileName) then begin
       	    showmessage('Cannot open ' + FullFileName);
       	    exit();
@@ -905,7 +893,7 @@ begin
     	showmessage('Error, cannot open template for ' + StringGridNotebooks.Cells[0, StringGridNotebooks.Row])
     else
     	OpenNote(StringGridNotebooks.Cells[0, StringGridNotebooks.Row] + ' Template',
-        		Sett.NoteDirectory + NotebookID);
+        		NotesDir + NotebookID);
 end;
 
 procedure TSearchForm.MenuRenameNoteBookClick(Sender: TObject);
@@ -931,12 +919,12 @@ begin
     if IDYES = Application.MessageBox('Delete this Notebook',
     			PChar(StringGridNotebooks.Cells[0, StringGridNotebooks.Row]),
        			MB_ICONQUESTION + MB_YESNO) then
-		DeleteNote(Sett.NoteDirectory + NoteLister.NotebookTemplateID(StringGridNotebooks.Cells[0, StringGridNotebooks.Row]));
+		DeleteNote(NotesDir + NoteLister.NotebookTemplateID(StringGridNotebooks.Cells[0, StringGridNotebooks.Row]));
 end;
 
 procedure TSearchForm.MenuNewNoteFromTemplateClick(Sender: TObject);
 begin
-    OpenNote('', Sett.NoteDirectory
+    OpenNote('', NotesDir
     		+ NoteLister.NotebookTemplateID(StringGridNotebooks.Cells[0, StringGridNotebooks.Row]),
             StringGridNotebooks.Cells[0, StringGridNotebooks.Row]);
 end;

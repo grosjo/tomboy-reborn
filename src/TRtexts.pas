@@ -1,8 +1,4 @@
-unit ResourceStr;
-
-{ Am attempt to move all resource strings into one unit to facilate
-  reuse where possible.  Note that while arranged in blocks labeled
-  with the unit that uses them, no reason to limit use to that. }
+unit TrTexts;
 
 {$mode objfpc}{$H+}
 
@@ -42,7 +38,7 @@ RESOURCESTRING
   rsSearchHint = 'Exact matches for terms between " "';
 
 
-// SyncGUI
+// Sync
   rsTestingSync = 'Testing Sync';
   rsUnableToSync = 'Unable to sync because ';
   rsRunningSync = 'Running Sync';
@@ -57,13 +53,28 @@ RESOURCESTRING
   rsLastSync = 'Last Sync';     // Followed by a date and simplified sync report
   rsSyncNCDefault = 'https://YOURSERVER/index.php/apps/grauphel';
 
+  rsNewUploads      = 'New Uploads    ';
+  rsEditUploads     = 'Edit Uploads   ';
+  rsDownloads       = 'Downloads      ';
+  rsSynCopies       = 'Copied notes   ';
+  rsLocalDeletes    = 'Local Deletes  ';
+  rsRemoteDeletes   = 'Remote Deletes ';
+  rsDoNothing       = 'Do Nothing     ';
+  rsUndecided       = 'Unresolved     ';
 
-// Settings but only part ...
+  rsNoNotesNeededSync = 'No notes needed syncing. You need to write more.';
+  rsNotesWereDealt = ' notes were dealt with.';
+  rsChangeExistingSync = 'Change existing sync connection ?';
+  rsNotRecommend = 'Generally not recommended.';
+  rsNextBitSlow = 'Next bit can be a bit slow, please wait';
 
-  //rsChangeNetSync = 'Change Net Sync Repo';          // These are labels on the button used to set sync repo
-  //rsChangeSync = 'Change Sync Repo';
+
+// Settings
+  rsErrorCreateDir = 'Unable to Create Directory';
+  rsErrorCannotWrite = 'Cannot write into';
   rsSyncNotConfig = 'not configured';               // means that the file of net sync is not configured yet.
   rsSetUp = 'Setup';                               // means configure something, eg, one of the Sync modules.
+  rsDoubleclickNote = 'double click a note ...';
 
 implementation
 

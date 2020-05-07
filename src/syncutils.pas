@@ -16,76 +16,11 @@ unit syncutils;
 interface
 
 uses
-    Classes, SysUtils, dateutils, LazLogger
+    Classes, SysUtils, dateutils, LazLogger, TRcommon
     {$ifdef LINUX}, Unix {$endif}
     ;
 
-type TSyncOption = (AlwaysAsk, UseServer, UseLocal, MakeCopy);	// Relating to sync clash pref in config file
 
-type TSyncTransport=(
-                SyncFile,  // Sync to locally available dir, things like smb: mount, google drive etc
-                SyncNextCloud,  // Sync to NextCloud using Nextcloud Notes
-                SyncAndroid,  // Simple one to one Android Device
-                SyncNone); // Not syncing
-
-type TSyncAction=(SynUnset,      // initial state, should not be like this at end.
-                SynNothing,      // This note, previously synced has not changed.
-                SynUploadNew,    // This a new local note, upload it.
-                SynUploadEdit,   // A previously synced note, edited locally, upload.
-                SynDownload,     // A new or edited note from elsewhere, download.
-                SynDeleteLocal,  // Synced previously but no longer present on server, delete locally
-                SynDeleteRemote, // Marked as having been deleted locally, so remove from server.
-                SynCopy,         // Make a copy hen replace by server
-                SynError,
-                SynAllRemote,    // Clash Decision - Use remote note for all subsquent clashes
-                SynAllCopy,      // Clash Decision - Make copies for all subsquent clashes
-                SynAllLocal,     // Clash Decision - Use local note for all subsquent clashes
-                SynAllNewest,    // Clash Decision - Use newest note for all subsquent clashes
-                SynAllOldest);   // Clash Decision - Use oldest note for all subsquent clashes
-
-        // Indicates the readyness of a sync connection
-type TSyncAvailable=(SyncNotYet,        // Initial state.
-                    SyncReady,          // We are ready to sync, looks good to go.
-                    SyncNoLocal,        // We dont have a local manifest, only an error if config thinks there should be one.
-                    SyncNoRemoteMan,    // No remote manifest, an uninitialized repo perhaps ?
-                    SyncNoRemoteRepo,   // Filesystem is OK but does not look like a repo.
-                    SyncBadRemote,      // Has either Manifest or '0' dir but not both.
-                    SyncNoRemoteDir,    // Perhaps sync device is not mounted, Tomdroid not installed ?
-                    SyncNoRemoteWrite,  // no write permission, do not proceed!
-                    SyncMismatch,       // Its a repo, Captain, but not as we know it.
-                    SyncXMLError,       // Housten, we have an XML error in a manifest !
-                    SyncBadError,       // Some other error, must NOT proceed.
-                    SyncNetworkError);  // Remove server/device not responding
-
-
-type
-  	PNoteInfo=^TNoteInfo;
-
-        TNoteInfo = record
-                  ID : ANSIString;            // The 36 char ID
-                  CreateDate : ANSIString;
-                  CreateDateGMT : TDateTime;
-                  LastChange : ANSIString;
-                  LastChangeGMT : TDateTime;
-                  LastMetaChange : ANSIString;
-                  LastMetaChangeGMT : TDateTime;
-                  Version : String;
-                  Rev : Integer;
-                  LastSync: ANSIString;
-                  LastSyncGMT : TDateTime;
-                  Action : TSyncAction;
-                  Title : String;
-                  Content : String;
-                  OpenOnStartup : boolean;
-                  Pinned : boolean;
-                  CursorPosition : integer;
-                  SelectBoundPosition : integer;
-                  Width : integer;
-                  Height : integer;
-                  X : integer;
-                  Y : integer;
-                  Deleted : boolean;
-        end;
 
  type                                 { ---------- TNoteInfoList ---------}
 
@@ -110,21 +45,9 @@ type
         { A couple of types used to manage the data involved in handling
           a sync clash.
         }
- type
-    TClashRecord = record
-        //Title : ANSIString;
-        //NoteID : ANSIString;
-        RemoteNote : PNoteInfo;
-        LocalNote : PNoteInfo;
-    end;
 
+ type    TMarkNoteReadonlyProcedure = procedure(const FileName : string; const WasDeleted : Boolean = False) of object;
 
- type    TClashFunction = function(const ClashRec : TClashRecord): TSyncAction of object;
-
-type    TMarkNoteReadonlyProcedure = procedure(const FileName : string; const WasDeleted : Boolean = False) of object;
-
-
-      function GetLocalNotePath(path : String; NoteID : string = ''): string;
 
       // Takes a normal Tomboy DateTime string and converts it to UTC, ie zero offset
       function ConvertDateStrAbsolute(const DateStr : string) : string;
@@ -133,19 +56,12 @@ type    TMarkNoteReadonlyProcedure = procedure(const FileName : string; const Wa
       function SafeGetUTCfromStr(const DateStr : string; out DateTime : TDateTime; out ErrorMsg : string) : boolean;
 
       // Ret GMT from tomboy date string, 0.0 on error or unlikely date.
-      function GetGMTFromStr(const DateStr: ANSIString): TDateTime;
-
-      function GetTimeFromGMT(d : TDateTime) : String;
 
       function GetCurrentTimeStr() : String;
 
       // Returns the LCD string, '' and setting Error to other than '' if something wrong
       function GetLocalNoteLastChange(const rep : String; const ID : string; out Error : string) : string;
 
-      // returns false if GUID does not look OK
-      function NoteIDLooksOK(const ID : string) : boolean;
-
-      function FileToNote(xml : String; NoteInfo : PNoteInfo) : boolean;
 
       // Use whenever we are writing content that may contain <>& to XML files
       // If DoQuotes is true, we also convert ' and " (for xml attributes).
@@ -155,22 +71,6 @@ type    TMarkNoteReadonlyProcedure = procedure(const FileName : string; const Wa
         necessary to do this on two end user's windows boxes. Writes debuglns
         if it has initial problems, returns F and sets ErrorMsg if fails.}
       function SafeWindowsDelete(const FullFileName : string; var ErrorMsg : string) : boolean;
-
-RESOURCESTRING
-  rsNewUploads      = 'New Uploads    ';
-  rsEditUploads     = 'Edit Uploads   ';
-  rsDownloads       = 'Downloads      ';
-  rsSynCopies       = 'Copied notes   ';
-  rsLocalDeletes    = 'Local Deletes  ';
-  rsRemoteDeletes   = 'Remote Deletes ';
-  rsDoNothing       = 'Do Nothing     ';
-  rsUndecided       = 'Unresolved     ';
-
-  rsNoNotesNeededSync = 'No notes needed syncing. You need to write more.';
-  rsNotesWereDealt = ' notes were dealt with.';
-  rsChangeExistingSync = 'Change existing sync connection ?';
-  rsNotRecommend = 'Generally not recommended.';
-  rsNextBitSlow = 'Next bit can be a bit slow, please wait';
 
             { -------------- implementation ---------------}
 implementation
@@ -264,7 +164,7 @@ var
    Node : TDOMNode;
    filename : string;
 begin
-   filename := GetLocalNotePath(rep,ID);
+   filename := GetLocalNoteFile(ID,rep);
 
     if not FileExists(filename) then
     begin
@@ -388,15 +288,6 @@ begin
     exit(True);
 end;
 
-function GetLocalNotePath(path : String; NoteID : string = ''): string;
-var
-   s : String;
-begin
-    if(length(NoteID)>0)
-    then Result := appendpathDelim(ChomppathDelim(path)) + NoteID + '.note'
-    else Result := appendpathDelim(ChomppathDelim(path)) ;
-end;
-
 
 // Takes a normal Tomboy DateTime string and converts it to UTC, ie zero offset
 function ConvertDateStrAbsolute(const DateStr : string) : string;
@@ -415,136 +306,7 @@ begin
                    + FormatDateTime('hh:mm:ss.zzz"0000+00:00"',Temp);
 end;
 
-function GetTimeFromGMT(d : TDateTime) : String;
-begin;
-    Result := FormatDateTime('YYYY-MM-DD',d) + 'T'
-                   + FormatDateTime('hh:mm:ss.zzz"0000+00:00"',d);
 
-end;
-
-
-function GetGMTFromStr(const DateStr: ANSIString): TDateTime;
-var
-    TimeZone : TDateTime;
-begin
-    if DateStr = '' then exit(0);                // Empty string
-    // A date string should look like this -     2018-01-27T17:13:03.1230000+11:00 33 characters !
-    if length(DateStr) <> 33 then begin
-        debugln('ERROR received invalid date string - [' + DateStr + ']');
-        exit(0);
-    end;
-    try
-	    if not TryEncodeTimeInterval( 	strtoint(copy(DateStr, 29, 2)),				// Hour
-	    								strtoint(copy(DateStr, 32, 2)),				// Minutes
-			        					0,				// Seconds
-	                					0,				// mSeconds
-	                					TimeZone)  then DebugLn('Fail on interval encode ');
-    except on EConvertError do begin
-        	DebugLn('FAIL on converting time interval ' + DateStr);
-            DebugLn('Hour ', copy(DateStr, 29, 2), ' minutes ', copy(DateStr, 32, 2));
-    	end;
-    end;
-    try
-	    if not TryEncodeDateTime(strtoint(copy(DateStr, 1, 4)),   	// Year
-	    			strtoint(copy(DateStr, 6, 2)),              // Month
-	                strtoint(copy(DateStr, 9, 2)),				// Day
-	                strtoint(copy(DateStr, 12, 2)),				// Hour
-	                strtoint(copy(DateStr, 15, 2)),				// Minutes
-	                strtoint(copy(DateStr, 18, 2)),				// Seconds
-	                strtoint(copy(DateStr, 21, 3)),				// mSeconds
-	                Result)  then DebugLn('Fail on date time encode ');
-    except on EConvertError do begin
-        	DebugLn('FAIL on converting date time ' + DateStr);
-            exit(0.0);
-    	end;
-    end;
-    try
-	    if DateStr[28] = '+' then
-            Result := Result - TimeZone
-		else if DateStr[28] = '-' then
-            Result := Result + TimeZone
-	    else debugLn('******* Bugger, we are not parsing DATE String ********');
-    except on EConvertError do begin
-        	DebugLn('FAIL on calculating GMT ' + DateStr);
-            exit(0.0);
-    	end;
-    end;
-    { writeln('Date is ', DatetoStr(Result), ' ', TimetoStr(Result));  }
-end;
-
-function NoteIDLooksOK(const ID : string) : boolean;
-begin
-    if length(ID) <> 36 then exit(false);
-    if pos('-', ID) <> 9 then exit(false);
-    result := True;
-end;
-
-function FileToNote(xml : String; NoteInfo : PNoteInfo) : boolean;
-var
-    Doc : TXMLDocument;
-    Node : TDOMNode;
-
-begin
-     try
-        ReadXMLFile(Doc, xml);
-     except on E:Exception do begin debugln(E.message); exit(false); end;
-     end;
-
-     try
-        Node := Doc.DocumentElement.FindNode('create-date');
-        NoteInfo^.CreateDate := Node.FirstChild.NodeValue;
-        if NoteInfo^.CreateDate <> '' then
-           NoteInfo^.CreateDateGMT := GetGMTFromStr(NoteInfo^.CreateDate)
-           else NoteInfo^.CreateDateGMT := 0;
-
-        Node := Doc.DocumentElement.FindNode('last-change-date');
-        NoteInfo^.LastChange := Node.FirstChild.NodeValue;
-        if NoteInfo^.LastChange <> '' then
-           NoteInfo^.LastChangeGMT := GetGMTFromStr(NoteInfo^.LastChange)
-        else NoteInfo^.LastChangeGMT := 0;
-
-        Node := Doc.DocumentElement.FindNode('last-metadata-change-date');
-        NoteInfo^.LastMetaChange := Node.FirstChild.NodeValue;
-        if NoteInfo^.LastMetaChange <> '' then
-           NoteInfo^.LastMetaChangeGMT := GetGMTFromStr(NoteInfo^.LastMetaChange)
-        else NoteInfo^.LastMetaChangeGMT := 0;
-
-        NoteInfo^.Title := Doc.DocumentElement.FindNode('title').FirstChild.NodeValue;
-
-        Node := Doc.DocumentElement.FindNode('text');
-        NoteInfo^.Content := Node.FindNode('note-content').NodeValue;
-        NoteInfo^.Version := Node.FindNode('note-content').Attributes.GetNamedItem('version').NodeValue;
-
-        Node := Doc.DocumentElement.FindNode('open-on-startup');
-        NoteInfo^.OpenOnStartup := (Node.FirstChild.NodeValue.ToLower = 'true');
-
-        Node := Doc.DocumentElement.FindNode('pinned');
-        NoteInfo^.Pinned := (Node.FirstChild.NodeValue.ToLower = 'true');
-
-        Node := Doc.DocumentElement.FindNode('cursor-position');
-        NoteInfo^.CursorPosition := StrToInt(Node.FirstChild.NodeValue);
-        Node := Doc.DocumentElement.FindNode('selection-bound-position');
-        NoteInfo^.SelectBoundPosition := StrToInt(Node.FirstChild.NodeValue);
-
-        Node := Doc.DocumentElement.FindNode('width');
-        NoteInfo^.Width := StrToInt(Node.FirstChild.NodeValue);
-        Node := Doc.DocumentElement.FindNode('height');
-        NoteInfo^.Height := StrToInt(Node.FirstChild.NodeValue);
-
-        Node := Doc.DocumentElement.FindNode('x');
-        NoteInfo^.X := StrToInt(Node.FirstChild.NodeValue);
-        Node := Doc.DocumentElement.FindNode('y');
-        NoteInfo^.Y := StrToInt(Node.FirstChild.NodeValue);
-
-        //NoteInfo^.Source := Doc.ToString;
-        NoteInfo^.Deleted := false;
-
-     except on E:Exception do begin Doc.Free; debugln(E.message); exit(false); end;
-     end;
-
-     Doc.Free;
-     Result := true;
-end;
 
 
 
