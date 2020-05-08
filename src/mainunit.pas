@@ -507,7 +507,7 @@ begin
     gtk_clipboard_store(c);
     //{$endif}
     {$endif}
-    Sett.AreClosing:=True;
+    //AreClosing:=True;
     if assigned(SearchForm.NoteLister) then begin
       AForm := SearchForm.NoteLister.FindFirstOpenNote();
       while AForm <> Nil do begin
@@ -575,7 +575,7 @@ begin
       close;
       exit;
     end;
-    if Application.HasOption('no-splash') or (not Sett.CheckShowSplash.Checked) then begin
+    if Application.HasOption('no-splash') or (not ShowSplash) then begin
          if AllowDismiss then ButtonDismissClick(Self);
      end;
     Left := 10;
@@ -610,8 +610,8 @@ begin
         CheckBoxDontShow.Enabled := False;
         Visible := True;
     end else
-        CheckBoxDontShow.checked := not Sett.CheckShowSplash.Checked;
-    if Sett.CheckShowSearchAtStart.Checked then
+        CheckBoxDontShow.checked := not ShowSplash;
+    if SearchAtStart then
         SearchForm.Show;
     if SearchForm.NoteLister.FindFirstOOSNote(NoteTitle, NoteID) then
         repeat
@@ -635,7 +635,7 @@ procedure TMainForm.UpdateNotesFound(Numb : integer);
 begin
     LabelNotesFound.Caption := rsFound + ' ' + inttostr(Numb) + ' ' + rsNotes;
          ImageConfigCross.Left := ImageConfigTick.Left;
-     ImageConfigTick.Visible := Sett.HaveConfig;
+     //ImageConfigTick.Visible := Sett.HaveConfig;
      ImageConfigCross.Visible := not ImageConfigTick.Visible;
 
      ImageNotesDirCross.Left := ImageNotesDirTick.Left;
@@ -643,12 +643,12 @@ begin
      ImageNotesDirCross.Visible := not ImageNotesDirTick.Visible;
 
      ImageSpellCross.Left := ImageSpellTick.Left;
-     ImageSpellTick.Visible := Sett.SpellConfig;
+     //ImageSpellTick.Visible := SpellConfig;
      ImageSpellCross.Visible := not ImageSpellTick.Visible;
 
      ImageSyncCross.Left := ImageSyncTick.Left;
 
-     ImageSyncTick.Visible :=  Sett.getSyncConfigured();
+     //ImageSyncTick.Visible :=  Sett.getSyncConfigured();
      ImageSyncCross.Visible := not ImageSyncTick.Visible;
 
      {((Sett.RadioFileSync.checked and (Sett.LabelFileSync.Caption <> rsSyncNotConfig))
@@ -681,8 +681,8 @@ var
     OldMask : boolean;
 begin
     if Visible then begin
-        Sett.CheckShowSplash.Checked := not Sett.CheckShowSplash.Checked;
-        Sett.onChange(Sender);
+        //ShowSplash := not Sett.CheckShowSplash.Checked;
+        //Sett.onChange(Sender);
     end;
     // showmessage('change dont show and Visible=' + booltostr(Visible, True));
 end;
@@ -737,16 +737,16 @@ begin
     if Application.HasOption('dark-theme') then // Manual override always wins on windows !
         Sett.DarkTheme := True
     else {$endif} begin
-        Sett.DarkTheme := false;
+        //Sett.DarkTheme := false;
         {$ifdef WINDOWS}
         Sett.DarkTheme := WinDarkTheme();
         {$else}
         // if char 3, 5 and 7 are all 'A' or above, we are not in a DarkTheme
         Col := hexstr(qword(GetRGBColorResolvingParent()), 8);
-        Sett.DarkTheme := (Col[3] < 'A') and (Col[5] < 'A') and (Col[7] < 'A');
+        //Sett.DarkTheme := (Col[3] < 'A') and (Col[5] < 'A') and (Col[7] < 'A');
         {$endif}
     end;
-	Sett.SetColours;
+	//Sett.SetColours;
 end;
 
 { ------------- M E N U   M E T H O D S ----------------}
@@ -754,7 +754,7 @@ end;
 
 procedure TMainForm.ButtonConfigClick(Sender: TObject);
 begin
-    Sett.Show();
+    FormSettings.Show();
 end;
 
 procedure TMainForm.ButtonCloseClick(Sender: TObject);

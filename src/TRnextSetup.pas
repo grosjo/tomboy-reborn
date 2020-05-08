@@ -6,8 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, LCLIntf, StdCtrls,
-  fpjson, jsonparser, strutils, fphttpserver, LazLogger, HMAC,
-  ssockets, sslsockets, fpopenssl, fphttpclient, openssl,
+  fpjson, jsonparser, strutils, fphttpserver, LazLogger, openssl,
   TRcommon;
 
 type     { TRServer }

@@ -7,7 +7,7 @@ interface
 
 uses
 		Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, CheckLst,
-		ExtCtrls, StdCtrls, Buttons, ComCtrls,
+		ExtCtrls, StdCtrls, Buttons, ComCtrls, LazFileUtils, LCLProc,
                 TRcommon;
 
 type
@@ -66,7 +66,8 @@ implementation
 
 { TNoteBookPick }
 
-uses TRSearchUnit, LazFileUtils, LCLProc, TRSettings, SaveNote, EditBox, SyncUtils, resourcestr;
+uses TRSearchUnit, SaveNote, EditBox,
+                SyncUtils, TRtexts;
 
 procedure TNoteBookPick.SetupForNewSelect();
 var
@@ -74,7 +75,7 @@ var
         Index, I : Integer;
 begin
     Label1.Caption := Title;
-    if Sett.CheckManyNotebooks.Checked then
+    if ManyNotebooks then
         Label2.Caption := rsMultipleNoteBooks
     else Label2.Caption := rsOneNoteBook;
     PageControl1.ActivePage := TabExisting;
@@ -126,7 +127,7 @@ procedure TNoteBookPick.CheckListBox1ItemClick(Sender: TObject; Index: integer);
 var
 	I : integer;
 begin
-    if Sett.CheckManyNotebooks.Checked then exit;
+    if ManyNotebooks then exit;
     // ensure only one clicked.
     if (Sender as TCheckListBox).Checked[Index] then begin
         for I := 0 to CheckListBox1.Count -1 do
@@ -324,7 +325,7 @@ procedure TNoteBookPick.ButtonOKClick(Sender: TObject);
 var
         SL : TStringList;
         Index : Integer;
-        Saver : TBSaveNote;
+        Saver : TSaveNote;
 begin
     if PageControl1.ActivePage = TabExisting then begin
         SL := TStringList.Create;
@@ -338,7 +339,7 @@ begin
     end;
     if PageControl1.ActivePage = TabNewNotebook then
         if EditNewNotebook.Text <> '' then begin
-            Saver := TBSaveNote.Create();
+            Saver := TSaveNote.Create();
             try
                 Saver.SaveNewTemplate(EditNewNotebook.Text);
                 // OK, now add current note to the new Notebook

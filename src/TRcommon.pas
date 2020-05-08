@@ -5,15 +5,16 @@ interface
 uses
     Classes, Forms, SysUtils, Dialogs, StdCtrls, LazFileUtils, laz2_DOM,
     laz2_XMLRead, DateUtils, fphttpclient, ssockets, sslsockets, fpopenssl,
-    openssl, hmac, strutils, IniFiles, LazLogger;
+    openssl, hmac, strutils, IniFiles, LazLogger, Graphics;
 
 
-type TSyncOption = (AlwaysAsk, UseServer, UseLocal, MakeCopy);	// Relating to sync clash pref in config file
+type TFontRange = (FontHuge, FontBig, FontMedium, FontSmall);	// Relating to sync clash pref in config file
+
+type TSyncClashOption = (AlwaysAsk, UseServer, UseLocal, MakeCopy);	// Relating to sync clash pref in config file
 
 type TSyncTransport=(
         SyncFile,  // Sync to locally available dir, things like smb: mount, google drive etc
         SyncNextCloud,  // Sync to NextCloud using Nextcloud Notes
-        SyncAndroid,  // Simple one to one Android Device
         SyncNone); // Not syncing
 
 type TSyncAction=(
@@ -104,10 +105,15 @@ function FileToNote(xml : String; NoteInfo : PNoteInfo) : boolean;
 
 // Font
 function GetDefaultFixedFont() : string;
+function GetUsualFont() : string;
+procedure setFontSizes();
 
 // Datetime
 function GetGMTFromStr(const DateStr: ANSIString): TDateTime;
 function GetTimeFromGMT(d : TDateTime) : String;
+
+// Spelling
+procedure SetDictDefaults();
 
 // Network
 function URLDecode(s: String): String;
@@ -124,6 +130,9 @@ function OauthNonce() : String;
 procedure OauthParamsSort(const params : TStrings) ;
 procedure OauthSign(u : String; mode : String; params : TStrings; Key,Secret : String);
 
+// Sync
+function isSyncConfigured() : boolean;
+
 var
     ConfigDir : String;
     NotesDir : String;
@@ -135,18 +144,22 @@ var
       Autostart, SearchAtStart : boolean;
 
     UsualFont, FixedFont : string;
-    FontSmall  : Integer;
-    FontLarge  : Integer;
-    FontHuge   : Integer;
-    FontTitle  : Integer;			// Dont set this to one of the other sizes !
-    FontNormal : Integer;
+    FontRange : TFontRange;
+    FontSizeSmall  : Integer;
+    FontSizeLarge  : Integer;
+    FontSizeHuge   : Integer;
+    FontSizeTitle  : Integer;	// Dont set this to one of the other sizes !
+    FontSizeNormal : Integer;
 
     SyncType : TSyncTransport;
-    SyncOption : TSyncOption;
+    SyncClashOption : TSyncClashOption;
     SyncFirstRun : boolean;
-    NCurl, NCKey, NCToken, NCSecret : String;
+    SyncFileRepo, SyncNCurl, SyncNCKey, SyncNCToken, SyncNCSecret : String;
     SyncRepeat : integer;
 
+    DictLibrary, DictPath, DictFile, DictPathAlt : String;
+
+    BackGndColour, TextColour, HiColour, TitleColour : TColor;
 
 
 implementation
@@ -243,93 +256,75 @@ begin
 
     debugln('ConfigSave proceeding '+source);
 
-    f :=  TINIFile.Create(ConfigFile);
     try
-        try
-            f.writestring('BasicSettings', 'NotesDir', NotesDir);
-
-            f.writestring('BasicSettings', 'ManyNotebooks', BoolToStr(ManyNoteBooks) );
-            f.writestring('BasicSettings', 'CaseSensitive', BoolToStr(SearchCaseSensitive));
-            f.writestring('BasicSettings', 'ShowIntLinks', BoolToStr(ShowIntLinks));
-            f.writestring('BasicSettings', 'ShowExtLinks', BoolToStr(ShowExtLinks));
-            f.WriteString('BasicSettings', 'ShowSplash', BoolToStr(ShowSplash));
-            f.WriteString('BasicSettings', 'Autostart', BoolToStr(Autostart));
-            f.WriteString('BasicSettings', 'ShowSearchAtStart', BoolToStr(SearchAtStart));
-
-
-            if RadioFontBig.Checked then
-                ConfigFile.writestring('BasicSettings', 'FontSize', 'big')
-            else if RadioFontMedium.Checked then
-                ConfigFile.writestring('BasicSettings', 'FontSize', 'medium')
-            else if RadioFontSmall.Checked then
-                ConfigFile.writestring('BasicSettings', 'FontSize', 'small')
-            else if RadioFontHuge.Checked then
-                ConfigFile.writestring('BasicSettings', 'FontSize', 'huge');
-            ConfigFile.writestring('BasicSettings', 'UsualFont', UsualFont);
-            ConfigFile.writestring('BasicSettings', 'FixedFont', FixedFont);
-            //(Sel_CText = 0) and (Sel_CBack = 0) and (Sel_CHiBack = 0) and (Sel_CTitle = 0)
-            if UserSetColours then begin
-                ConfigFile.writestring('BasicSettings', 'BackGndColour', ColorToString(BackGndColour));
-                ConfigFile.writestring('BasicSettings', 'HiColour', ColorToString(HiColour));
-                ConfigFile.writestring('BasicSettings', 'TextColour', ColorToString(TextColour));
-                ConfigFile.writestring('BasicSettings', 'TitleColour', ColorToString(TitleColour));
-	    end else begin
-                ConfigFile.writestring('BasicSettings', 'BackGndColour', '0');
-                ConfigFile.writestring('BasicSettings', 'HiColour', '0');
-                ConfigFile.writestring('BasicSettings', 'TextColour', '0');
-                ConfigFile.writestring('BasicSettings', 'TitleColour', '0');
-	    end;
-
-            ConfigFile.WriteString('SyncSettings', 'Autosync', MyBoolStr(CheckBoxAutosync.Checked));
-            ConfigFile.WriteString('SyncSettings', 'Autosync', EditTimerSync.Text);
-
-            case SyncOption of
-		AlwaysAsk : ConfigFile.writestring('SyncSettings', 'SyncOption', 'AlwaysAsk');
-                UseLocal : ConfigFile.writestring('SyncSettings', 'SyncOption', 'UseLocal');
-                UseServer : ConfigFile.writestring('SyncSettings', 'SyncOption', 'UseServer');
-	        MakeCopy : ConfigFile.writestring('SyncSettings', 'SyncOption', 'MakeCopy');
-	    end;
-
-            if getSyncTested() then
-                ConfigFile.writestring('SyncSettings', 'SyncTested', 'true')
-                else ConfigFile.writestring('SyncSettings', 'SyncTested', 'false');
-
-            if RadioSyncFile.checked then
-                ConfigFile.writestring('SyncSettings', 'SyncType', 'file')
-            else ConfigFile.writestring('SyncSettings', 'SyncType', 'nextcloud');
-            if (LabelFileSync.Caption = '') or (LabelFileSync.Caption = rsSyncNotConfig) then
-                ConfigFile.writestring('SyncSettings', 'SyncRepo', '')
-            else  ConfigFile.writestring('SyncSettings', 'SyncRepo', LabelFileSync.Caption);
-            if (LabelNCSyncURL.Caption = '') or (LabelNCSyncURL.Caption = rsSyncNotConfig) then
-                ConfigFile.writestring('SyncSettings', 'SyncNCURL', '')
-            else  ConfigFile.writestring('SyncSettings', 'SyncNCURL', LabelNCSyncURL.Caption);
-
-            ConfigFile.writestring('SyncSettings', 'SyncNCKey', NCKey);
-            ConfigFile.writestring('SyncSettings', 'SyncNCToken', NCToken);
-            ConfigFile.writestring('SyncSettings', 'SyncNCSecret', NCSecret);
-
-        if SpellConfig then begin
-                ConfigFile.writestring('Spelling', 'Library', LabelLibrary.Caption);
-                ConfigFile.writestring('Spelling', 'Dictionary', LabelDic.Caption);
-            end;
-
-        HaveConfig := true;
-
-        finally
-    	    ConfigFile.Free;
-        end;
-    	except on E: Exception do begin
-            showmessage('Unable to write config (from '+source+') to ' + LabelSettingPath.Caption);
-            Result := False;
-        end;
+      DeleteFile(ConfigFile);
+      f :=  TINIFile.Create(ConfigFile);
+    except on E: Exception do begin
+       showmessage('Unable to write config '+ ConfigFile);
+       ConfigWriting := false;
+       exit(False);
+       end;
     end;
+
+    f.writestring('BasicSettings', 'NotesDir', NotesDir);
+
+    f.writestring('BasicSettings', 'ManyNotebooks', BoolToStr(ManyNoteBooks) );
+    f.writestring('BasicSettings', 'CaseSensitive', BoolToStr(SearchCaseSensitive));
+    f.writestring('BasicSettings', 'ShowIntLinks', BoolToStr(ShowIntLinks));
+    f.writestring('BasicSettings', 'ShowExtLinks', BoolToStr(ShowExtLinks));
+    f.WriteString('BasicSettings', 'ShowSplash', BoolToStr(ShowSplash));
+    f.WriteString('BasicSettings', 'Autostart', BoolToStr(Autostart));
+    f.WriteString('BasicSettings', 'ShowSearchAtStart', BoolToStr(SearchAtStart));
+
+    f.writestring('Fonts', 'UsualFont', UsualFont);
+    f.writestring('Fonts', 'FixedFont', FixedFont);
+    case FontRange of
+         TFontRange.FontHuge :   f.writestring('Fonts', 'FontRange', 'huge');
+         TFontRange.FontBig :    f.writestring('Fonts', 'FontRange', 'big');
+         TFontRange.FontMedium : f.writestring('Fonts', 'FontRange', 'medium');
+         TFontRange.FontSmall :  f.writestring('Fonts', 'FontRange', 'small');
+    end;
+
+    f.writestring('Colors', 'BackGndColour', ColorToString(BackGndColour));
+    f.writestring('Colors', 'HiColour', ColorToString(HiColour));
+    f.writestring('Colors', 'TextColour', ColorToString(TextColour));
+    f.writestring('Colors', 'TitleColour', ColorToString(TitleColour));
+
+
+    f.WriteString('Sync', 'Autosync', IntToStr(SyncRepeat));
+    case SyncClashOption of
+         TSyncClashOption.AlwaysAsk :  f.writestring('Sync', 'ClashOption', 'AlwaysAsk');
+         TSyncClashOption.UseLocal :   f.writestring('Sync', 'ClashOption', 'UseLocal');
+         TSyncClashOption.UseServer :  f.writestring('Sync', 'ClashOption', 'UseServer');
+	 TSyncClashOption.MakeCopy :   f.writestring('Sync', 'ClashOption', 'MakeCopy');
+    end;
+    f.writestring('Sync', 'Tested', BoolToStr(not SyncFirstRun));
+
+    if(SyncType = TSyncTransport.SyncNone)
+    then f.writestring('Sync', 'Type', 'none')
+    else if(SyncType = TSyncTransport.SyncFile )
+       then f.writestring('Sync', 'Type', 'file')
+       else f.writestring('Sync', 'Type', 'nextcloud');
+
+    f.writestring('Sync', 'FileRepo', SyncFileRepo);
+    f.writestring('Sync', 'NCURL', SyncNCUrl);
+    f.writestring('Sync', 'NCKey', SyncNCKey);
+    f.writestring('Sync', 'NCToken', SyncNCToken);
+    f.writestring('Sync', 'NCSecret', SyncNCSecret);
+
+    f.writestring('Spelling', 'Library', DictLibrary);
+    f.writestring('Spelling', 'DictPath', DictPath);
+    f.writestring('Spelling', 'DictFile', DictFile);
+
+    f.Free;
 
     ConfigWriting := false;
 end;
 
 procedure ConfigRead(source : String);
 var
-    ConfigFile : TINIFile;
+    f : TINIFile;
+    s : String;
 begin
 
     if(ConfigReading) then begin
@@ -338,101 +333,63 @@ begin
     end;
     ConfigReading := True;
 
-    if fileexists(LabelSettingPath.Caption) then
+    if fileexists(ConfigFile) then
     begin
-         ConfigFile :=  TINIFile.Create(LabelSettingPath.Caption);
+         f :=  TINIFile.Create(ConfigFile);
 
-         NotesDir:= ConfigFile.readstring('BasicSettings', 'NotesDir', GetDefaultNotesDir());
-         ShowIntLinks := StrToBool(ConfigFile.readstring('BasicSettings', 'ShowIntLinks', 'true');
-         ShowExtLinks := StrToBool(ConfigFile.readstring('BasicSettings', 'ShowExtLinks', 'true');
-         ManyNoteBooks := Configfile.readstring('BasicSettings', 'ManyNotebooks', 'false');
-         CaseSensitive := Configfile.readstring('BasicSettings', 'CaseSensitive', 'false');
-         ShowSplash := Configfile.ReadString('BasicSettings', 'ShowSplash', 'true');
-         Autostart := Configfile.ReadString('BasicSettings', 'Autostart', 'false');
-         SearchAtStart := Configfile.ReadString('BasicSettings', 'ShowSearchAtStart', 'false');
+         NotesDir:= f.readstring('BasicSettings', 'NotesDir', GetDefaultNotesDir());
 
-         ReqFontSize := ConfigFile.readstring('BasicSettings', 'FontSize', 'medium');
-         case ReqFontSize of
-              'huge'   : RadioFontHuge.Checked := true;
-              'big'    : RadioFontBig.Checked := true;
-              'medium' : RadioFontMedium.Checked := true;
-              'small'  : RadioFontSmall.Checked := true;
+         ManyNoteBooks        := StrToBool(f.readstring('BasicSettings', 'ManyNotebooks', 'false'));
+         SearchCaseSensitive  := StrToBool(f.readstring('BasicSettings', 'CaseSensitive', 'false'));
+         ShowIntLinks         := StrToBool(f.readstring('BasicSettings', 'ShowIntLinks', 'true'));
+         ShowExtLinks         := StrToBool(f.readstring('BasicSettings', 'ShowExtLinks', 'true'));
+         ShowSplash           := StrToBool(f.readstring('BasicSettings', 'ShowSplash', 'true'));
+         Autostart            := StrToBool(f.readstring('BasicSettings', 'Autostart', 'false'));
+         SearchAtStart        := StrToBool(f.readstring('BasicSettings', 'ShowSearchAtStart', 'true'));
+
+         UsualFont            := f.readstring('Fonts', 'UsualFont', GetUsualFont());
+         FixedFont            := f.readstring('Fonts', 'FixedFont', GetDefaultFixedFont());
+         FontRange := TFontRange.FontMedium;
+         case f.readstring('Fonts', 'FontRange', 'medium') of
+              'huge'    : FontRange := TFontRange.FontHuge;
+              'big'     : FontRange := TFontRange.FontBig;
+              'small'   : FontRange := TFontRange.FontSmall;
          end;
-         UsualFont := ConfigFile.readstring('BasicSettings', 'UsualFont', GetFontData(Self.Font.Handle).Name);
-         ButtonFont.Hint := UsualFont;
-         FixedFont := ConfigFile.readstring('BasicSettings', 'FixedFont', DefaultFixedFont);
-         if FixedFont = '' then FixedFont := DefaultFixedFont;
-         ButtonFixedFont.Hint := FixedFont;
 
-         BackGndColour:=   StringToColor(Configfile.ReadString('BasicSettings', 'BackGndColour', '0'));
-         HiColour :=   StringToColor(Configfile.ReadString('BasicSettings', 'HiColour', '0'));
-         TextColour := StringToColor(Configfile.ReadString('BasicSettings', 'TextColour', '0'));
-         TitleColour :=  StringToColor(Configfile.ReadString('BasicSettings', 'TitleColour', '0'));
-         UserSetColours := not ((BackGndColour = 0) and (HiColour = 0) and (TextColour = 0) and (TitleColour = 0));
-            	// Note - '0' is a valid colour, black. So, what says its not set is they are all '0';
+         BackGndColour := StringToColor(f.ReadString('Colors', 'BackGndColour',ColorToString(clCream)));
+         HiColour      := StringToColor(f.ReadString('Colors', 'HiColour',ColorToString(clYellow)));
+         TextColour    := StringToColor(f.ReadString('Colors', 'TextColour',ColorToString(clBlack)));
+         TitleColour   := StringToColor(f.ReadString('Colors', 'TitleColour',ColorToString(clBlue)));
 
-         case ConfigFile.readstring('SyncSettings', 'SyncOption', 'AlwaysAsk') of
-              'AlwaysAsk' : begin SyncOption := AlwaysAsk; RadioAlwaysAsk.Checked := True; end;
-              'UseLocal'  : begin SyncOption := UseLocal;  RadioUseLocal.Checked  := True; end;
-              'UseServer' : begin SyncOption := UseServer; RadioUseServer.Checked := True; end;
-              'MakeCopy' : begin SyncOption := MakeCopy; RadioMakeCopy.Checked := True; end;
-	 end;
-
-         tmp := ConfigFile.readstring('SyncSettings', 'SyncType', '');          // this is new way to do it, file, nextcloud, etc
-         if(tmp = '') then
-         begin
-              // Legacy
-              tmp := ConfigFile.readstring('SyncSettings', 'UseFileSync', '');
-              if (tmp = 'true') then tmp := 'file';
+         SyncRepeat       := StrToInt(f.ReadString('Sync', 'Autosync', '0'));
+         SyncClashOption  := TSyncClashOption.AlwaysAsk;
+         case f.ReadString('Sync', 'ClashOption', 'AlwaysAsk') of
+              'UseLocal'  : SyncClashOption := TSyncClashOption.UseLocal;
+              'UseServer' : SyncClashOption := TSyncClashOption.UseServer;
+              'MakeCopy'  : SyncClashOption := TSyncClashOption.MakeCopy;
          end;
-         if(tmp = 'file') then
-         begin
-              RadioSyncFile.checked := true;
-              RadioSyncNC.checked := false;
-              RadioSyncNone.checked := false;
-         end else if(tmp = 'nextcloud') then
-   	 begin
-              RadioSyncFile.checked := false;
-              RadioSyncNC.checked := true;
-              RadioSyncNone.checked := false;
-         end else begin
-             RadioSyncFile.checked := false;
-             RadioSyncNC.checked := false;
-             RadioSyncNone.checked := true;
-	 end;
+         SyncFirstRun     := StrToBool(f.ReadString('Sync', 'Tested', 'false'));
+         SyncType         := TSyncTransport.SyncNone;
+         case f.ReadString('Sync', 'Type','none') of
+              'file'      : SyncType := TSyncTransport.SyncFile;
+              'nextcloud' : SyncType := TSyncTransport.SyncNextCloud;
+         end;
 
-         CheckBoxAutoSync.enabled := not RadioSyncNone.checked;
+         SyncFileRepo     := f.ReadString('Sync', 'FileRepo', '');
+         SyncNCUrl        := f.ReadString('Sync', 'NCUrl', '');
+         SyncNCKey        := f.ReadString('Sync', 'NCKey', '');
+         SyncNCToken      := f.ReadString('Sync', 'NCToken', '');
+         SyncNCSecret     := f.ReadString('Sync', 'NCSecret', '');
 
-	 LabelFileSync.Caption := ConfigFile.readstring('SyncSettings', 'SyncRepo', '');
-         if LabelFileSync.Caption = '' then LabelFileSync.Caption := rsSyncNotConfig;
+         SetDictDefaults();
+         DictLibrary      := f.ReadString('Spelling', 'Library',DictLibrary  );
+         DictPath         := f.ReadString('Spelling', 'DictPath', DictPath);
+         DictFile         := f.ReadString('Spelling', 'DictFile', DictFile);
 
-         NCUrl    := ConfigFile.readstring('SyncSettings', 'SyncNCUrl', rsSyncNCDefault);
-	 LabelNCSyncURL.Caption := NCUrl;
-
-         if (length(LabelNCSyncURL.Caption)<10) then LabelNCSyncURL.Caption := rsSyncNotConfig;
-         NCKey    := ConfigFile.readstring('SyncSettings', 'SyncNCKey', MD5Print(MD5String(Format('%d',[Random(9999999-123400)+123400]))));
-	 NCToken  := ConfigFile.readstring('SyncSettings', 'SyncNCToken', '');
-	 NCSecret  := ConfigFile.readstring('SyncSettings', 'SyncNCSecret', '');
-
-         SyncFirstRun := (ConfigFile.readstring('SyncSettings', 'SyncTested', 'true') = 'true');
-
-         LabelLibrary.Caption := ConfigFile.readstring('Spelling', 'Library', '');
-         LabelDic.Caption := ConfigFile.readstring('Spelling', 'Dictionary', '');
-         SpellConfig := (LabelLibrary.Caption <> '') and (LabelDic.Caption <> '');     // indicates it worked once...
-
-         CheckBoxAutoSync.checked := ('true' = Configfile.ReadString('SyncSettings', 'Autosync', 'false'));
-         EditTimerSync.Text := Configfile.ReadString('SyncSettings', 'AutosyncElapse', '10');
-         EditTimerSync.Enabled := CheckBoxAutoSync.checked;
-         Label16.Enabled := CheckBoxAutoSync.checked;
-         Label17.Enabled := CheckBoxAutoSync.checked;
-
-         ConfigFile.free;
-
-         LabelNotespath.Caption := NotesDir;
-         ShowIntLinks := CheckShowIntLinks.Checked;
-         SetFontSizes();
+         f.free;
 
          ConfigReading := false;
+
          ConfigSave('CheckConfigFile1');
 
     end else begin
@@ -447,36 +404,45 @@ begin
         Autostart := true;
         SearchAtStart := false;
 
-        NCUrl := rsSyncNCDefault;
-        NCKey := MD5Print(MD5String(Format('%d',[Random(9999999-123400)+123400])));
-        NCToken :='';
-        NCSecret :='';
+        SyncRepeat := 0;
+        SyncClashOption  := TSyncClashOption.AlwaysAsk;
+
+        SyncFirstRun     := false;
+        SyncType         := TSyncTransport.SyncNone;
+
+        SyncRepeat      := 0;
+        SyncType        := TSyncTransport.SyncNone;
+        SyncClashOption := TSyncClashOption.AlwaysAsk;
+        SyncFirstRun    := true;
+        SyncFileRepo    := '';
+        SyncNCUrl       := '';
+        SyncNCKey       := '';
+        SyncNCToken     := '';
+        SyncNCSecret    := '';
 
         FixedFont := GetDefaultFixedFont();
+        UsualFont := GetUsualFont();
+        FontRange := TFontRange.FontMedium;
 
+        SetDictDefaults();
 
-        RadioFontMedium.Checked := True;
-        CheckShowIntLinks.Checked:= True;
-        CheckShowExtLinks.Checked := True;
-        CheckBoxAutoSync.Checked := False;
-        EditTimerSync.Text := '10';
-        UsualFont := GetFontData(Self.Font.Handle).Name;
-        FixedFont := DefaultFixedFont;
-        LabelFileSync.Caption := rsSyncNotConfig;
-        SyncFirstRun := false;
-        RadioSyncNone.checked := true;
+        BackGndColour := clCream;
+        HiColour := clYellow;
+        TextColour := clBlack;
+        TitleColour := clBlue;
 
         ConfigReading := false;
 
         ConfigSave('CheckConfigFile2');
     end;
 
+    SetFontSizes();
 
 end;
 
 
 
-{ ===== GENERIC FUNCTION ==== }
+{ ===== NOTE FUNCTIONS ==== }
 
 function GetNewID() : ANSIString;
 var
@@ -633,10 +599,14 @@ var  T : string;
     FontNames : array[1..7] of string
       = ('Monospace', 'Monaco', 'Nimbus Mono L', 'Liberation Mono', 'Lucida Console', 'Lucida Sans Typewriter', 'Courier New' );
 
+    Label1 : TLabel;
+
     function IsMono(FontName : String) : boolean;
     begin
+      Label1 := TLabel.Create(nil);
       Label1.Canvas.Font.Name := FontName;
       result := Label1.Canvas.TextWidth('i') = Label1.Canvas.TextWidth('w');
+      FreeAndNil(Label1);
     end;
 
     function IsDifferentSizes() : boolean;
@@ -665,6 +635,45 @@ begin
     end;
 end;
 
+function GetUsualFont() : String;
+var
+    f : TForm;
+begin
+    f := TForm.Create(nil);
+    Result := GetFontData(f.Font.Handle).Name;
+    FreeAndNil(f);
+end;
+
+procedure setFontSizes();
+begin
+   if(FontRange = FontBig) then begin
+    	FontSizeSmall  := 9;
+     	FontSizeLarge  := 17;
+     	FontSizeHuge   := 20;
+     	FontSizeTitle  := 18;			// Dont set this to one of the other sizes !
+     	FontSizeNormal := 14;
+   end
+   else if (FontRange = FontHuge) then begin
+        FontSizeSmall  := 11;
+        FontSizeLarge  := 20;
+        FontSizeHuge   := 23;
+        FontSizeTitle  := 21;			// Dont set this to one of the other sizes !
+        FontSizeNormal := 16;
+   end
+   else if (FontRange = FontMedium)then begin
+    	FontSizeSmall  := 8;
+ 	FontSizeLarge  := 14;
+ 	FontSizeHuge   := 18;
+ 	FontSizeTitle  := 16;			// Dont set this to one of the other sizes !
+ 	FontSizeNormal := 11;
+   end else begin
+    	FontSizeSmall  := 7;
+        FontSizeLarge  := 13;
+ 	FontSizeHuge   := 16;
+ 	FontSizeTitle  := 14;			// Dont set this to one of the other sizes !
+ 	FontSizeNormal := 10;
+   end;
+end;
 
 { ===== NETWORK ==== }
 
@@ -959,6 +968,42 @@ begin
 
 end;
 
+{ ===== SPELLING ==== }
+
+procedure SetDictDefaults();
+begin
+    DictPathAlt := ExtractFilePath(Application.ExeName);
+    {$ifdef WINDOWS}
+    DictPath := 'C:\Program Files\LibreOffice 5\share\extensions\dict-en\';
+    {$ENDIF}
+    {$ifdef DARWIN}
+    DictPath := '/Library/Spelling/';
+    DictPathAlt := '/Applications/tomboy-reborn.app/Contents/Resources/';
+    {$endif}
+    {$ifdef LINUX}
+    DictPath := '/usr/share/hunspell/';
+    DictPathAlt := '/usr/share/myspell/';
+    {$ENDIF}
+    DictLibrary := '';
+    DictFile := '';
+end;
+
+{ ===== SYNC ==== }
+
+function isSyncConfigured() : boolean;
+begin
+  if(SyncType = TSyncTransport.SyncNone) then exit(false);
+  if(SyncType = TSyncTransport.SyncFile) then exit(length(SyncFileRepo)>0);
+  if(SyncType = TSyncTransport.SyncNextCloud) then
+    begin
+       if(length(SyncNCURL) = 0) then exit(false);
+       if(length(SyncNCKey) = 0) then exit(false);
+       if(length(SyncNCToken) = 0) then exit(false);
+       if(length(SyncNCSecret) = 0) then exit(false);
+       exit(true);
+    end;
+  exit(false);
+end;
 
 initialization
 

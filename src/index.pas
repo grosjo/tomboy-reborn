@@ -1,36 +1,4 @@
 unit Index;
-{
- * Copyright (C) 2018 David Bannon
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-}
-
-{  This unit find and displays all the 'headings' in a note, returns with
-   the block index of the one user clicked.
-    A Heading is any complete line that is all either Large or Huge text.
-    We indent Huge, Large Bold and just Large differently so easy to see
-    relative heading importance.
-
-HISTORY
-    2019/05/14  Display strings all (?) moved to resourcestrings
-}
 
 {$mode objfpc}{$H+}
 
@@ -66,7 +34,7 @@ implementation
 
 { TFormIndex }
 
-uses TRSettings;
+uses TRcommon;
 
 procedure TFormIndex.FormShow(Sender: TObject);
 var
@@ -109,13 +77,13 @@ begin
         // writeln('[' + inttostr(Index) + '] ' + TKmemoTextBlock(TheKMemo.Blocks.Items[Index]).Text);
         if (TheKMemo.Blocks.Items[Index].ClassNameIs('TKMemoTextBlock')
                     and (TKmemoTextBlock(TheKMemo.Blocks.Items[Index]).TextStyle.Font.Size
-                        in [Sett.FontTitle, Sett.FontLarge, Sett.FontHuge]))
+                        in [FontSizeTitle, FontSizeLarge, FontSizeHuge]))
         then {begin writeln('================ Examined ' + TKmemoTextBlock(TheKMemo.Blocks.Items[Index]).Text);} inc(Index){; end }
         else                    // its not a heading
             exit(Result)        // Remember we may be beyond the content ....
     end;
     // OK, its a heading, all blocks are Large or Huge. Huge=NoSpaces; LargeBold=2 spaces; Large=4 spaces
-    if TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.Size = Sett.FontLarge then begin
+    if TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.Size = FontSizeLarge then begin
         St := '.  ';
         if not (fsBold in TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.style) then
             St := St + '   ';

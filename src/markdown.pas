@@ -93,7 +93,7 @@ var
 
 implementation
 
-uses TRsettings, Clipbrd;
+uses TRcommon, TRsettings, Clipbrd;
 {$R *.lfm}
 
 { TFormMarkdown }
@@ -291,11 +291,11 @@ begin
     then begin
         // OK, its a single block line. But is it a heading ?
 
-        if TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.Size = Sett.FontTitle then
+        if TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.Size = FontSizeTitle then
               Result := '# ' + TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).Text;
-        if TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.Size = Sett.FontHuge then
+        if TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.Size = FontSizeHuge then
               Result := '## ' + TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).Text;
-        if TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.Size = Sett.FontLarge then
+        if TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.Size = FontSizeLarge then
               Result := '### ' + TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).Text;
     end;
 end;
@@ -347,7 +347,7 @@ begin
 
     // Normal mode.
     // When smallfont turns off
-    if (SmallFont and (FT.TextStyle.Font.Size <> Sett.FontSmall)) then begin
+    if (SmallFont and (FT.TextStyle.Font.Size <> FontSizeSmall)) then begin
         Buff := Buff + '</sub>';
         SmallFont := False;
     end;
@@ -429,7 +429,7 @@ begin
     end;
 
     // SmallFont turns on
-    if ((not SmallFont) and (FT.TextStyle.Font.Size = Sett.FontSmall)) then begin
+    if ((not SmallFont) and (FT.TextStyle.Font.Size = FontSizeSmall)) then begin
         Buff := Buff + '<sub>';
         SmallFont := True;
     end;

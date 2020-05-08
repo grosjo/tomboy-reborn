@@ -1,4 +1,4 @@
-unit colours;
+unit TRcolours;
 
 {$mode objfpc}{$H+}
 

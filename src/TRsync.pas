@@ -394,10 +394,10 @@ begin
 
     ClashAction := SynUnset;
 
-    case Sett.SyncOption of
-         UseLocal : ClashAction := SynAllLocal;
-         UseServer : ClashAction := SynAllRemote;
-         MakeCopy : ClashAction := SynAllCopy;
+    case SyncClashOption of
+         TSyncClashOption.UseLocal : ClashAction := SynAllLocal;
+         TSyncClashOption.UseServer : ClashAction := SynAllRemote;
+         TSyncClashOption.MakeCopy : ClashAction := SynAllCopy;
     end;
 
     for Index := 0 to NoteMetaData.Count -1 do
@@ -628,21 +628,15 @@ begin
     case Mode of
         SyncFile : begin
         	Transport := TFileSync.Create;
-	        Transport.setParam('RemoteAddress',AppendPathDelim(Sett.LabelFileSync.Caption));
+	        Transport.setParam('RemoteAddress',AppendPathDelim(SyncFileRepo));
                 end;
 	SyncNextCloud : begin
                 Transport := TNextSync.Create;
-	        Transport.setParam('URL', Sett.NCUrl);
-                Transport.setParam('KEY', Sett.NCKey);
-                Transport.setParam('TOKEN', Sett.NCToken);
-                Transport.setParam('SECRET', Sett.NCSecret);
+	        Transport.setParam('URL', SyncNCUrl);
+                Transport.setParam('KEY', SyncNCKey);
+                Transport.setParam('TOKEN', SyncNCToken);
+                Transport.setParam('SECRET', SyncNCSecret);
                 end;
-    end;
-
-    if TransportMode = SyncAndroid then
-    begin
-        ConfigDir := ConfigDir + 'android' + PathDelim;
-        ForceDirectory(ConfigDir);
     end;
 
     Result := Transport.SetTransport();

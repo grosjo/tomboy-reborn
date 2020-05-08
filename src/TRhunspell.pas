@@ -1,5 +1,6 @@
+unit TRhunspell;
+
 {$MODE objfpc}{$H+}
-unit hunspell;
 
 {	Hunspell interface.
 	Based on code that seems to appear in lots of places in the Lazarus Forum
@@ -55,11 +56,9 @@ type
     ErrorMessage : ANSIString;
             { Will have a full name to library if correctly loaded at create }
     LibraryFullName : string;
-            { if set t, typically by caller, prints a lot of whats happening }
-    DebugMode : boolean;
             { Will have a "first guess" as to where dictionaries are, poke another name in
             and call FindDictionary() if default did not work }
-    constructor Create(const Debug : boolean; const FullLibName : ANSIString = '');
+    constructor Create(const FullLibName : ANSIString = '');
     destructor Destroy; override;
             { Returns True if word spelt correctly }
     function Spell(Word: string): boolean;
@@ -104,7 +103,7 @@ begin
     Result := false;
     HunLibHandle := LoadLibrary(PAnsiChar(libraryName));
     if HunLibHandle = NilHandle then begin
-        if Debugmode then debugln('Failed to load library ' + libraryName);
+        debugln('Failed to load library ' + libraryName);
         ErrorMessage := 'Failed to load library ' + libraryName;
     end else begin
         Result := True;
@@ -133,30 +132,29 @@ begin
     if ErrorMessage = '' then
         if not Result then begin
             ErrorMessage := 'Failed to find functions in ' + LibraryName;
-            if debugmode then debugln('Hunspell Failed to find functions in ' + LibraryName);
+            debugln('Hunspell Failed to find functions in ' + LibraryName);
         end;
-    if Result and debugmode then  debugln('Loaded library OK ' + LibraryName);
+    if Result then  debugln('Loaded library OK ' + LibraryName);
 end;
 
-constructor THunspell.Create(const Debug : boolean; const FullLibName : ANSIString = '');
+constructor THunspell.Create(const FullLibName : ANSIString = '');
 begin
-    DebugMode := Debug;
     ErrorMessage := '';
     LibraryFullName := FullLibName;
     if LibraryFullName = '' then
         if Not FindLibrary(LibraryFullName) then begin
-            if debugmode then debugln('Cannot find Hunspell library');
+            debugln('Cannot find Hunspell library');
             ErrorMessage := 'Cannot find Hunspell library';
             exit();
         end;
-    if debugmode then debugln('Creating Hunspell with library = ' + LibraryFullName);
+    debugln('Creating Hunspell with library = ' + LibraryFullName);
     LoadHunspellLibrary(LibraryFullName);    // will flag any errors it finds
     Speller := nil;           // we are not GoodToGo yet, need a dictionary ....
 end;
 
 destructor THunspell.Destroy;
 begin
-    if DebugMode then debugln('About to destry Hunspell');
+    debugln('About to destry Hunspell');
     if (HunLibHandle <> 0) and HunLibLoaded then begin
         if Speller<>nil then hunspell_destroy(Speller);
         Speller:=nil;
@@ -254,16 +252,16 @@ begin
     FindClose(Info);
     {$endif}
     if Result then begin
-        if DebugMode then debugln('FindLibrary looks promising [', FullName, ']');
+        debugln('FindLibrary looks promising [', FullName, ']');
     end else
-        if DebugMode then debugln('FindLibrary Failed to find a Hunspell Library', FullName, ']');
+        debugln('FindLibrary Failed to find a Hunspell Library', FullName, ']');
 end;
 
 function THunspell.SetDictionary(const FullDictName: string) : boolean;
 var
     FullAff : string;
 begin
-    if debugmode then debugln('about to try to set dictionary');
+    debugln('about to try to set dictionary');
     Result := False;
     if not FileExistsUTF8(FullDictName) then exit();
     FullAff := FullDictName;
@@ -279,7 +277,7 @@ begin
     try
         if assigned(Speller) then begin
                 hunspell_destroy(Speller);
-                if debugmode then debugln('Speller destroyed');
+                debugln('Speller destroyed');
         end;
         Speller := hunspell_create(PChar(FullAff), PChar(FullDictName));
                         // Create does not test the dictionaries !

@@ -12,7 +12,8 @@ uses
   X, Y, Width, Height : integer;
 end;}
 
-type TNoteUpdateRec = record
+type TNoteUpdateRec =
+  record
      CPos : shortstring;
      X, Y : shortstring;
      Width, Height : shortstring;
@@ -20,71 +21,61 @@ type TNoteUpdateRec = record
      FFName : string;
      LastChangeDate : string;   // if '', its a content save, generate a new timestamp
      ErrorStr : string;         // '' if all OK, not used everywhere....
-end;
+  end;
 
 
 type
 
-    { TBSaveNote }
+{ TSaveNote }
 
- TBSaveNote = class
+ TSaveNote = class
 
-       private
-            OutStream:TMemoryStream;
-            ID : ANSIString;
-            FSize : integer;
-			Bold : boolean;
-			Italics : boolean;
-			HiLight : boolean;
-                        Underline : boolean;
-                        Strikeout : boolean;
-                        FixedWidth : boolean;
-            PrevFSize : integer;
-			PrevBold : boolean;
-			PrevItalics : boolean;
-			PrevHiLight : boolean;
-                        PrevUnderline : boolean;
-                        PrevStrikeout : boolean;
-                        PrevFixedWidth : boolean;
-			InList : boolean;
-            KM : TKMemo;
-            function AddTag(const FT : TKMemoTextBlock; var Buff : ANSIString; CloseOnly : boolean = False) : ANSIString;
-			function BlockAttributes(Bk: TKMemoBlock): AnsiString;
-			procedure BulletList(var Buff: ANSIString);
-            procedure CopyLastFontAttr();
-			function FontAttributes(const Ft : TFont; Ts : TKMemoTextStyle): ANSIString;
-			//function RemoveBadCharacters(const InStr: ANSIString): ANSIString;
-            function SetFontXML(Size : integer; TurnOn : boolean) : string;
-          	function Header() : ANSIstring;
-         	//function Footer(Loc: TNoteLocation): ANSIstring;
-            function Footer(Loc : TNoteUpdateRec) : string;
-            //function GetLocalTime():ANSIstring;
+ private
+        OutStream:TMemoryStream;
+        ID : ANSIString;
+        FSize : integer;
+	Bold : boolean;
+	Italics : boolean;
+	HiLight : boolean;
+        Underline : boolean;
+        Strikeout : boolean;
+        FixedWidth : boolean;
+        PrevFSize : integer;
+	PrevBold : boolean;
+	PrevItalics : boolean;
+	PrevHiLight : boolean;
+        PrevUnderline : boolean;
+        PrevStrikeout : boolean;
+        PrevFixedWidth : boolean;
+	InList : boolean;
+        KM : TKMemo;
+        function AddTag(const FT : TKMemoTextBlock; var Buff : ANSIString; CloseOnly : boolean = False) : ANSIString;
+	function BlockAttributes(Bk: TKMemoBlock): AnsiString;
+	procedure BulletList(var Buff: ANSIString);
+        procedure CopyLastFontAttr();
+	function FontAttributes(const Ft : TFont; Ts : TKMemoTextStyle): ANSIString;
 
-            // Assembles a list of tags this note is a member of, list is
-            // used in all note's footer - needs ID to have been set
-            // function NoteBookTags() : ANSIString;
-       public
-            TimeStamp : string;
-            Title : ANSIString;
-            // set to orig createdate if available, if blank, we'll use now()
-            CreateDate : ANSIString;
-            procedure SaveNewTemplate(NotebookName: ANSIString);
-         	procedure ReadKMemo(FileName : ANSIString; KM1 : TKMemo);
-            function WriteToDisk(const FileName: ANSIString; var NoteLoc: TNoteUpdateRec
-                ): boolean;
-            constructor Create;
-            destructor Destroy;  override;
-    end;
+        function SetFontXML(FontSize : TFontRange; s : String) : string;
+
+        function Header() : ANSIstring;
+        function Footer(Loc : TNoteUpdateRec) : string;
+
+ public
+       TimeStamp : string;
+       Title : ANSIString;
+
+       CreateDate : ANSIString;
+       procedure SaveNewTemplate(NotebookName: ANSIString);
+       procedure ReadKMemo(FileName : ANSIString; KM1 : TKMemo);
+       function WriteToDisk(const FileName: ANSIString; var NoteLoc: TNoteUpdateRec): boolean;
+       constructor Create;
+       destructor Destroy;  override;
+ end;
 
 
 implementation
 
-uses FileUtil               // Graphics needed for font style defines
-    ,LazUTF8
-    ,TRSettings				// User settings and some defines across units.
-    ,TRSearchUnit				// So we have access to NoteBookList
-    ,LazFileUtils           // For ExtractFileName...
-    ,SyncUtils;             // For removebadxmlcharacters()
+uses FileUtil,LazUTF8,TRSearchUnit,LazFileUtils,SyncUtils;
 
 const
   {$ifdef LINUX}
@@ -97,12 +88,12 @@ const
   MonospaceFont = 'Lucida Console';
   {$ifend}
 
-constructor TBSaveNote.Create;
+constructor TSaveNote.Create;
 begin
     OutStream := Nil;
 end;
 
-destructor TBSaveNote.Destroy;
+destructor TSaveNote.Destroy;
 begin
     if OutStream <> Nil then begin
         debugln('ERROR - ID=' + ID + '  outstream was not routinly freed .....');
@@ -111,19 +102,17 @@ begin
     end;
 end;
 
-function TBSaveNote.SetFontXML(Size : integer; TurnOn : boolean) : string;
+function TSaveNote.SetFontXML(FontSize : TFontRange; s : String) : string;
 begin
-    Result := '';
-	if Size = Sett.FontHuge then
-         if TurnOn then Result  := '<size:huge>' else Result  := '</size:huge>';
-    if Size = sett.FontLarge then
-         if TurnOn then Result  := '<size:large>' else Result  := '</size:large>';
-    if Size = Sett.FontSmall then
-         if TurnOn then Result  := '<size:small>' else Result  := '</size:small>';
+    Result := s;
+    if FontSize = TFontRange.FontHuge
+    then Result  := '<size:huge>' + s + '</size:huge>'
+    else if FontSize = TFontRange.FontBig then Result  := '<size:large>' + s + '</size:large>'
+    else if FontSize = TFontRange.FontSmall then Result  := '<size:small>' + s + '</size:small>';
 end;
 
 
-function TBSaveNote.AddTag(const FT : TKMemoTextBlock; var Buff : ANSIString; CloseOnly : boolean = False) : ANSIString;
+function TSaveNote.AddTag(const FT : TKMemoTextBlock; var Buff : ANSIString; CloseOnly : boolean = False) : ANSIString;
 {var
    TestVar : Boolean;}
 begin
@@ -151,7 +140,7 @@ begin
     end;
 
     // When Highlight turns OFF
-    if (HiLight and (not (FT.TextStyle.Brush.Color = Sett.HiColour))) then begin
+    if (HiLight and (not (FT.TextStyle.Brush.Color = HiColour))) then begin
 		if Bold then Buff := Buff + '</bold>';
         if Italics then Buff := Buff + '</italic>';
         Buff := Buff + '</highlight>';
@@ -206,7 +195,7 @@ begin
     end;
 
     // When Font size changes
-    if (FSize <> FT.TextStyle.Font.Size) and (FT.TextStyle.Font.Size <> Sett.FontTitle) then begin
+    if (FSize <> FT.TextStyle.Font.Size) and (FT.TextStyle.Font.Size <> FontSizeTitle) then begin
 		if Bold then Buff := Buff + '</bold>';
         if Italics then Buff := Buff + '</italic>';
         if HiLight then Buff := Buff + '</highlight>';
@@ -214,9 +203,10 @@ begin
         if Strikeout then Buff := Buff + '</strikeout>';                      //
                               // if strikeout, underline, fixedwidth here?
 
-        Buff := Buff + SetFontXML(FSize, false);
+        //Buff := Buff + SetFontXML(FSize, false); -> JOAN : SHALL NOT BE COMMENTED
+
         // better for pretty tags but generates invalid tags ! See below ....
-        Buff := Buff + SetFontXML(FT.TextStyle.Font.Size, true);
+        //Buff := Buff + SetFontXML(FT.TextStyle.Font.Size, true); -> JOAN : SHALL NOT BE COMMENTED
 
         if Strikeout then Buff := Buff + '<strikeout>';                         //
         if Underline then Buff := Buff + '<underline>';                         //
@@ -282,7 +272,7 @@ begin
     end;
 
     // Highlight turns ON
-    if ((not HiLight) and (FT.TextStyle.Brush.Color = Sett.HiColour)) then begin
+    if ((not HiLight) and (FT.TextStyle.Brush.Color = HiColour)) then begin
         if Bold then Buff := Buff + '</bold>';
         if Italics then Buff := Buff + '</italic>';
         Buff := Buff + '<highlight>';
@@ -313,7 +303,7 @@ end;
     }
     // ListOff BoldOff ItalicsOff HiLiteOff FontSize HiLite Ital Bold List
 
-procedure TBSaveNote.BulletList(var Buff : ANSIString);
+procedure TSaveNote.BulletList(var Buff : ANSIString);
 var
    StartStartSt, StartEndSt, EndStartSt, EndEndSt : ANSIString;
 begin
@@ -372,14 +362,14 @@ begin
         EndStartSt := EndStartSt + '</monospace>';
         EndEndSt := '<monospace>' + EndEndSt;
     end;
-    if PrevFSize <> Sett.FontNormal then begin
-        StartStartSt := StartStartSt + SetFontXML(PrevFSize, False);
-        StartEndSt := SetFontXML(PrevFSize, True) + StartEndSt;
-	end;
-    if FSize <> Sett.FontNormal then begin
-        EndStartSt := EndStartSt + SetFontXML(FSize, False);
-        EndEndSt := SetFontXML(FSize, True) + EndEndSt;
-	end;
+    //if PrevFSize <> FontSizeNormal then begin
+    //    StartStartSt := StartStartSt + SetFontXML(PrevFSize, False);
+    //    StartEndSt := SetFontXML(PrevFSize, True) + StartEndSt;
+//	end;
+    //if FSize <> FontSizeNormal then begin
+    //    EndStartSt := EndStartSt + SetFontXML(FSize, False);
+    //    EndEndSt := SetFontXML(FSize, True) + EndEndSt;
+//	end;
 
     {writeLn('Buff at Start [' + Buff + ']');
     writeln('StartStart    [' + StartStartSt + ']');
@@ -394,14 +384,14 @@ begin
 end;
 
 // This is just a debug function.
-function TBSaveNote.BlockAttributes(Bk : TKMemoBlock) : AnsiString;
+function TSaveNote.BlockAttributes(Bk : TKMemoBlock) : AnsiString;
 begin
    Result := TKMemoTextBlock(BK).ClassName;
    if fsBold in TKMemoTextBlock(BK).TextStyle.Font.Style then
    Result := Result + ' Bold ';
    if fsItalic in TKMemoTextBlock(BK).TextStyle.Font.Style then
    Result := Result + ' Italic ';
-   if TKMemoTextBlock(BK).TextStyle.Brush.Color = Sett.HiColour then
+   if TKMemoTextBlock(BK).TextStyle.Brush.Color = HiColour then
    Result := Result + ' HighLight ';
    Result := Result + ' size=' + inttostr(TKMemoTextBlock(BK).TextStyle.Font.Size);
    if fsUnderline in TKMemoTextBlock(BK).TextStyle.Font.Style then
@@ -415,14 +405,14 @@ begin
 end;
 
     // I suspect this function is no longer used.
-function TBSaveNote.FontAttributes(const Ft : TFont; Ts : TKMemoTextStyle) : ANSIString;
+function TSaveNote.FontAttributes(const Ft : TFont; Ts : TKMemoTextStyle) : ANSIString;
 begin
    Result := '';
    if fsBold in Ft.Style then
    Result := Result + ' Bold ';
    if fsItalic in Ft.Style then
    Result := Result + ' Italic ';
-   if Ts.Brush.Color = Sett.HiColour then
+   if Ts.Brush.Color = HiColour then
    Result := Result + ' HighLight ';
    Result := Result + inttostr(Ft.Size);
    if fsUnderline in Ft.Style then
@@ -433,7 +423,7 @@ begin
    Result := Result + ' FixedWidth ';
 end;
 
-procedure TBSaveNote.SaveNewTemplate(NotebookName : ANSIString);
+procedure TSaveNote.SaveNewTemplate(NotebookName : ANSIString);
 var
    GUID : TGUID;
    OStream:TFilestream;
@@ -459,7 +449,7 @@ begin
    end;
 end;
 
-procedure TBSaveNote.CopyLastFontAttr();
+procedure TSaveNote.CopyLastFontAttr();
 begin
   PrevFSize := FSize;
   PrevBold := Bold;
@@ -471,7 +461,7 @@ begin
   PrevFSize := FSize;
 end;
 
-procedure TBSaveNote.ReadKMemo(FileName : ANSIString; KM1 : TKMemo);
+procedure TSaveNote.ReadKMemo(FileName : ANSIString; KM1 : TKMemo);
 var
    Buff : ANSIstring = '';
    // OutStream:TFilestream;
@@ -481,7 +471,7 @@ var
    // BlankFont : TFont;
  begin
     KM := KM1;
-    FSize := Sett.FontNormal;
+    FSize := FontSizeNormal;
     Bold := false;
      Italics := False;
      HiLight := False;
@@ -565,8 +555,8 @@ var
             if Underline then Buff := Buff + '</underline>';
             if Strikeout then Buff := Buff + '</strikeout>';
             if FixedWidth then Buff := Buff + '</monospace>';
-            if FSize <> Sett.FontNormal then
-                 Buff := Buff + SetFontXML(FSize, False);
+            //if FSize <> FontSizeNormal then
+            //     Buff := Buff + SetFontXML(FSize, False);
             if length(Buff) > 0 then
                   OutStream.Write(Buff[1], length(Buff));
             //Buff := Footer();
@@ -589,7 +579,7 @@ end;
 
 // gets called (from outside) after all content assembled.  Its done from outside
 // as the calling unit has control of KMemo's locking.
-function TBSaveNote.WriteToDisk(const FileName: ANSIString; var NoteLoc : TNoteUpdateRec) : boolean;
+function TSaveNote.WriteToDisk(const FileName: ANSIString; var NoteLoc : TNoteUpdateRec) : boolean;
 var
    Buff : string = '';
    TmpName : string;
@@ -638,31 +628,7 @@ begin
     if not Result then NoteLoc.ErrorStr:='Failed Rename';
 end;
 
-{                    // moved to note lister
-function TBSaveNote.NoteBookTags(): ANSIString;
-var
-    SL : TStringList;
-    Index : Integer;
-begin
-   Result := '';
-   if SearchForm.NoteLister = nil then exit;
-   SL := TStringList.Create;
-   if SearchForm.NoteLister.GetNotebooks(SL, ID) then begin  // its a template
-   		Result := '  <tags>'#10'    <tag>system:template</tag>'#10;
-        if SL.Count > 0 then
-        	Result := Result + '    <tag>system:notebook:' + SL[0] + '</tag>'#10'  </tags>'#10;
-   end else
-   		if SL.Count > 0 then begin					// its a Notebook Member
-        	Result := '  <tags>'#10;
-        	for Index := 0 to SL.Count -1 do		// here, we auto support multiple notebooks.
-        		Result := Result + '    <tag>system:notebook:' + SL[Index] + '</tag>'#10;
-        	Result := Result + '  </tags>'#10;
-		end;
-    SL.Free;
-end;
-}
-
-function TBSaveNote.Header(): ANSIstring;
+function TSaveNote.Header(): ANSIstring;
 var
    S1, S2, S3, S4 : ANSIString;
 begin
@@ -674,7 +640,7 @@ begin
 end;
 
 
-function TBSaveNote.Footer(Loc : TNoteUpdateRec {TNoteLocation}): ANSIstring;
+function TSaveNote.Footer(Loc : TNoteUpdateRec {TNoteLocation}): ANSIstring;
 var
    S1, S2, S3, S4, S5, S6 : string;
 begin

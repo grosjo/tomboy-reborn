@@ -1,4 +1,4 @@
-unit TRAutoStartCtrl
+unit TRAutoStartCtrl;
 
 {$mode objfpc}{$H+}
 

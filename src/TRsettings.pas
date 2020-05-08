@@ -9,8 +9,8 @@ unit TRsettings;
 interface
 
 uses Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
-    Buttons, Menus, ComCtrls, ExtCtrls, md5,
-    TRcommon, TRtexts, TRnextSetup, Types;
+    Buttons, Menus, ComCtrls, ExtCtrls,
+    TRcommon, TRtexts, TRnextSetup;
 
 // Types;
 
@@ -20,6 +20,7 @@ type
 
     TSettings = class(TForm)
           ButtDefaultNoteDir: TButton;
+          ButtonSetColours: TButton;
           ButtonNCSetup: TSpeedButton;
 	  CheckBoxAutoSync: TCheckBox;
           GroupBox2: TGroupBox;
@@ -89,10 +90,9 @@ type
 	  RadioUseLocal: TRadioButton;
 	  RadioUseServer: TRadioButton;
 	  SelectDirectoryDialog1: TSelectDirectoryDialog;
-          SpeedButHide: TSpeedButton;
-	  SpeedButHelp: TSpeedButton;
-          SpeedButtTBMenu: TSpeedButton;
+          SettingsCancel: TSpeedButton;
           ButtonFileSetup: TSpeedButton;
+          SettingsOK: TSpeedButton;
 	  TabBasic: TTabSheet;
           TabSpell: TTabSheet;
 	  TabSync: TTabSheet;
@@ -100,9 +100,9 @@ type
 
 
         procedure ButtDefaultNoteDirClick(Sender: TObject);
+        procedure ButtonSetColoursClick(Sender: TObject);
         procedure ButtonNCSetupClick(Sender: TObject);
-	procedure ButtonSetColoursClick(Sender: TObject);
-        procedure ButtonFixedFontClick(Sender: TObject);
+	procedure ButtonFixedFontClick(Sender: TObject);
         procedure ButtonFontClick(Sender: TObject);
         procedure ButtonSetDictionaryClick(Sender: TObject);
 	procedure ButtonSetNotePathClick(Sender: TObject);
@@ -120,7 +120,6 @@ type
         procedure FormCreate(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
         procedure FormHide(Sender: TObject);
-        procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
         procedure FormShow(Sender: TObject);
         procedure ListBoxDicClick(Sender: TObject);
 	procedure PageControl1Change(Sender: TObject);
@@ -130,22 +129,17 @@ type
         procedure RadioFontMediumChange(Sender: TObject);
         procedure RadioFontSmallChange(Sender: TObject);
 	procedure SpeedButHelpClick(Sender: TObject);
-        procedure SpeedButHideClick(Sender: TObject);
+        procedure SettingsCancelClick(Sender: TObject);
         procedure SpeedButtTBMenuClick(Sender: TObject);
 	procedure ButtonFileSetupClick(Sender: TObject);
         procedure RadioSyncChange(Sender: TObject);
-        procedure TabBasicContextPopup(Sender: TObject; MousePos: TPoint;
-          var Handled: Boolean);
-        procedure TabSpellResize(Sender: TObject);
+        procedure TabBasicContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
         procedure TimerAutoSyncTimer(Sender: TObject);
-        procedure SetColours;
-        procedure LoadSettings();
-    private
-        UserSetColours : boolean;
+   private
+      procedure LoadSettings();
 
-
-        // Ret true and displays on screen if passed Full name is a usable dictonary
-        // sets SpellConfig and triggers a config save if successful
+       // Ret true and displays on screen if passed Full name is a usable dictonary
+       // sets SpellConfig and triggers a config save if successful
         function CheckDictionary(const FullDicName : string): boolean;
 
         // Returns the number of files that could be dictionaries in indicated directory
@@ -156,23 +150,6 @@ type
           or a full name was provided in DicFullName, just tests that name.
           If successfull show on screen and saves config }
         procedure CheckSpelling(const DicFullName: string='');
-        procedure DicDefaults(var DicPathAlt: string);
-
-
-
-    public
-        AreClosing : boolean;       // False until set true by mainUnit FormClose.
-        BackGndColour : TColor;     // Next three set in main unit.
-        TextColour : TColor;
-        HiColour : TColor;
-        TitleColour : TColor;
-        DefaultFixedFont : string;
-        DarkTheme : boolean;
-
-        { Indicates Spell is configured and LabelLibrary and LabelDic should
-            contain valid full file names.}
-        SpellConfig : boolean;
-
 
     end;
 
@@ -195,12 +172,12 @@ implementation
 
 uses LazLogger,
     LazFileUtils,   // LazFileUtils needed for TrimFileName(), cross platform stuff;
+    LCLType,        // Keycodes ....
     TRsearchUnit,		// So we can call IndexNotes() after altering Notes Dir
     TRsyncUI,
-    hunspell,       // spelling check
-    LCLType,        // Keycodes ....
-    Autostart,
-    Colours;
+    TRhunspell,       // spelling check
+    TRcolours,
+    TRAutoStartCtrl;
 
 var
     Spell: THunspell;
@@ -218,25 +195,43 @@ begin
      SearchForm.IndexNotes();
 end;
 
+procedure TSettings.ButtonSetColoursClick(Sender: TObject);
+begin
+   FormColours.CBack   := BackGndColour;
+   FormColours.CHiBack := HiColour;
+   FormColours.CText   := TextColour;
+   FormColours.CTitle  := TitleColour;
+
+   case FormColours.ShowModal of
+      mrOK     :  begin
+         BackGndColour := FormColours.CBack;
+	 HiColour := FormColours.CHiBack;
+	 TextColour := FormColours.CText;
+	 TitleColour := FormColours.CTitle;
+         //UserSetColours := True;
+      end;
+   end;
+end;
+
 procedure TSettings.ButtonNCSetupClick(Sender: TObject);
 begin
-   if(NCUrl = '')
+   if(SyncNCUrl = '')
    then FormNCSetup.URL.Text := rsSyncNCDefault
-   else FormNCSetup.URL.Text   :=  NCUrl;
+   else FormNCSetup.URL.Text   :=  SyncNCUrl;
 
-   FormNCSetup.setKey(NCKey);
-   FormNCSetup.setToken(NCToken);
+   FormNCSetup.setKey(SyncNCKey);
+   FormNCSetup.setToken(SyncNCToken);
 
    FormNCSetup.ShowModal();
 
    if( FormNCSetup.isSuccess() ) then
    begin
-      NCUrl := FormNCSetup.URL.Text;
-      NCKey := FormNCSetup.getKey();
-      NCToken := FormNCSetup.getToken();
-      NCSecret := FormNCSetup.getTokenSecret();
+      SyncNCUrl := FormNCSetup.URL.Text;
+      SyncNCKey := FormNCSetup.getKey();
+      SyncNCToken := FormNCSetup.getToken();
+      SyncNCSecret := FormNCSetup.getTokenSecret();
 
-      LabelNCSyncURL.Caption := NCUrl;
+      LabelNCSyncURL.Caption := SyncNCUrl;
 
       RadioSyncNC.checked := true;
       SyncFirstRun := true;
@@ -244,10 +239,6 @@ begin
    end;
 end;
 
-procedure TSettings.ButtonSetColoursClick(Sender: TObject);
-begin
-
-end;
 
 procedure TSettings.ButtonFixedFontClick(Sender: TObject);
 begin
@@ -296,23 +287,19 @@ begin
    end;
 end;
 
-procedure TSettings.ButtonSetSpellLibraryClick(Sender: TObject);
-begin
-
-end;
 
 procedure TSettings.CheckAutostartChange(Sender: TObject);
 var
      auto : TAutoStartCtrl;
 begin
-   Autostart := CheckAutostartChange.Checked;
+   Autostart := CheckAutostart.Checked;
 
    auto := TAutoStartCtrl.Create('tomboy-reborn', CheckAutostart.Checked);
    if auto.ErrorMessage <> '' then
         ShowMessage('Error setting autstart' + Auto.ErrorMessage);
    FreeAndNil(Auto);
 
-   ConfigSave('CheckAutostartChange');
+   debugln('CheckAutostartChange');
 end;
 
 procedure TSettings.CheckBoxAutoSyncChange(Sender: TObject);
@@ -323,37 +310,37 @@ begin
 
    if(not CheckBoxAutoSync.checked) then SyncRepeat:=0;
 
-   ConfigSave('CheckBoxAutoSyncChange');
+   debugln('CheckBoxAutoSyncChange');
 end;
 
 procedure TSettings.CheckManyNotebooksChange(Sender: TObject);
 begin
-  ManyNoteBooks := CheckManyNotebooksChange.Checked;
-  ConfigSave('CheckManyNotebooksChange');
+  ManyNoteBooks := CheckManyNotebooks.Checked;
+  debugln('CheckManyNotebooksChange');
 end;
 
 procedure TSettings.CheckShowExtLinksChange(Sender: TObject);
 begin
-  ShowExtLinks := CheckShowExtLinksChange.Checked;
-  ConfigSave('CheckShowExtLinksChange');
+  ShowExtLinks := CheckShowExtLinks.Checked;
+  debugln('CheckShowExtLinksChange');
 end;
 
 procedure TSettings.CheckShowIntLinksChange(Sender: TObject);
 begin
-  ShowIntLinks := CheckShowIntLinksChange.Checked;
-  ConfigSave('CheckShowIntLinksChange');
+  ShowIntLinks := CheckShowIntLinks.Checked;
+  debugln('CheckShowIntLinksChange');
 end;
 
 procedure TSettings.CheckShowSearchAtStartChange(Sender: TObject);
 begin
-  ShowSearchAtStart := CheckShowSearchAtStartChange.Checked;
-  ConfigSave('CheckShowSearchAtStartChange');
+  debugln('CheckShowSearchAtStartChange');
+  SearchAtStart := CheckShowSearchAtStart.Checked;
 end;
 
 procedure TSettings.CheckShowSplashChange(Sender: TObject);
 begin
-  ShowSplash := CheckShowSplashChange.Checked;
-  ConfigSave('CheckShowSplashChange');
+  ShowSplash := CheckShowSplash.Checked;
+  debugln('CheckShowSplashChange');
 end;
 
 procedure TSettings.EditTimerSyncChange(Sender: TObject);
@@ -371,8 +358,8 @@ end;
 
 procedure TSettings.onCheckCaseSensitive(Sender: TObject);
 begin
-  CaseSensitive := onCheckCaseSensitive.Checked;
-  ConfigSave('onCheckCaseSensitive');
+  SearchCaseSensitive := CheckCaseSensitive.Checked;
+  debugln('onCheckCaseSensitive');
 end;
 
 procedure TSettings.FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -395,18 +382,7 @@ begin
 
 end;
 
-procedure TSettings.FormKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
-begin
-
-end;
-
 procedure TSettings.FormShow(Sender: TObject);
-begin
-
-end;
-
-procedure TSettings.ListBoxDicClick(Sender: TObject);
 begin
 
 end;
@@ -418,59 +394,31 @@ end;
 
 procedure TSettings.RadioConflictChange(Sender: TObject);
 begin
-     if RadioAlwaysAsk.Checked then SyncOption := AlwaysAsk;
-     else if RadioUseLocal.Checked then SyncOption := UseLocal
-     else if RadioUseServer.Checked then SyncOption := UseServer
-     else if RadioMakeCopy.Checked then SyncOption := MakeCopy;
-     SaveConfig('RadioFontBigChange');
+     if RadioAlwaysAsk.Checked then SyncClashOption := TSyncClashOption.AlwaysAsk
+     else if RadioUseLocal.Checked then SyncClashOption := TSyncClashOption.UseLocal
+     else if RadioUseServer.Checked then SyncClashOption := TSyncClashOption.UseServer
+     else if RadioMakeCopy.Checked then SyncClashOption := TSyncClashOption.MakeCopy;
+     debugln('RadioFontBigChange');
 end;
 
 procedure TSettings.RadioFontBigChange(Sender: TObject);
 begin
-  if RadioFontBig.checked then begin
-    	FontSmall  := 9;
-     	FontLarge  := 17;
-     	FontHuge   := 20;
-     	FontTitle  := 18;			// Dont set this to one of the other sizes !
-     	FontNormal := 14;
+  if RadioFontBig.checked then FontRange := FontBig;
   end;
-  SaveConfig('RadioFontBigChange');
-end;
 
 procedure TSettings.RadioFontHugeChange(Sender: TObject);
 begin
-  if RadioFontHuge.checked then begin
-        FontSmall  := 11;
-        FontLarge  := 20;
-        FontHuge   := 23;
-        FontTitle  := 21;			// Dont set this to one of the other sizes !
-        FontNormal := 16;
-    end;
-  SaveConfig('RadioFontHugeChange');
+  if RadioFontHuge.checked then FontRange := FontHuge;
 end;
 
 procedure TSettings.RadioFontMediumChange(Sender: TObject);
 begin
-  if RadioFontMedium.checked then begin
-    	FontSmall  := 8;
- 	FontLarge  := 14;
- 	FontHuge   := 18;
- 	FontTitle  := 16;			// Dont set this to one of the other sizes !
- 	FontNormal := 11;
-  end;
-  SaveConfig('RadioFontMediumChange');
+  if RadioFontMedium.checked then FontRange := FontMedium;
 end;
 
 procedure TSettings.RadioFontSmallChange(Sender: TObject);
 begin
-    if RadioFontSmall.Checked then begin
-    	FontSmall  := 7;
-        FontLarge  := 13;
- 	FontHuge   := 16;
- 	FontTitle  := 14;			// Dont set this to one of the other sizes !
- 	FontNormal := 10;
-    end;
-    SaveConfig('RadioFontSmallChange');
+    if RadioFontSmall.Checked then FontRange := FontSmall;
 end;
 
 procedure TSettings.SpeedButHelpClick(Sender: TObject);
@@ -478,7 +426,7 @@ begin
 
 end;
 
-procedure TSettings.SpeedButHideClick(Sender: TObject);
+procedure TSettings.SettingsCancelClick(Sender: TObject);
 begin
 
 end;
@@ -494,8 +442,8 @@ begin
    begin
       SyncFirstRun := false;
       LabelFileSync.Caption := TrimFilename(SelectDirectoryDialog1.FileName + PathDelim);
-      NotesDir := LabelFileSync.Caption;
-      ConfigSave('ButtonFileSetupClick');
+      SyncFileRepo := LabelFileSync.Caption;
+      debugln('ButtonFileSetupClick');
    end;
 end;
 
@@ -503,6 +451,8 @@ procedure TSettings.RadioSyncChange(Sender: TObject);
 var
    s : TSyncTransport;
 begin
+   debugln('RadioSyncChange');
+
    CheckBoxAutoSync.Enabled := not RadioSyncNone.checked;
    EditTimerSync.Enabled := CheckBoxAutoSync.Checked and not RadioSyncNone.checked;
    Label16.Enabled := CheckBoxAutoSync.Checked and not RadioSyncNone.checked;
@@ -510,15 +460,13 @@ begin
 
    if(RadioSyncNone.Enabled) then s := TSyncTransport.SyncNone
     else if(RadioSyncFile.Enabled) then s :=TSyncTransport.SyncFile
-    else s := TSyncTransport.SyncNextCloud
+    else s := TSyncTransport.SyncNextCloud;
 
    if(s <> SyncType) then
    begin
      SyncType :=s;
      SyncFirstRun :=false;
    end;
-
-   ConfigSave(RadioSyncChange);
 end;
 
 procedure TSettings.TabBasicContextPopup(Sender: TObject; MousePos: TPoint;
@@ -527,134 +475,60 @@ begin
 
 end;
 
-procedure TSettings.TabSpellResize(Sender: TObject);
-begin
-
-end;
-
-procedure TSettings.TimerAutoSyncTimer(Sender: TObject);
-begin
-
-end;
-
-procedure TSettings.SetColours;
-begin
-
-end;
-
-procedure TSettings.LoadSettings();
-begin
-
-end;
-
-procedure TSettings.ConfigCheck;
-begin
-
-end;
 
 function TSettings.CheckDictionary(const FullDicName: string): boolean;
 begin
   result := false;
     if fileexists(FullDicName) then begin
         if assigned(Spell) then begin
-            SpellConfig := Spell.SetDictionary(FullDicName);
-            if SpellConfig then begin
+            //SpellConfig := Spell.SetDictionary(FullDicName);
+            //if SpellConfig then begin
                LabelDicStatus.Caption := rsDictionaryLoaded;
                LabelDic.Caption := FullDicName;
                ConfigSave('CheckDictionary');
                Result := True;
-            end else begin
-                LabelDicStatus.Caption := rsDictionaryNotFound;
-            end;
+            //end else begin
+            //    LabelDicStatus.Caption := rsDictionaryNotFound;
+            //end;
         end;
     end else debugln('ERROR - called CheckDictionary with Spell nil');
     debugln('CheckDictionary ' + FullDicName + ' return ' + booltostr(Result, True));
 end;
 
-function TSettings.CheckForDic(const DictPath: ANSIString): integer;
-begin
-
-end;
-
-procedure TSettings.CheckSpelling(const DicFullName: string);
-begin
-
-end;
-
-procedure TSettings.DicDefaults(var DicPathAlt: string);
-begin
-
-end;
 
 procedure TSettings.LoadSettings();
 begin
-    CheckShowIntLinks.Checked := ShowIntLinks;
-    CheckShowExtLinks.Checked := ShowExtLinks;
-    CheckManyNoteBooks.checked := ManyNoteBooks;
-    CheckCaseSensitive.Checked := SearchCaseSensitive;
-    CheckShowSplash.Checked := ShowSplash;
-    CheckAutostart.Checked := Autostart;
-    CheckShowSearchAtStart.Checked := ShowSearchAtStart;
 
-    if(SyncOption = AlwaysAsk) then RadioAlwaysAsk.Checked := true
-    else if(SyncOption = UseLocal) then RadioUseLocal.Checked := true
-    else if(SyncOption = UserServer) then RadioUseServer.Checked := true
+   LabelSettingPath.Caption := ConfigFile;
+   LabelNotesPath.Caption := NotesDir;
+
+   CheckShowIntLinks.Checked := ShowIntLinks;
+   CheckShowExtLinks.Checked := ShowExtLinks;
+   CheckManyNoteBooks.checked := ManyNoteBooks;
+   CheckCaseSensitive.Checked := SearchCaseSensitive;
+   CheckShowSplash.Checked := ShowSplash;
+   CheckAutostart.Checked := Autostart;
+   CheckShowSearchAtStart.Checked := SearchAtStart;
+
+   if(SyncClashOption = TSyncClashOption.AlwaysAsk) then RadioAlwaysAsk.Checked := true
+    else if(SyncClashOption = TSyncClashOption.UseLocal) then RadioUseLocal.Checked := true
+    else if(SyncClashOption = TSyncClashOption.UseServer) then RadioUseServer.Checked := true
     else RadioMakeCopy.Checked := true;
+
+   ButtonFont.Hint := UsualFont;
+   ButtonFixedFont.Hint := FixedFont;
+   case FontRange of
+      FontHuge   : RadioFontHuge.Checked := true;
+      FontBig    : RadioFontBig.Checked := true;
+      FontMedium   : RadioFontMedium.Checked := true;
+      FontSmall   : RadioFontSmall.Checked := true;
+   end;
 end;
-
-
-procedure TSettings.RadioConflictChange(Sender: TObject);
-begin
-   if RadioAlwaysAsk.Checked then SyncOption := AlwaysAsk
-   else if RadioUseLocal.Checked then SyncOption := UseLocal
-   else if RadioUseServer.Checked then SyncOption := UseServer
-   else if RadioMakeCopy.Checked then SyncOption := MakeCopy;
-end;
-
-
-procedure TSett.SpeedButHelpClick(Sender: TObject);
-begin
-        MainForm.ShowHelpNote('sync-ng.note');
-end;
-
-procedure TSett.SpeedButHideClick(Sender: TObject);
-begin
-  FormHide(Sender);
-end;
-
-
-procedure TSett.SpeedButtTBMenuClick(Sender: TObject);
-begin
-    PMenuMain.Popup;
-end;
-
-
-procedure TSett.RadioSyncChange(Sender: TObject);
-begin
-    SyncFirstRun :=false;
-
-    CheckBoxAutoSync.Enabled:= not RadioSyncNone.checked;
-    ConfigSave('RadioSyncChange');
-end;
-
-procedure TSett.TabSpellResize(Sender: TObject);
-begin
-    ButtonSetSpellLibrary.Width := (TabSpell.Width div 2) -7;
-    ButtonSetDictionary.Width := ButtonSetSpellLibrary.Width;
-end;
-
 
 
     { ----------------- S P E L L I N G ----------------------}
 
-ResourceString
-    rsSelectLibrary = 'Select your hunspell library';
-    rsSelectDictionary = 'Select the dictionary you want to use';
-    rsDictionaryLoaded = 'Dictionary Loaded OK';
-    rsDictionaryFailed = 'Library Not Loaded';
-    rsDictionaryNotFound = 'No Dictionary Found';
-
-procedure TSett.ButtonSetSpellLibraryClick(Sender: TObject);
+procedure TSettings.ButtonSetSpellLibraryClick(Sender: TObject);
 begin
     OpenDialogLibrary.InitialDir := ExtractFilePath(LabelLibrary.Caption);
     OpenDialogLibrary.Filter := 'Library|libhunspell*';
@@ -666,7 +540,7 @@ begin
 end;
 
 
-function TSett.CheckForDic(const DictPath : ANSIString) : integer;
+function TSettings.CheckForDic(const DictPath : ANSIString) : integer;
 var
     Info : TSearchRec;
 begin
@@ -679,7 +553,7 @@ begin
         until FindNext(Info) <> 0;
     end;
     FindClose(Info);
-    if DebugModeSpell then debugln('CheckForDic searched ' + DictPath + ' and found ' + inttostr(ListBoxDic.Items.Count));
+    debugln('CheckForDic searched ' + DictPath + ' and found ' + inttostr(ListBoxDic.Items.Count));
     if ListBoxDic.Items.Count > 0 then begin
         DicPath := DictPath;
         LabelDic.Caption := DictPath;
@@ -688,30 +562,15 @@ begin
 end;
 
 
-procedure TSett.ListBoxDicClick(Sender: TObject);
+procedure TSettings.ListBoxDicClick(Sender: TObject);
 begin
     if ListBoxDic.ItemIndex > -1 then
         CheckDictionary(AppendPathDelim(DicPath) + ListBoxDic.Items.Strings[ListBoxDic.ItemIndex]);
 end;
 
 
-procedure TSett.DicDefaults(var DicPathAlt : string);
-begin
-    DicPathAlt := ExtractFilePath(Application.ExeName);
-    {$ifdef WINDOWS}
-    DicPath := 'C:\Program Files\LibreOffice 5\share\extensions\dict-en\';
-    {$ENDIF}
-    {$ifdef DARWIN}
-    DicPath := '/Library/Spelling/';
-    DicPathAlt := '/Applications/tomboy-reborn.app/Contents/Resources/';
-    {$endif}
-    {$ifdef LINUX}
-    DicPath := '/usr/share/hunspell/';
-    DicPathAlt := '/usr/share/myspell/';
-    {$ENDIF}
-end;
 
-procedure TSett.CheckSpelling(const DicFullName : string = '');
+procedure TSettings.CheckSpelling(const DicFullName : string = '');
 var
     DicPathAlt, DicToCheck : AnsiString;
 
@@ -727,18 +586,17 @@ begin
     LabelDic.Visible := False;
     LabelDicStatus.Visible := False;
     LabelDicPrompt.Visible := False;
-    SpellConfig := False;
-    if DicFullName = '' then DicDefaults(DicPathAlt);        // startup mode
-    DebugModeSpell := Application.HasOption('debug-spell');
+    //SpellConfig := False;
+    //if DicFullName = '' then DicDefaults(DicPathAlt);        // startup mode
     // LabelLibrary.Caption := '/usr/local/Cellar/hunspell/1.6.2/lib/libhunspell-1.6.0.dylib';
     if fileexists(LabelLibrary.Caption) then		// make sure file from config is still valid
-    	Spell :=  THunspell.Create(DebugModeSpell, LabelLibrary.Caption)
-    else Spell :=  THunspell.Create(DebugModeSpell);
+    	Spell :=  THunspell.Create(LabelLibrary.Caption)
+    else Spell :=  THunspell.Create();
     if Spell.ErrorMessage <> '' then begin
         LabelLibraryStatus.Caption := rsDictionaryFailed;
         exit();
     end;
-    if DebugModeSpell then debugln('Library OK, lets look for dictionary');
+    debugln('Library OK, lets look for dictionary');
     LabelLibraryStatus.caption := rsDictionaryLoaded;
     LabelLibrary.Caption := Spell.LibraryFullName;
     LabelDicStatus.Visible := True;
@@ -763,128 +621,11 @@ begin
     end;
      // if to here, we have 1 candidate dictionary, either exactly 1 found or DicFullName has content
     if CheckDictionary(DicToCheck) then
-        if DebugModeSpell then debugln('Spelling Configured.');
-end;
-
-{ --------------------- H O U S E    K E E P I NG -------------------- }
-
-procedure TSett.FormHide(Sender: TObject);
-begin
-    FreeandNil(Spell);
-end;
-
-procedure TSett.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-begin
-    if {$ifdef DARWIN}ssMeta{$else}ssCtrl{$endif} in Shift then begin
-      if key = ord('N') then begin SearchForm.OpenNote(); Key := 0; exit(); end;
-      if key = VK_Q then MainForm.Close();
-    end;
-end;
-
-procedure TSett.FormShow(Sender: TObject);
-begin
-    if not assigned(Spell) then
-        Spell := THunspell.Create(Application.HasOption('debug-spell'), LabelLibrary.Caption);
-    Label15.Caption:='';
-end;
-
-// We only really close when told by RTSearch that The Exit Menu choice from TrayIcon was clicked.
-procedure TSett.FormClose(Sender: TObject; var CloseAction: TCloseAction);
-begin
-	if AllowClose then begin
-    	CloseAction := caFree;
-        SearchForm.Close;
-	end else CloseAction := caHide;
-end;
-
-procedure TSett.FormCreate(Sender: TObject);
-begin
-    AreClosing := false;
-    Top := 100;
-    Left := 300;
-
-    ConfigReading := False;
-    ConfigWriting := False;
-
-    ExportPath := '';
-    LabelLibrary.Caption := '';
-    labelNotesPath.Caption := NotesDir;
-
-    ConfigCheck();
-
-    PageControl1.ActivePage := TabBasic;
-    //NeedRefresh := False;
-    CheckSpelling();
-    PageControl1.ActivePage := TabBasic;
-
-    ButtonNCSetup.enabled := false;
-    RadioSyncNC.enabled := false;
-    LabelNCSyncURL.Hint := 'NextCloud / Grauphel will be in a future Release';
-    LabelNCSyncURL.ShowHint := True;
-end;
-
-procedure TSett.FormDestroy(Sender: TObject);
-begin
-    FreeandNil(Spell);
+    debugln('Spelling Configured.');
 end;
 
 
-function TSett.getSyncConfigured() : boolean;
-begin
-    Result := (getSyncType() <> TSyncTransport.SyncNone);
-end;
-
-
-
-
-procedure TSett.ButtonNCSetupClick(Sender: TObject);
-begin
-
-end;
-
-procedure TSett.SetColours();
-begin
-    if UserSetColours then exit;        // will have already been set by config or by colour form.
-    if DarkTheme then begin
-        //debugln('Its definltly a Dark Theme');
-        BackGndColour:= clBlack;
-        HiColour := clDkGray;
-        TextColour := clLtGray;
-        TitleColour:= clTeal;
-    end else begin
-        BackGndColour := clCream;
-        HiColour := clYellow;
-        TextColour := clBlack;
-        TitleColour := clBlue;
-    end;
-end;
-
-procedure TSett.ButtonSetColoursClick(Sender: TObject);
-begin
-    FormColours.CBack   := BackGndColour;
-    FormColours.CHiBack := HiColour;
-    FormColours.CText   := TextColour;
-    FormColours.CTitle  := TitleColour;
-    case FormColours.ShowModal of
-        mrRetry  :  begin
-                        UserSetColours := False;
-                        SetColours();
-                        ConfigSave('ButtonSetColoursClick');
-                    end;
-        mrOK     :  begin
-	                    BackGndColour := FormColours.CBack;
-	                    HiColour := FormColours.CHiBack;
-	                    TextColour := FormColours.CText;
-	                    TitleColour := FormColours.CTitle;
-                         UserSetColours := True;
-                        ConfigSave('ButtonSetColoursClick2');
-                    end;
-//        mrCancel : showmessage('Do nothing');
-	end;
-end;
-
-
-procedure TSett.TimerAutoSyncTimer(Sender: TObject);
+procedure TSettings.TimerAutoSyncTimer(Sender: TObject);
 var
    elapse : LongInt;
 begin
@@ -897,7 +638,7 @@ begin
 
     if (not CheckBoxAutoSync.checked) then exit;
 
-    if (getSyncConfigured() and getSyncTested()) then begin
+    if (isSyncConfigured() and (not SyncFirstRun)) then begin
        FormSync.RunSyncHidden();
     end;
 

@@ -76,6 +76,12 @@ RESOURCESTRING
   rsSetUp = 'Setup';                               // means configure something, eg, one of the Sync modules.
   rsDoubleclickNote = 'double click a note ...';
 
+  rsSelectLibrary = 'Select your hunspell library';
+  rsSelectDictionary = 'Select the dictionary you want to use';
+  rsDictionaryLoaded = 'Dictionary Loaded OK';
+  rsDictionaryFailed = 'Library Not Loaded';
+  rsDictionaryNotFound = 'No Dictionary Found';
+
 implementation
 
 end.

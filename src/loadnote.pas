@@ -93,7 +93,7 @@ implementation
 
 uses Graphics,     		// For some font style defs
     LazUTF8,
-    TRSettings,			// User settings and some defines across units.
+    TRcommon,
     LazLogger;
 
 procedure TBLoadNote.LoadFile(FileName : ANSIString; RM : TKMemo);
@@ -156,8 +156,8 @@ begin
       if FirstTime then begin                 // Title
   	    FT.Style := [fsUnderline];
         Title := ReplaceAngles(InStr);
-        FT.Size := Sett.FontTitle;
-        FT.Color := Sett.TitleColour;
+        FT.Size := FontSizeTitle;
+        FT.Color := TitleColour;
       end else begin
         FT.Style := [];
         FT.Size:= FontSize;
@@ -166,14 +166,14 @@ begin
       TB := KM.Blocks.AddTextBlock(ReplaceAngles(InStr));  // We have to scan InStr for &lt; and &gt;  being < and >
       if Bold then FT.Style := FT.Style + [fsBold];
       if Italic then FT.Style := FT.Style + [fsItalic];
-      if HighLight then TB.TextStyle.Brush.Color := Sett.HiColour;
+      if HighLight then TB.TextStyle.Brush.Color := HiColour;
       if Underline then FT.Style := Ft.Style + [fsUnderline];
       if Strikeout then FT.Style := Ft.Style + [fsStrikeout];
-      if FixedWidth then FT.Name := Sett.FixedFont;
+      if FixedWidth then FT.Name := FixedFont;
       if FixedWidth then FT.Pitch := fpFixed;
-      if not FixedWidth then FT.Name := Sett.UsualFont;    // Because 'FixedWidth := false;' does not specify a font to return to
+      if not FixedWidth then FT.Name := UsualFont;    // Because 'FixedWidth := false;' does not specify a font to return to
       // if Sett.DarkTheme then Ft.Color:=Sett.DarkTextColour;
-      Ft.Color:=Sett.TextColour;
+      Ft.Color := TextColour;
       TB.TextStyle.Font := Ft;
       FT.Free;
   end;
@@ -253,12 +253,12 @@ begin
             '/strikeout' : Strikeout := false;
             'monospace' : FixedWidth := true;
             '/monospace' : FixedWidth := false;
-            'size:small' : FontSize := Sett.FontSmall;
-            '/size:small' : FontSize := Sett.FontNormal;
-            'size:large' : FontSize := Sett.FontLarge;
-            '/size:large' : FontSize := Sett.FontNormal;
-            'size:huge' : FontSize := Sett.FontHuge;
-            '/size:huge' : FontSize := Sett.FontNormal;
+            'size:small' : FontSize := FontSizeSmall;
+            '/size:small' : FontSize := FontSizeNormal;
+            'size:large' : FontSize := FontSizeLarge;
+            '/size:large' : FontSize := FontSizeNormal;
+            'size:huge' : FontSize := FontSizeHuge;
+            '/size:huge' : FontSize := FontSizeNormal;
             'list-item dir="ltr"' : begin InBullet := true; BulletOwing := True; end;
             '/list-item' : InBullet := false;
             '/create-date' : CreateDate := InStr;

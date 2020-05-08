@@ -150,14 +150,14 @@ begin
     LabelStatus.Caption := '';
     TheKMemo.Blocks.LockUpdate;
     Str_Text := TheKMemo.Blocks.Text;       	// Make a copy to work with, faster
-    if Sett.SpellConfig then begin
-        Spell :=  THunspell.Create(Application.HasOption('debug-spell'), Sett.LabelLibrary.Caption);
+    //if Sett.SpellConfig then begin
+        Spell :=  THunspell.Create(Application.HasOption('debug-spell'), FormSettings.LabelLibrary.Caption);
         if Spell.ErrorMessage = '' then begin
-            if Spell.SetDictionary(Sett.LabelDic.Caption) then
+            if Spell.SetDictionary(FormSettings.LabelDic.Caption) then
                 PreviousWord(Index);
         end;
-     end else
-        LabelStatus.Caption := rsSpellNotConfig;
+     //end else
+     //   LabelStatus.Caption := rsSpellNotConfig;
 end;
 
 RESOURCESTRING

@@ -436,7 +436,7 @@ type
         	{ Return a string with a title for new note "New Note 2018-01-24 14:46.11" }
         function NewNoteTitle() : ANSIString;
                  { Saves the note as text or rtf, consulting user about path and file name }
-        procedure SaveNoteAs(TheExt: string);
+        //procedure SaveNoteAs(TheExt: string);
         procedure MarkDirty();
         function CleanCaption() : ANSIString;
         procedure SetBullet(PB: TKMemoParagraph; Bullet: boolean);
@@ -847,8 +847,8 @@ var
 begin
     FirstBlock := TKMemoTextBlock(KMemo1.Blocks.Items[FirstBlockNo]);
 	Block := TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]);
-    if (Command = ChangeSize) and (NewFontSize = Sett.FontNormal) then begin  // Don't toggle, just set to FontNormal
-         Block.TextStyle.Font.Size := Sett.FontNormal;
+    if (Command = ChangeSize) and (NewFontSize = FontSizeNormal) then begin  // Don't toggle, just set to FontNormal
+         Block.TextStyle.Font.Size := FontSizeNormal;
          exit();
     end;
     case Command of
@@ -870,12 +870,12 @@ begin
 						Block.TextStyle.Font.Style := Block.TextStyle.Font.Style + [fsItalic];
 					end;
         ChangeFixedWidth :
-                    if FirstBlock.TextStyle.Font.Name <> Sett.FixedFont then begin
+                    if FirstBlock.TextStyle.Font.Name <> FixedFont then begin
                        Block.TextStyle.Font.Pitch := fpFixed;
-                       Block.TextStyle.Font.Name := Sett.FixedFont;
+                       Block.TextStyle.Font.Name := FixedFont;
                     end else begin
                        Block.TextStyle.Font.Pitch := fpVariable;
-	                    Block.TextStyle.Font.Name := Sett.UsualFont;
+	                    Block.TextStyle.Font.Name := UsualFont;
                     end;
 
         ChangeStrikeout :
@@ -891,10 +891,10 @@ begin
 						Block.TextStyle.Font.Style := Block.TextStyle.Font.Style + [fsUnderline];
 					end;
 		ChangeColor :
-                    if FirstBlock.TextStyle.Brush.Color <> Sett.HiColour then begin
-                        Block.TextStyle.Brush.Color := Sett.HiColour;
+                    if FirstBlock.TextStyle.Brush.Color <> HiColour then begin
+                        Block.TextStyle.Brush.Color := HiColour;
                     end else begin
-                        Block.TextStyle.Brush.Color := Sett.BackGndColour; { clDefault; }
+                        Block.TextStyle.Brush.Color := BackGndColour; { clDefault; }
                     end;
 	end;
 end;
@@ -906,17 +906,17 @@ end;
 
 procedure TEditBoxForm.MenuLargeClick(Sender: TObject);
 begin
-   AlterFont(ChangeSize, Sett.FontLarge);
+   AlterFont(ChangeSize, FontSizeLarge);
 end;
 
 procedure TEditBoxForm.MenuNormalClick(Sender: TObject);
 begin
-   AlterFont(ChangeSize, Sett.FontNormal);	// Note, this won't toggle !
+   AlterFont(ChangeSize, FontSizeNormal);	// Note, this won't toggle !
 end;
 
 procedure TEditBoxForm.MenuSmallClick(Sender: TObject);
 begin
-    AlterFont(ChangeSize, Sett.FontSmall);
+    AlterFont(ChangeSize, FontSizeSmall);
 end;
 
 
@@ -925,7 +925,7 @@ end;
 
 procedure TEditBoxForm.MenuHugeClick(Sender: TObject);
 begin
-   AlterFont(ChangeSize, Sett.FontHuge);
+   AlterFont(ChangeSize, FontSizeHuge);
 end;
 
 procedure TEditBoxForm.MenuBoldClick(Sender: TObject);
@@ -969,7 +969,7 @@ end;
 
 procedure TEditBoxForm.MenuItemSettingsClick(Sender: TObject);
 begin
-    Sett.show;
+    FormSettings.show;
 end;
 
 procedure TEditBoxForm.MenuUnderlineClick(Sender: TObject);
@@ -1092,41 +1092,14 @@ end;
 
 procedure TEditBoxForm.MenuItemExportPlainTextClick(Sender: TObject);
 begin
-     SaveNoteAs('txt');
+     //SaveNoteAs('txt');
 end;
 
 procedure TEditBoxForm.MenuItemExportRTFClick(Sender: TObject);
 begin
-   SaveNoteAs('rtf');
+   //SaveNoteAs('rtf');
 end;
 
-procedure TEditBoxForm.SaveNoteAs(TheExt : string);
-var
-    SaveExport : TSaveDialog;
-begin
-     SaveExport := TSaveDialog.Create(self);
-     SaveExport.DefaultExt := TheExt;
-     if Sett.ExportPath <> '' then
-        SaveExport.InitialDir := Sett.ExportPath
-     else begin
-          {$ifdef UNIX}
-          SaveExport.InitialDir :=  GetEnvironmentVariable('HOME');
-          {$endif}
-          {$ifdef WINDOWS}
-          SaveExport.InitialDir :=  GetEnvironmentVariable('HOMEPATH');
-          {$endif}
-     end;
-     SaveExport.Filename := StringReplace(CleanCaption(), #32, '', [rfReplaceAll]) + '.' + TheExt;
-     if SaveExport.Execute then begin
-        if 'txt' = TheExt then
-           KMemo1.SaveToTXT(SaveExport.FileName)
-        else if 'rtf' = TheExt then
-           KMemo1.SaveToRTF(SaveExport.FileName);
-        Sett.ExportPath := ExtractFilePath(SaveExport.FileName);  // Hmm, UTF8 ?
-     end;
-     //showmessage(SaveExport.FileName);
-     SaveExport.Free;
-end;
 
 procedure TEditBoxForm.MarkDirty();
 begin
@@ -1183,21 +1156,21 @@ var
     SpellBox : TFormSpell;
 begin
     if KMemo1.ReadOnly then exit();
-    if Sett.SpellConfig then begin
+    //if Sett.SpellConfig then begin
         SpellBox := TFormSpell.Create(Application);
         // SpellBox.Top := Placement + random(Placement*2);
         // SpellBox.Left := Placement + random(Placement*2);
         SpellBox.TextToCheck:= KMemo1.Blocks.Text;
         SpellBox.TheKMemo := KMemo1;
         SpellBox.ShowModal;
-    end else showmessage('Sorry, spelling not configured');
+    //end else showmessage('Sorry, spelling not configured');
 end;
 
 procedure TEditBoxForm.MenuItemSyncClick(Sender: TObject);
 begin
     if KMemo1.ReadOnly then exit();
 	if Dirty then SaveTheNote();
-    Sett.Synchronise();
+    //Sett.Synchronise();
 end;
 
 { - - - H O U S E   K E E P I N G   F U C T I O N S ----- }
@@ -1366,7 +1339,7 @@ begin
     if Ready then exit();				// its a "re-show" event. Already have a note loaded.
     PanelReadOnly.Height := 1;
     TimerSave.Enabled := False;
-    KMemo1.Font.Size := Sett.FontNormal;
+    KMemo1.Font.Size := FontSizeNormal;
     {$ifdef LINUX}
     //{$DEFINE DEBUG_CLIPBOARD}
     KMemo1.ExecuteCommand(ecPaste);         // this to deal with a "first copy" issue.
@@ -1430,8 +1403,8 @@ begin
     {$ifdef windows}
     Color:= Sett.textcolour;
     {$endif}
-    KMemo1.Colors.BkGnd:= Sett.BackGndColour;
-    Kmemo1.Blocks.DefaultTextStyle.Font.Color:=Sett.TextColour;
+    KMemo1.Colors.BkGnd:= BackGndColour;
+    Kmemo1.Blocks.DefaultTextStyle.Font.Color := TextColour;
     KMemo1.Blocks.UnLockUpdate;
 end;
 
@@ -1535,10 +1508,10 @@ procedure TEditBoxForm.FormDestroy(Sender: TObject);
 begin
     UnsetPrimarySelection;                                      // tidy up copy on selection.
     if (length(NoteFileName) = 0) and (not Dirty) then exit;    // A new, unchanged note, no need to save.
-    if not Kmemo1.ReadOnly then
-        if not DeletingThisNote then
-            if (not SingleNoteMode) or Dirty then       // We always save, except in SingleNoteMode (where we save only if dirty)
-                SaveTheNote(Sett.AreClosing);           // Jan 2020, just call SaveTheNote, it knows how to record the notebook state
+    //if not Kmemo1.ReadOnly then
+        //if not DeletingThisNote then
+            //if (not SingleNoteMode) or Dirty then       // We always save, except in SingleNoteMode (where we save only if dirty)
+            //    SaveTheNote(Sett.AreClosing);           // Jan 2020, just call SaveTheNote, it knows how to record the notebook state
     SearchForm.NoteClosing(NoteFileName);
 
 end;
@@ -1576,8 +1549,8 @@ begin
 	try
         while Kmemo1.Blocks.Items[BlockNo].ClassName <> 'TKMemoParagraph' do begin
             if Kmemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock') then begin    // just possible its an image, ignore ....
-                TKMemoTextBlock(Kmemo1.Blocks.Items[BlockNo]).TextStyle.Font.Size := Sett.FontTitle;
-                TKMemoTextBlock(Kmemo1.Blocks.Items[BlockNo]).TextStyle.Font.Color := Sett.TitleColour;
+                TKMemoTextBlock(Kmemo1.Blocks.Items[BlockNo]).TextStyle.Font.Size := FontSizeTitle;
+                TKMemoTextBlock(Kmemo1.Blocks.Items[BlockNo]).TextStyle.Font.Color := TitleColour;
                 TKMemoTextBlock(Kmemo1.Blocks.Items[BlockNo]).TextStyle.Font.Style := [fsUnderline];
             end;
            	inc(BlockNo);
@@ -1592,9 +1565,9 @@ begin
         EndBlock := KMemo1.Blocks.IndexToBlockIndex(KMemo1.Selstart, Blar);
         while EndBlock > BlocksInTitle do begin
             if KMemo1.Blocks.Items[EndBlock].ClassNameIs('TKMemoTextBlock') and
-                (TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Size = Sett.FontTitle) then begin
-                    TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Size := Sett.FontNormal;
-                    TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Color := Sett.TextColour;
+                (TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Size = FontSizeTitle) then begin
+                    TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Size := FontSizeNormal;
+                    TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Color := TextColour;
                     TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Style := [];
                 end;
             dec(EndBlock);
@@ -1641,7 +1614,7 @@ begin
     Hyperlink.Textstyle.StyleChanged   :=  true;
 	Hyperlink.OnClick := @OnUserClickLink;
 	HL := KMemo1.Blocks.AddHyperlink(Hyperlink, BlockNo);
-    HL.TextStyle.Font.Color:= Sett.TitleColour;
+    HL.TextStyle.Font.Color:= TitleColour;
     // Note the colour seems to get set to some standard that TK likes when added.
 
 (*
@@ -1773,9 +1746,9 @@ begin
     KMemo1.Blocks.LockUpdate;
     //Tick := gettickcount64();
     PText := PChar(lowerCase(KMemo1.Blocks.text));
-    if Sett.CheckShowExtLinks.Checked then          // OK, what are we here for ?
+    if ShowExtLinks then          // OK, what are we here for ?
         CheckForHTTP(PText, StartScan, httpLen);
-    if Sett.ShowIntLinks then
+    if ShowIntLinks then
         while SearchForm.NextNoteTitle(SearchTerm) do
             if SearchTerm <> NoteTitle then             // My tests indicate lowercase() has neglible overhead and is UTF8 ok.
                 MakeAllLinks(PText, lowercase(SearchTerm), StartScan, EndScan);
@@ -1822,7 +1795,7 @@ begin
     KMemo1.Blocks.LockUpdate;
     try
     while StartBlock < EndBlock do begin
-        if TKMemoTextBlock(KMemo1.Blocks.Items[StartBlock]).TextStyle.Font.Size = Sett.FontTitle then begin
+        if TKMemoTextBlock(KMemo1.Blocks.Items[StartBlock]).TextStyle.Font.Size = FontSizeTitle then begin
             inc(StartBlock);
             continue;
         end;
@@ -1837,10 +1810,10 @@ begin
         end else begin
             // Must check here that its not been subject to the copying of a links colour and underline
             // we know its not a link and we know its not title. So, check color ...
-            if TKMemoTextBlock(KMemo1.Blocks.Items[StartBlock]).TextStyle.Font.Color = Sett.TitleColour then begin    // we set links to title colour
+            if TKMemoTextBlock(KMemo1.Blocks.Items[StartBlock]).TextStyle.Font.Color = TitleColour then begin    // we set links to title colour
                 TKMemoTextBlock(KMemo1.Blocks.Items[StartBlock]).TextStyle.Font.Style
                     := TKMemoTextBlock(KMemo1.Blocks.Items[StartBlock]).TextStyle.Font.Style - [fsUnderLine];
-                TKMemoTextBlock(KMemo1.Blocks.Items[StartBlock]).TextStyle.Font.Color := Sett.TextColour;
+                TKMemoTextBlock(KMemo1.Blocks.Items[StartBlock]).TextStyle.Font.Color := TextColour;
             end;
         end;
         inc(StartBlock);
@@ -1953,7 +1926,7 @@ begin
             KMemo1.Blocks.AddParagraph();
   	        exit();
     end;
-    if Sett.ShowIntLinks or Sett.CheckShowExtLinks.Checked then begin
+    if ShowIntLinks or ShowExtLinks then begin
   	    ClearNearLink(StartScan, EndScan {CurserPos});
   	    // TS2:=DateTimeToTimeStamp(Now);
         CheckForLinks(StartScan, EndScan);
@@ -2556,9 +2529,9 @@ begin
     // Timing numbers below using MyRecipes on my Acer linux laptop. For local comparison only !
     //T1 := gettickcount64();
     Loader := TBLoadNote.Create();
-    Loader.FontNormal:= Sett.FontNormal;
+    Loader.FontNormal:= FontSizeNormal;
     // Loader.FontName := FontName;
-    Loader.FontSize:= Sett.FontNormal;
+    Loader.FontSize:= FontSizeNormal;
     KMemo1.Blocks.LockUpdate;
     KMemo1.Clear;
     Loader.LoadFile(FileName, KMemo1);                        // 340mS
@@ -2567,7 +2540,7 @@ begin
     Createdate := Loader.CreateDate;
     Ready := true;
     Caption := Loader.Title;
-    if Sett.ShowIntLinks or Sett.CheckShowExtLinks.checked then
+    if ShowIntLinks or ShowExtLinks then
     	CheckForLinks();                     		// 360mS
     Left := Loader.X;
     Top := Loader.Y;
@@ -2587,7 +2560,7 @@ end;
 
 procedure TEditBoxForm.SaveTheNote(WeAreClosing : boolean = False);
 var
- 	Saver : TBSaveNote;
+ 	Saver : TSaveNote;
     SL : TStringList;
     OldFileName : string ='';
     Loc : TNoteUpdateRec;
@@ -2607,7 +2580,7 @@ begin
         SL.Free;
         TemplateIs := '';
     end;
-    Saver := TBSaveNote.Create();
+    Saver := TSaveNote.Create();
     try
         Saver.CreateDate := CreateDate;
         if not GetTitle(Saver.Title) then exit();

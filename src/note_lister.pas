@@ -200,7 +200,7 @@ type
 implementation
 
 uses  laz2_DOM, laz2_XMLRead, LazFileUtils, LazUTF8, LazLogger, SyncUtils,
-                TRcommon, TRsettings;
+                TRcommon;
 
 { TNoteBookList }
 
@@ -860,7 +860,7 @@ begin
     for I := 0 to TermList.Count -1 do begin      // Iterate over search terms
         Result := False;
         for Index := 0 to SLNote.Count - 1 do begin // Check each line of note for a match against current word.
-            if  Sett.CheckCaseSensitive.Checked then begin
+            if  SearchCaseSensitive then begin
                 if (UTF8Pos(TermList.Strings[I], SLNote.Strings[Index]) > 0) then begin
                     Result := True;
                     break;
@@ -916,8 +916,6 @@ function TNoteLister.GetNotes(const Term: ANSIstring = ''; DontTestName : boolea
 var
     Info : TSearchRec;
     SL : TStringList;
-    P : pointer;
-    //Tick, Tock : qword;
 begin
     SL := Nil;
     if Term <> '' then begin

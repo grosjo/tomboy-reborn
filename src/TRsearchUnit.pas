@@ -338,8 +338,8 @@ begin
         MList.Add(MainForm.MainTBMenu);
     if (MainForm.UseTrayMenu) and assigned(MainForm.PopupMenuTray) then
         MList.Add(MainForm.PopupMenuTray);
-    if assigned(Sett.PMenuMain) then
-        MList.Add(Sett.PMenuMain);
+    //if assigned(Sett.PMenuMain) then
+    //    MList.Add(Sett.PMenuMain);
 end;
 
 procedure TSearchForm.RefreshMenus(WhichSection : TMenuKind; AMenu : TPopupMenu = nil);
@@ -506,12 +506,12 @@ begin
                          Show;
                     end;
         mtAbout :   MainForm.ShowAbout();
-        mtSync :    if(Sett.getSyncConfigured()) then Sett.Synchronise()
-                    else showmessage(rsSetupSyncFirst);
+        //mtSync :    if(Sett.getSyncConfigured()) then Sett.Synchronise()
+        //            else showmessage(rsSetupSyncFirst);
         mtSettings : begin
-                     MoveWindowHere(Sett.Caption);
-                     Sett.EnsureVisible(true);
-                     Sett.Show;
+                     MoveWindowHere(FormSettings.Caption);
+                     FormSettings.EnsureVisible(true);
+                     FormSettings.Show;
                     end;
         mtQuit :      MainForm.close;
     end;
@@ -594,7 +594,7 @@ function TSearchForm.IndexNotes() : integer;
 	// TS1, TS2 : TTimeStamp;
 begin
     // TS1 := DateTimeToTimeStamp(Now);
-    if not Sett.HaveConfig then exit(0);
+    //if not Sett.HaveConfig then exit(0);
     if NoteLister <> Nil then
        freeandnil(NoteLister);
     NoteLister := TNoteLister.Create;
@@ -604,7 +604,7 @@ begin
     // TS2 := DateTimeToTimeStamp(Now);
 	// debugln('That took (mS) ' + inttostr(TS2.Time - TS1.Time));
     MainForm.UpdateNotesFound(Result);      // Says how many notes found and runs over checklist.
-    Sett.CheckAutoSync();
+    //Sett.CheckAutoSync();
 end;
 
 procedure TSearchForm.FormCreate(Sender: TObject);
@@ -664,7 +664,7 @@ begin
     Left := Placement + random(Placement*2);
     Top := Placement + random(Placement * 2);
     // Edit1.Text:= 'Search';
-    CheckCaseSensitive.checked := Sett.CheckCaseSensitive.Checked;
+    CheckCaseSensitive.checked := SearchCaseSensitive;
     StringGridNotebooks.Options := StringGridNotebooks.Options - [goRowHighlight];
     {$ifdef windows}
     StringGrid1.Color := clWhite;   // err ? once changed from clDefault, there is no going back ?                                            // linux apps know how to do this themselves
@@ -709,7 +709,7 @@ end;
 
 procedure TSearchForm.CheckCaseSensitiveChange(Sender: TObject);
 begin
-    Sett.CheckCaseSensitive.Checked := CheckCaseSensitive.Checked;
+    SearchCaseSensitive := CheckCaseSensitive.Checked;
 end;
 
 procedure TSearchForm.Edit1Enter(Sender: TObject);

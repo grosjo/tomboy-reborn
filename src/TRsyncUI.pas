@@ -75,7 +75,7 @@ var
 
 implementation
 
-uses TRsettings, TRsearchUnit, TRsync,  TRclashUI;
+uses TRsearchUnit, TRsync,  TRclashUI;
 
 {$R *.lfm}
 
@@ -166,7 +166,7 @@ begin
     Label1.Caption:= rsTestingRepo;
     Application.ProcessMessages;
     ASync.ClashFunction:= @DefineDefaultAction;
-    Async.SetTransport(Sett.getSyncType());
+    Async.SetTransport(SyncType);
     SyncAvail := ASync.TestConnection();
     if SyncAvail <> SyncReady then begin
         showmessage(rsUnableToProceed + ' ' + ASync.ErrorString);
@@ -189,7 +189,7 @@ end;
 procedure TFormSync.AfterShown(Sender : TObject);
 begin
     LocalTimer.Enabled := False;             // Dont want to hear from you again
-    if not Sett.getSyncTested() then begin
+    if SyncFirstRun then begin
         DrySync();
     end else
         DoSync();
@@ -220,7 +220,7 @@ end;
 function TFormSync.RunSyncHidden(): boolean;
 begin
     //debugln('In RunSyncHidden');
-    if not Sett.getSyncTested() then exit(False);      // should never call this in setup mode but to be sure ...
+    //if not Sett.getSyncTested() then exit(False);      // should never call this in setup mode but to be sure ...
 
     busy := true;
     StringGridReport.Clear;
@@ -242,7 +242,7 @@ begin
 
     try
         ASync.ClashFunction:= @DefineDefaultAction;
-        Async.SetTransport(Sett.getSyncType());
+        Async.SetTransport(SyncType);
         SyncState := ASync.TestConnection();
         while SyncState <> SyncReady do begin
             debugln('Failed testConnection');
@@ -330,7 +330,7 @@ begin
         SearchForm.ProcessSyncUpdates(Async.DeletedList, Async.DownList);
         Label1.Caption:=rsAllDone;
         Label2.Caption := rsPressClose;
-	Sett.setSyncTested(true);
+	SyncFirstRun := false;
     end  else
         Showmessage(rsSyncError + ASync.ErrorString);
     ButtonClose.Enabled := True;

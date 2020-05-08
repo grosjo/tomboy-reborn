@@ -723,7 +723,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="33">
+    <Units Count="32">
       <Unit0>
         <Filename Value="tomboy-reborn.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -891,9 +891,8 @@
         <ResourceBaseClass Value="Form"/>
       </Unit27>
       <Unit28>
-        <Filename Value="resourcestr.pas"/>
+        <Filename Value="TRtexts.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="ResourceStr"/>
       </Unit28>
       <Unit29>
         <Filename Value="syncerror.pas"/>
@@ -904,24 +903,19 @@
         <UnitName Value="SyncError"/>
       </Unit29>
       <Unit30>
-        <Filename Value="colours.pas"/>
+        <Filename Value="TRcolours.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormColours"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit30>
       <Unit31>
-        <Filename Value="ncsetup.pas"/>
+        <Filename Value="TRnextSetup.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormNCSetup"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit31>
-      <Unit32>
-        <Filename Value="trtexts.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="TrTexts"/>
-      </Unit32>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
