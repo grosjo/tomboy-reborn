@@ -5,10 +5,10 @@
     <General>
       <SessionStorage Value="InProjectDir"/>
       <MainUnit Value="0"/>
-      <Title Value="tomboy-reborn"/>
+      <Title Value="TomboyReborn"/>
       <Scaled Value="True"/>
+      <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
-      <UseXPManifest Value="True"/>
       <XPManifest>
         <TextName Value="DRB"/>
         <TextDesc Value=""/>
@@ -54,6 +54,10 @@
         <Item33 Value="FormMarkdown"/>
       </ExcludedOriginals>
     </i18n>
+    <VersionInfo>
+      <UseVersionInfo Value="True"/>
+      <MinorVersionNr Value="1"/>
+    </VersionInfo>
     <BuildModes Count="17">
       <Item1 Name="Default" Default="True"/>
       <Item2 Name="Debug">
@@ -723,7 +727,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="32">
+    <Units Count="30">
       <Unit0>
         <Filename Value="tomboy-reborn.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -737,12 +741,12 @@
         <UnitName Value="SearchUnit"/>
       </Unit1>
       <Unit2>
-        <Filename Value="editbox.pas"/>
+        <Filename Value="TRnoteEdit.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="EditBoxForm"/>
+        <ComponentName Value="NoteEditForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="EditBox"/>
+        <UnitName Value="TRNoteEdit"/>
       </Unit2>
       <Unit3>
         <Filename Value="Notes.txt"/>
@@ -790,132 +794,118 @@
         <UnitName Value="Spelling"/>
       </Unit9>
       <Unit10>
-        <Filename Value="mainunit.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="MainForm"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <UnitName Value="Mainunit"/>
-      </Unit10>
-      <Unit11>
         <Filename Value="backupview.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormBackupView"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="BackupView"/>
-      </Unit11>
-      <Unit12>
+      </Unit10>
+      <Unit11>
         <Filename Value="recover.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormRecover"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit12>
-      <Unit13>
-        <Filename Value="tomdroid.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="FormTomdroid"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-      </Unit13>
-      <Unit14>
+      </Unit11>
+      <Unit12>
         <Filename Value="markdown.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormMarkdown"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit14>
-      <Unit15>
+      </Unit12>
+      <Unit13>
         <Filename Value="index.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormIndex"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Index"/>
-      </Unit15>
-      <Unit16>
+      </Unit13>
+      <Unit14>
         <Filename Value="autostart.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit16>
-      <Unit17>
+      </Unit14>
+      <Unit15>
         <Filename Value="note_lister.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Note_Lister"/>
+      </Unit15>
+      <Unit16>
+        <Filename Value="syncutils.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit16>
+      <Unit17>
+        <Filename Value="TRsync.pas"/>
+        <IsPartOfProject Value="True"/>
       </Unit17>
       <Unit18>
-        <Filename Value="syncutils.pas"/>
+        <Filename Value="hunspell.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit18>
       <Unit19>
-        <Filename Value="TRsync.pas"/>
+        <Filename Value="transandroid.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit19>
       <Unit20>
-        <Filename Value="hunspell.pas"/>
+        <Filename Value="k_prn.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit20>
       <Unit21>
-        <Filename Value="transandroid.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit21>
-      <Unit22>
-        <Filename Value="k_prn.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit22>
-      <Unit23>
         <Filename Value="syncclash.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormSDiff"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="TRsyncclash"/>
+      </Unit21>
+      <Unit22>
+        <Filename Value="trans.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit22>
+      <Unit23>
+        <Filename Value="transfile.pas"/>
+        <IsPartOfProject Value="True"/>
       </Unit23>
       <Unit24>
-        <Filename Value="trans.pas"/>
+        <Filename Value="transnet.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit24>
       <Unit25>
-        <Filename Value="transfile.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit25>
-      <Unit26>
-        <Filename Value="transnet.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit26>
-      <Unit27>
         <Filename Value="helpnotes.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormHelpNotes"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit27>
-      <Unit28>
+      </Unit25>
+      <Unit26>
         <Filename Value="TRtexts.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit28>
-      <Unit29>
+        <UnitName Value="TrTexts"/>
+      </Unit26>
+      <Unit27>
         <Filename Value="syncerror.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormSyncError"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="SyncError"/>
-      </Unit29>
-      <Unit30>
+      </Unit27>
+      <Unit28>
         <Filename Value="TRcolours.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormColours"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit30>
-      <Unit31>
+      </Unit28>
+      <Unit29>
         <Filename Value="TRnextSetup.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormNCSetup"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit31>
+      </Unit29>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

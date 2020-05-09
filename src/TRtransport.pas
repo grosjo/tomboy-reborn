@@ -1,38 +1,22 @@
-unit trans;
-
-{ Contains parent, abstract class that does Transport part of Tomboy Reborn sync.
-  It moves files around, one way or another, determined by its children.
-  *  Copyright (C) 2018 David Bannon
-  *  See attached licence file.
-
-  HISTORY
-    2018/10/25  Much testing, support for Tomdroid.
-    2018/10/28  Added password
-}
+unit TRtransport;
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-    Classes, SysUtils, TRcommon, SyncUtils;
+    Classes, SysUtils, TRcommon;
 
 
-type
-
-  { TTomboyTrans }
-
-  TTomboyTrans = class      // An abstract class, parent of eg FileTrans and NetTrans
+type TTomboyTrans = class
+    
     private
-          // Hold any parameters
         names : TStringList;
         values : TStringList;
 
     public
 
-        { Set to '' is no errors. }
         ErrorString : string;
-
         { The current server ID. Is set with a successful TestTransport call. }
         ServerID : string;
         { The current Server Rev, before we upload. Is set with a successful
@@ -78,8 +62,6 @@ type
 
 
 implementation
-
-{ TTomboyTrans }
 
 constructor TTomboyTrans.Create;
 begin

@@ -433,7 +433,7 @@ begin
    CreateGUID(GUID);
    Title := NotebookName  + ' Template';
    ID := copy(GUIDToString(GUID), 2, 36) ;
-   SearchForm.NoteLister.AddNoteBook(ID, NotebookName, True);
+   //SearchForm.NoteLister.AddNoteBook(ID, NotebookName, True);
    Ostream :=TFilestream.Create(GetLocalNoteFile(ID), fmCreate);
    Loc.Y := '20'; Loc.X := '20'; Loc.Height := '200'; Loc.Width:='300';
    Loc.OOS := 'False'; Loc.CPos:='1';
@@ -655,11 +655,11 @@ begin
         + Loc.X + '</x>'#10'  <y>' + Loc.Y + '</y>'#10;
   S6 := '  <open-on-startup>' + Loc.OOS + '</open-on-startup>'#10'</note>';
   if CreateDate = '' then CreateDate := TimeStamp;
-  if SearchForm.NoteLister <> Nil then
-        Result := S1 + TimeStamp + S2 + TimeStamp + S3 + CreateDate + S4 + S5
-            + SearchForm.NoteLister.NoteBookTags(ID) + S6
-  else
-        Result := S1 + TimeStamp + S2 + TimeStamp + S3 + CreateDate + S4 + S5 + S6;
+  //if SearchForm.NoteLister <> Nil then
+  //      Result := S1 + TimeStamp + S2 + TimeStamp + S3 + CreateDate + S4 + S5
+  //          + SearchForm.NoteLister.NoteBookTags(ID) + S6
+  //else
+  //      Result := S1 + TimeStamp + S2 + TimeStamp + S3 + CreateDate + S4 + S5 + S6;
   // ToDo : That will mean no Notebook tags in single note mode, is that an issue ?
   // Most singe notes are out of their repo so won't have notebooks anyway but we could
   // save any tag list and restore it on save ??

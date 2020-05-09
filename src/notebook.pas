@@ -66,7 +66,7 @@ implementation
 
 { TNoteBookPick }
 
-uses TRSearchUnit, SaveNote, EditBox,
+uses TRSearchUnit, SaveNote, TRnoteEdit,
                 SyncUtils, TRtexts;
 
 procedure TNoteBookPick.SetupForNewSelect();
@@ -81,11 +81,11 @@ begin
     PageControl1.ActivePage := TabExisting;
     Label3.Caption := rsSetTheNotebooks;
     SL := TStringList.Create;
-    SearchForm.NoteLister.GetNotebooks(SL, '');
+    //SearchForm.NoteLister.GetNotebooks(SL, '');
     CheckListBox1.Items.Assign(SL);
     SL.Free;
     SL := TStringList.Create;
-    SearchForm.NoteLister.GetNotebooks(SL, ExtractFileNameOnly(FullFileName) + '.note');
+    //SearchForm.NoteLister.GetNotebooks(SL, ExtractFileNameOnly(FullFileName) + '.note');
     for I := 0 to CheckListBox1.Count-1 do
         CheckListBox1.Checked[I] := False;
     for Index := 0 to SL.Count -1 do
@@ -107,10 +107,10 @@ begin
     PageControl1.ActivePage := TabChangeName;
     Label3.Caption := rsChangeNameofNotebook;
     Label7.Caption := Title;
-    if SearchForm.NoteLister.GetNotesInNoteBook(NBIDList, Title) then begin
-        for NoteID in NBIDList do
-            DebugLn('Notebook.pas #158 Note - '+ NoteID);
-    end else
+    //if SearchForm.NoteLister.GetNotesInNoteBook(NBIDList, Title) then begin
+    //    for NoteID in NBIDList do
+    //        DebugLn('Notebook.pas #158 Note - '+ NoteID);
+    //end else
         debugln('Notebook.pas #160 No member notes found');
     Label1.Caption := format(rsNumbNotesAffected, [NBIDList.Count]);
     EditNewNotebookName.SetFocus;
@@ -174,7 +174,7 @@ begin
                                                 end;
                         '<y>' :     begin
                                         writeln(OutFile, InString);
-                                        write(OutFile, SearchForm.NoteLister.NoteBookTags(Filename));
+                                        //write(OutFile, SearchForm.NoteLister.NoteBookTags(Filename));
                                         NextSeekString := '<tags>';
                                     end;
                         '<tags>' :  begin
@@ -304,16 +304,16 @@ var
     OpenForm : TForm; //TEditBoxForm;
 begin
     result := true;
-    TemplateID := SearchForm.notelister.NotebookTemplateID(Title);
+    //TemplateID := SearchForm.notelister.NotebookTemplateID(Title);
     if TemplateID = '' then begin
         showmessage('Failed to ID Template [' + Title + ']');
         exit(false);
     end;
-    SearchForm.NoteLister.AlterNotebook(Title, NewName);
+    //SearchForm.NoteLister.AlterNotebook(Title, NewName);
     for IDstr in NBIDList do begin
-        if SearchForm.NoteLister.IsThisNoteOpen(IDStr, OpenForm) then
-            TEditBoxForm(OpenForm).Dirty:= true
-        else RewriteWithNewNotebookName(IDstr);
+        //if SearchForm.NoteLister.IsThisNoteOpen(IDStr, OpenForm) then
+        //    TEditBoxForm(OpenForm).Dirty:= true
+        //else RewriteWithNewNotebookName(IDstr);
     end;
     // OK, now change template ......
     // debugln('template is ' + SearchForm.notelister.NotebookTemplateID(Title));
@@ -332,7 +332,7 @@ begin
         try
             for Index := 0 to CheckListBox1.Count -1 do
         	if CheckListBox1.Checked[Index] then SL.Add(CheckListBox1.Items[Index]);
-    		SearchForm.NoteLister.SetNotebookMembership(ExtractFileNameOnly(FullFileName) + '.note', SL);
+    		//SearchForm.NoteLister.SetNotebookMembership(ExtractFileNameOnly(FullFileName) + '.note', SL);
         finally
             Sl.Free;
         end;
@@ -343,8 +343,8 @@ begin
             try
                 Saver.SaveNewTemplate(EditNewNotebook.Text);
                 // OK, now add current note to the new Notebook
-                SearchForm.NoteLister.AddNoteBook(ExtractFileNameOnly(FullFileName) + '.note', EditNewNotebook.Text, False);
-                SearchForm.RefreshNotebooks();
+                //SearchForm.NoteLister.AddNoteBook(ExtractFileNameOnly(FullFileName) + '.note', EditNewNotebook.Text, False);
+                //SearchForm.RefreshNotebooks();
 			finally
                 Saver.Destroy;
 			end;

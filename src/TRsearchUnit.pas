@@ -5,9 +5,13 @@ unit TRsearchUnit;
 interface
 
 uses
-    Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ActnList,
-    Grids, ComCtrls, StdCtrls, ExtCtrls, Menus, Buttons, Note_Lister, lazLogger,
-    TRcommon, TRtexts;
+    Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
+    Buttons, Menus, ComCtrls, ExtCtrls, FileUtil, ActnList,
+    Grids, lazLogger,
+    TRcommon, TRtexts, Note_Lister;
+
+
+type TTrayTags = (ttNewNote, ttSearch, ttAbout, ttSync, ttSettings, ttQuit);
 
 // These are choices for main popup menus.
 type TMenuTarget = (mtSep=1, mtNewNote, mtSearch, mtAbout=10, mtSync, mtTomdroid, mtSettings, mtMainHelp, mtHelp, mtQuit, mtRecent);
@@ -35,6 +39,15 @@ type        { TSearchForm }
         StringGrid1: TStringGrid;
 	StringGridNotebooks: TStringGrid;
         SelectDirectoryDialog1: TSelectDirectoryDialog;
+
+        //TRAY
+        TrayIcon: TTrayIcon;
+        TrayMenu : TPopupMenu;
+        procedure TrayIconClick(Sender: TObject);
+        procedure BuildTrayMenu();
+        procedure TrayMenuClicked(Sender : TObject);
+
+
         procedure ButtonMenuClick(Sender: TObject);
 	procedure ButtonNotebookOptionsClick(Sender: TObject);
   	procedure ButtonRefreshClick(Sender: TObject);
@@ -63,7 +76,7 @@ type        { TSearchForm }
         procedure StringGridNotebooksPrepareCanvas(sender: TObject; aCol,
             aRow: Integer; aState: TGridDrawState);
         procedure StringGridNotebooksResize(Sender: TObject);
-    private
+private
         HelpNotes : TNoteLister;
         procedure AddItemMenu(TheMenu: TPopupMenu; Item: string;
             mtTag: TMenuTarget; OC: TNotifyEvent; MenuKind: TMenuKind);
@@ -126,10 +139,7 @@ type        { TSearchForm }
 const
 	MenuEmpty = '(empty)';
 
-    end;
-
-var
-    SearchForm: TSearchForm;
+end;
 
 implementation
 
@@ -137,23 +147,121 @@ implementation
 
 
 
-uses MainUnit,      // Opening form, manages startup and Menus
-    EditBox,
+uses
+    LCLType,
+    LazFileUtils,
+    TRnoteEdit,
     TRsettings,		// Manages settings.
-    LCLType,		// For the MessageBox
-    LazFileUtils,   // LazFileUtils needed for TrimFileName(), cross platform stuff
     TRsync,           // because we need it to manhandle local manifest when a file is deleted
     process,        // Linux, we call wmctrl to move note to current workspace
     NoteBook;
 
 
-
 { TSearchForm }
 
 
+{ ====== TRAY WORK ====== }
+
+procedure TSearchForm.TrayIconClick(Sender: TObject);
+begin
+    TrayMenu.PopUp();
+end;
+
+procedure TSearchForm.BuildTrayMenu();
+var
+    m1,m2 : TMenuItem;
+begin
+
+   TrayMenu.Items.Clear;
+   // New Note
+   m1 := TMenuItem.Create(TrayMenu);
+   m1.Tag := ord(ttNewNote);
+   m1.Caption := rsTrayNewNote;
+   m1.OnClick := @TrayMenuClicked;
+   TrayMenu.Items.Add(m1);
+
+   // App menu
+   m1 := TMenuItem.Create(TrayMenu);
+   m1.Caption := rsTrayApplication;
+   TrayMenu.Items.Add(m1);
+
+   // Search
+   m2 := TMenuItem.Create(m1);
+   m2.Tag := ord(ttSearch);
+   m2.Caption := rsTraySearchNote;
+   m2.OnClick := @TrayMenuClicked;
+   m1.Add(m2);
+   // Sync
+   m2 := TMenuItem.Create(m1);
+   m2.Tag := ord(ttSync);
+   m2.Caption := rsTraySync;
+   m2.OnClick := @TrayMenuClicked;
+   m1.Add(m2);
+   // Settings
+   m2 := TMenuItem.Create(m1);
+   m2.Tag := ord(ttSettings);
+   m2.Caption := rsTraySettings;
+   m2.OnClick := @TrayMenuClicked;
+   m1.Add(m2);
+   // About
+   m2 := TMenuItem.Create(m1);
+   m2.Tag := ord(ttAbout);
+   m2.Caption := rsTrayAbout;
+   m2.OnClick := @TrayMenuClicked;
+   m1.Add(m2);
+   // Quit
+   m2 := TMenuItem.Create(m1);
+   m2.Tag := ord(ttQuit);
+   m2.Caption := rsTrayQuit;
+   m2.OnClick := @TrayMenuClicked;
+   m1.Add(m2);
+
+   TrayMenu.Items.AddSeparator;
+
+   // Notebooks
+   m1 := TMenuItem.Create(TrayMenu);
+   m1.Caption := rsTrayNotebooks;
+   TrayMenu.Items.Add(m1);
+
+   // List notebooks
+   m2 := TMenuItem.Create(m1);
+   m2.Caption := 'test NB';
+   //m2.OnClick := nil;
+   m1.Add(m2);
+
+   // Add latest notes
+
+end;
+
+procedure TSearchForm.TrayMenuClicked(Sender : TObject);
+var
+    FormSettings : TSettings;
+begin
+
+   debugln('TrayMenuClicked');
+
+   case TTrayTags(TMenuItem(Sender).Tag) of
+        ttNewNote : if (NotesDir = '')
+                  then ShowMessage(rsSetupNotesDirFirst)
+                  else OpenNote();
+        ttSettings: begin
+            Application.CreateForm(TSettings, FormSettings);
+            FormSettings.ShowModal;
+            FreeAndNil(FormSettings);
+            end;
+        //mtAbout :   MainForm.ShowAbout();
+        //mtSync :    if(Sett.getSyncConfigured()) then Sett.Synchronise()
+        //            else showmessage(rsSetupSyncFirst);
+        //mtSettings : begin
+                     //MoveWindowHere(FormSettings.Caption);
+                     //FormSettings.EnsureVisible(true);
+                     //FormSettings.Show;
+          //          end;
+        //mtQuit :      //MainForm.close;
+    end;
+end;
 
 { -------------   FUNCTIONS  THAT  PROVIDE  SERVICES  TO  OTHER   UNITS  ------------ }
-
 
 procedure TSearchForm.ProcessSyncUpdates(const DeletedList, DownList : TStringList);
 // The lists arrive here with just the 36 char ID, some following functions are OK with that ????
@@ -315,8 +423,8 @@ begin
     InitialiseHelpFiles();
     PopupTBMainMenu := TPopupMenu.Create(self);      // LCL will dispose because of 'self'
     ButtonMenu.PopupMenu := PopupTBMainMenu;
-    MainForm.MainTBMenu := TPopupMenu.Create(self);
-    MainForm.ButtMenu.PopupMenu := MainForm.MainTBMenu;
+    //MainForm.MainTBMenu := TPopupMenu.Create(self);
+    //MainForm.ButtMenu.PopupMenu := MainForm.MainTBMenu;
     // Add any other 'fixed' menu here.
 end;
 
@@ -328,16 +436,16 @@ begin
     if assigned(NoteLister) then begin
       AForm := NoteLister.FindFirstOpenNote();
       while AForm <> Nil do begin
-          MList.Add(TEditBoxForm(AForm).PopupMainTBMenu);
-          AForm := SearchForm.NoteLister.FindNextOpenNote();
+          MList.Add(TNoteEditForm(AForm).PopupMainTBMenu);
+          AForm := NoteLister.FindNextOpenNote();
       end;
     end;
     if assigned(PopupTBMainMenu) then
         MList.Add(PopupTBMainMenu);
-    if assigned(MainForm.MainTBMenu) then
-        MList.Add(MainForm.MainTBMenu);
-    if (MainForm.UseTrayMenu) and assigned(MainForm.PopupMenuTray) then
-        MList.Add(MainForm.PopupMenuTray);
+    //if assigned(MainForm.MainTBMenu) then
+    //    MList.Add(MainForm.MainTBMenu);
+    //if (MainForm.UseTrayMenu) and assigned(MainForm.PopupMenuTray) then
+    //    MList.Add(MainForm.PopupMenuTray);
     //if assigned(Sett.PMenuMain) then
     //    MList.Add(Sett.PMenuMain);
 end;
@@ -505,22 +613,22 @@ begin
                          EnsureVisible(true);
                          Show;
                     end;
-        mtAbout :   MainForm.ShowAbout();
+        //mtAbout :   MainForm.ShowAbout();
         //mtSync :    if(Sett.getSyncConfigured()) then Sett.Synchronise()
         //            else showmessage(rsSetupSyncFirst);
         mtSettings : begin
-                     MoveWindowHere(FormSettings.Caption);
-                     FormSettings.EnsureVisible(true);
-                     FormSettings.Show;
+                     //MoveWindowHere(FormSettings.Caption);
+                     //FormSettings.EnsureVisible(true);
+                     //FormSettings.Show;
                     end;
-        mtQuit :      MainForm.close;
+        mtQuit :      //MainForm.close;
     end;
 end;
 
 procedure TSearchForm.RecentMenuClicked(Sender: TObject);
 begin
- 	if TMenuItem(Sender).Caption <> SearchForm.MenuEmpty then
- 		SearchForm.OpenNote(TMenuItem(Sender).Caption);
+ 	if TMenuItem(Sender).Caption <> MenuEmpty then
+ 		OpenNote(TMenuItem(Sender).Caption);
 end;
 
 procedure TSearchForm.ButtonRefreshClick(Sender: TObject);
@@ -603,14 +711,14 @@ begin
     UseList();
     // TS2 := DateTimeToTimeStamp(Now);
 	// debugln('That took (mS) ' + inttostr(TS2.Time - TS1.Time));
-    MainForm.UpdateNotesFound(Result);      // Says how many notes found and runs over checklist.
+    //MainForm.UpdateNotesFound(Result);      // Says how many notes found and runs over checklist.
     //Sett.CheckAutoSync();
 end;
 
 procedure TSearchForm.FormCreate(Sender: TObject);
 begin
     NoteLister := nil;
-    if MainForm.closeASAP or (MainForm.SingleNoteFileName <> '') then exit;
+    //if MainForm.closeASAP or (MainForm.SingleNoteFileName <> '') then exit;
     StringGrid1.Clear;          // We'll setup the grid columns in Lazarus style, not Delphi
     StringGrid1.FixedCols := 0;
     StringGrid1.Columns.Add;
@@ -630,6 +738,14 @@ begin
     Edit1.Text := rsMenuSearch;
     Edit1.SelStart := 1;
     Edit1.SelLength := length(Edit1.Text);
+
+    if UseTrayIcon then
+    begin
+        TrayMenu := TPopupMenu.Create(Self);
+        TrayIcon.PopUpMenu := TrayMenu;
+        TrayIcon.Show;
+        BuildTrayMenu();
+    end;
 
     CreateMenus();
 
@@ -654,7 +770,7 @@ procedure TSearchForm.FormKeyDown(Sender: TObject; var Key: Word;
 begin
      if {$ifdef DARWIN}ssMeta{$else}ssCtrl{$endif} in Shift then begin
        if key = ord('N') then begin OpenNote(); Key := 0; exit(); end;
-       if key = VK_Q then MainForm.Close();
+       //if key = VK_Q then MainForm.Close();
      end;
 end;
 
@@ -730,7 +846,7 @@ begin
     if NoteLister.IsThisNoteOpen(FullFileName, TheForm) then begin
        // if user opened and then closed, we won't know we cannot access
         try
-       	    TEditBoxForm(TheForm).SetReadOnly();
+       	    TNoteEditForm(TheForm).SetReadOnly();
             exit();
         except on  EAccessViolation do
        	    DebugLn('Tried to mark a closed note as readOnly, thats OK');
@@ -772,7 +888,7 @@ procedure TSearchForm.OpenNote(NoteTitle: String; FullFileName: string;
 		TemplateIs: AnsiString);
 // Might be called with no Title (NewNote) or a Title with or without a Filename
 var
-    EBox : TEditBoxForm;
+    EBox : TNoteEditForm;
     NoteFileName : string;
     TheForm : TForm;
 begin
@@ -800,7 +916,7 @@ begin
     // if to here, we need open a new window. If Filename blank, its a new note
     if (NoteFileName = '') and (NoteTitle ='') and ButtonNoteBookOptions.Enabled then  // a new note with notebook selected.
        TemplateIs := StringGridNotebooks.Cells[0, StringGridNotebooks.Row];
-	EBox := TEditBoxForm.Create(Application);
+	EBox := TNoteEditForm.Create(Application);
     if (NoteFileName <> '') and (NoteTitle <> '') and (Edit1.Text <> '') and (Edit1.Text <> 'Search') then
         // Looks like we have a search in progress, lets take user there when note opens.
         EBox.SearchedTerm := Edit1.Text
@@ -932,7 +1048,7 @@ end;
 procedure TSearchForm.SpeedButton1Click(Sender: TObject);
 begin
     // note - image is 24x24 tpopupmenu.png from lazarus source
-    MainForm.PopupMenuSearch.PopUp;
+    //MainForm.PopupMenuSearch.PopUp;
 end;
 
 procedure TSearchForm.StringGrid1Resize(Sender: TObject);

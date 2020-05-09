@@ -1,48 +1,12 @@
 unit Spelling;
 
-{ A GUI unit that uses hunspell.pas to check spelling of the passed KMemo
-  Note we start at the end of doc and scan back to beginning
-
- * Copyright (C) 2018 David Bannon
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- }
-
-{  HISTORY -
-    2018/03/03 Initial Commit
-	2018/03/24	Win only bug, missed counting a #13 when replacing first word on line.
-				Win only - allow for #13 in a selected block
-	2018/04/07	Changes in ReplaceWord to really get it right for Windows UTF8 but
-				some changes outside ifdef so must check on Linux too.
-    2018/06/21  Hide an unnecessary debug line
-    2018/11/29  Fixed bug when spell checking a selection of text
-    2019/05/19  Display strings all (?) moved to resourcestrings
-}
-
 {$mode objfpc}{$H+}
 
 interface
 
 uses
     Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-    Buttons, kmemo;
+    Buttons, kmemo, ExtCtrls, LazUTF8, LazLogger;
 
 type
 
@@ -89,7 +53,7 @@ var
 
 implementation
 
-uses hunspell, TRsettings, LazUTF8, LazLogger;
+uses TRcommon, TRsettings, TRtexts, TRhunspell;
 
 const
   SetofDelims = [#10, #13, ' '..'@', '['..'`', '{'..'~'];   // all askii visible char ??
@@ -123,10 +87,6 @@ begin
    end;
 end;
 
-RESOURCESTRING
-  rsCheckingFull = 'Checking full document';
-  rsCheckingSelection = 'Checking selection';
-  rsSpellNotConfig = 'Spelling not configured';
 
 procedure TFormSpell.FormShow(Sender: TObject);
 begin
@@ -151,11 +111,11 @@ begin
     TheKMemo.Blocks.LockUpdate;
     Str_Text := TheKMemo.Blocks.Text;       	// Make a copy to work with, faster
     //if Sett.SpellConfig then begin
-        Spell :=  THunspell.Create(Application.HasOption('debug-spell'), FormSettings.LabelLibrary.Caption);
-        if Spell.ErrorMessage = '' then begin
-            if Spell.SetDictionary(FormSettings.LabelDic.Caption) then
-                PreviousWord(Index);
-        end;
+        //Spell :=  THunspell.Create(Application.HasOption('debug-spell'), FormSettings.LabelLibrary.Caption);
+        //if Spell.ErrorMessage = '' then begin
+        //    if Spell.SetDictionary(FormSettings.LabelDic.Caption) then
+        //        PreviousWord(Index);
+        //end;
      //end else
      //   LabelStatus.Caption := rsSpellNotConfig;
 end;

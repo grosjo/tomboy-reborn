@@ -1,14 +1,4 @@
-unit transfile;
-
-{ A unit that does the file transfer side of a FileSync operation
-  *  Copyright (C) 2018 David Bannon
-  *  See attached licence file.
-
-  HISTORY
-  2018/10/25  Much testing, support for Tomdroid.
-  2018/06/05  Change to doing Tomboy's sync dir names, rev 431 is in ~/4/341
-  2019/10/17  Ensure DownloadFile returns true remote dir name, irrespective of above.
-}
+unit TRtransportFile;
 
 {$mode objfpc}{$H+}
 
@@ -16,13 +6,9 @@ interface
 
 uses
     Classes, SysUtils, LazLogger,
-    TRcommon, trans, SyncUtils;
+    TRcommon, TRtransport;
 
-type
-
-  { TFileSync }
-
-  TFileSync = Class(TTomboyTrans)
+type TFileSync = Class(TTomboyTrans)
     private
         function GetRemoteNotePath(Rev: integer; NoteID : string = ''): string;
         function GetRemoteNoteLastChange(const ID : string; rev : Integer; out Error : string) : string;
@@ -41,7 +27,6 @@ implementation
 
 uses laz2_DOM, laz2_XMLRead, LazFileUtils, FileUtil;
 
-{ TFileSync }
 
 function TFileSync.getPrefix(): string;
 begin

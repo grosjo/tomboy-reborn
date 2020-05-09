@@ -1,4 +1,4 @@
-object EditBoxForm: TEditBoxForm
+object NoteEditForm: TNoteEditForm
   Left = 551
   Height = 497
   Top = 327

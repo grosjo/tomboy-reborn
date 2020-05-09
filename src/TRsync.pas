@@ -121,8 +121,8 @@ implementation
 
 { TSync }
 
-uses laz2_DOM, laz2_XMLRead, Trans, TransFile, TransNext, LazLogger, LazFileUtils,
-    FileUtil, TRsettings;
+uses laz2_DOM, laz2_XMLRead, TRtransport, TRtransportFile, TRtransportNC, LazLogger, LazFileUtils,
+    FileUtil;
 
 var
     Transport : TTomboyTrans;

@@ -97,7 +97,7 @@ begin
     {$ifdef LINUX}
     TargetName := '/usr/share/applications/' + AppName + '.desktop';
     LinkDestination := AppendPathDelim(GetEnvironmentVariableUTF8('HOME')) + '.config/autostart';
-        LinkName := '/' + AppName + '.desktop';
+    LinkName := '/' + AppName + '.desktop';
     {$endif}
     {$ifdef WINDOWS}
     CPU := {$i %FPCTARGETCPU%};

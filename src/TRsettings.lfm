@@ -23,17 +23,15 @@ object Settings: TSettings
     Height = 374
     Top = 0
     Width = 630
-    ActivePage = TabSync
+    ActivePage = TabBasic
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderSpacing.Bottom = 2
-    TabIndex = 1
+    TabIndex = 0
     TabOrder = 0
-    OnChange = PageControl1Change
     object TabBasic: TTabSheet
       Caption = 'Basic'
       ClientHeight = 343
       ClientWidth = 620
-      OnContextPopup = TabBasicContextPopup
       object LabelSettingPath: TLabel
         Left = 128
         Height = 15
@@ -104,7 +102,7 @@ object Settings: TSettings
         AnchorSideBottom.Side = asrBottom
         Left = 394
         Height = 187
-        Top = 153
+        Top = 151
         Width = 221
         Anchors = [akRight, akBottom]
         BorderSpacing.Right = 5
@@ -115,49 +113,30 @@ object Settings: TSettings
         TabOrder = 0
         object CheckShowSearchAtStart: TCheckBox
           AnchorSideLeft.Control = GroupBox1
-          AnchorSideTop.Control = CheckShowSplash
-          AnchorSideTop.Side = asrBottom
-          Left = 15
-          Height = 23
-          Top = 86
-          Width = 142
-          BorderSpacing.Left = 15
-          BorderSpacing.Top = 15
-          Caption = 'Show Search at Start'
-          OnChange = CheckShowSearchAtStartChange
-          TabOrder = 0
-        end
-        object CheckShowSplash: TCheckBox
-          AnchorSideLeft.Control = GroupBox1
           AnchorSideTop.Control = CheckAutostart
           AnchorSideTop.Side = asrBottom
           Left = 15
           Height = 23
-          Hint = 'Always shown if error loading notes.'
-          Top = 48
-          Width = 140
+          Top = 62
+          Width = 142
           BorderSpacing.Left = 15
-          BorderSpacing.Top = 15
-          Caption = 'Show Splash at Start'
-          Checked = True
-          OnChange = CheckShowSplashChange
-          ParentShowHint = False
-          ShowHint = True
-          State = cbChecked
-          TabOrder = 1
+          BorderSpacing.Top = 24
+          Caption = 'Show Search at Start'
+          OnChange = CheckShowSearchAtStartChange
+          TabOrder = 0
         end
         object CheckAutostart: TCheckBox
           AnchorSideLeft.Control = GroupBox1
           AnchorSideTop.Control = GroupBox1
           Left = 15
           Height = 23
-          Top = 10
+          Top = 15
           Width = 129
           BorderSpacing.Left = 15
-          BorderSpacing.Top = 10
+          BorderSpacing.Top = 15
           Caption = 'Autostart at Logon'
           OnChange = CheckAutostartChange
-          TabOrder = 2
+          TabOrder = 1
         end
         object CheckCaseSensitive: TCheckBox
           AnchorSideLeft.Control = GroupBox1
@@ -165,13 +144,13 @@ object Settings: TSettings
           AnchorSideTop.Side = asrBottom
           Left = 15
           Height = 23
-          Top = 124
+          Top = 100
           Width = 159
           BorderSpacing.Left = 15
           BorderSpacing.Top = 15
           Caption = 'Search is case Sensitive'
           OnChange = onCheckCaseSensitive
-          TabOrder = 3
+          TabOrder = 2
         end
       end
       object GroupBox5: TGroupBox
@@ -257,7 +236,7 @@ object Settings: TSettings
         AnchorSideBottom.Side = asrBottom
         Left = 200
         Height = 187
-        Top = 153
+        Top = 151
         Width = 184
         Anchors = [akBottom]
         BorderSpacing.Bottom = 5
@@ -330,7 +309,7 @@ object Settings: TSettings
         AnchorSideBottom.Side = asrBottom
         Left = 5
         Height = 33
-        Top = 302
+        Top = 300
         Width = 73
         Anchors = [akLeft, akBottom]
         BorderSpacing.Top = 5
@@ -351,7 +330,7 @@ object Settings: TSettings
         AnchorSideBottom.Side = asrBottom
         Left = 119
         Height = 31
-        Top = 304
+        Top = 302
         Width = 73
         Anchors = [akRight, akBottom]
         BorderSpacing.Left = 5
@@ -592,19 +571,15 @@ object Settings: TSettings
       ClientHeight = 343
       ClientWidth = 620
       object Label13: TLabel
-        Left = 12
+        AnchorSideLeft.Control = TabSpell
+        AnchorSideTop.Control = TabSpell
+        Left = 15
         Height = 15
         Top = 20
-        Width = 263
-        Caption = 'Spell Check requires the Hunspell Libraries and'
-        ParentColor = False
-      end
-      object Label14: TLabel
-        Left = 12
-        Height = 15
-        Top = 52
-        Width = 218
-        Caption = 'an appropriate Hunspell Dictionary set.'
+        Width = 484
+        BorderSpacing.Left = 15
+        BorderSpacing.Top = 20
+        Caption = 'Spell Check requires the Hunspell Libraries and an appropriate Hunspell Dictionary set.'
         ParentColor = False
       end
       object LabelError: TLabel
@@ -616,34 +591,53 @@ object Settings: TSettings
         ParentColor = False
       end
       object LabelLibraryStatus: TLabel
-        Left = 16
+        AnchorSideLeft.Control = TabSpell
+        AnchorSideTop.Control = LabelLibrary
+        AnchorSideTop.Side = asrBottom
+        Left = 150
         Height = 15
-        Top = 100
+        Top = 90
         Width = 104
+        BorderSpacing.Left = 150
+        BorderSpacing.Top = 20
         Caption = 'LabelLibraryStatus'
         ParentColor = False
       end
       object LabelDicStatus: TLabel
-        Left = 16
+        AnchorSideLeft.Control = TabSpell
+        AnchorSideTop.Control = Label9
+        AnchorSideTop.Side = asrCenter
+        Left = 150
         Height = 15
-        Top = 240
+        Top = 231
         Width = 83
+        BorderSpacing.Left = 150
         Caption = 'LabelDicStatus'
         ParentColor = False
       end
       object LabelLibrary: TLabel
-        Left = 16
+        AnchorSideLeft.Control = TabSpell
+        AnchorSideTop.Control = Label13
+        AnchorSideTop.Side = asrBottom
+        Left = 150
         Height = 15
-        Top = 132
+        Top = 55
         Width = 69
+        BorderSpacing.Left = 150
+        BorderSpacing.Top = 20
         Caption = 'LabelLibrary'
         ParentColor = False
       end
       object LabelDic: TLabel
-        Left = 16
+        AnchorSideLeft.Control = TabSpell
+        AnchorSideTop.Control = Label8
+        AnchorSideTop.Side = asrCenter
+        Left = 150
         Height = 15
-        Top = 272
+        Top = 196
         Width = 48
+        BorderSpacing.Left = 150
+        BorderSpacing.Top = 50
         Caption = 'LabelDic'
         ParentColor = False
       end
@@ -655,55 +649,123 @@ object Settings: TSettings
         AnchorSideRight.Side = asrBottom
         AnchorSideBottom.Control = ButtonSetDictionary
         AnchorSideBottom.Side = asrBottom
-        Left = 171
-        Height = 180
-        Top = 154
-        Width = 442
-        Anchors = [akTop, akLeft, akRight, akBottom]
+        Left = 464
+        Height = 168
+        Top = 161
+        Width = 146
+        Anchors = []
         BorderSpacing.Left = 12
-        BorderSpacing.Right = 7
+        BorderSpacing.Right = 10
+        BorderSpacing.Bottom = 5
         ItemHeight = 0
         OnClick = ListBoxDicClick
-        ScrollWidth = 440
+        ScrollWidth = 144
         TabOrder = 0
         TopIndex = -1
       end
-      object LabelDicPrompt: TLabel
-        AnchorSideRight.Control = ListBoxDic
-        AnchorSideRight.Side = asrBottom
-        AnchorSideBottom.Control = ListBoxDic
-        Left = 524
-        Height = 15
-        Top = 132
-        Width = 89
-        Anchors = [akRight, akBottom]
-        BorderSpacing.Bottom = 7
-        Caption = 'LabelDicPrompt'
-        ParentColor = False
-      end
       object ButtonSetSpellLibrary: TButton
-        AnchorSideTop.Control = LabelLibrary
+        AnchorSideTop.Control = Label13
         AnchorSideTop.Side = asrBottom
-        Left = 16
+        AnchorSideRight.Control = TabSpell
+        AnchorSideRight.Side = asrBottom
+        Left = 440
         Height = 40
-        Top = 154
-        Width = 143
-        BorderSpacing.Top = 7
+        Top = 65
+        Width = 150
+        Anchors = [akTop, akRight]
+        BorderSpacing.Top = 30
+        BorderSpacing.Right = 30
         Caption = 'Set Spell Library'
         OnClick = ButtonSetSpellLibraryClick
         TabOrder = 1
       end
       object ButtonSetDictionary: TButton
-        AnchorSideTop.Control = LabelDic
+        AnchorSideTop.Control = LabelDicStatus
         AnchorSideTop.Side = asrBottom
-        Left = 16
+        Left = 64
         Height = 40
-        Top = 294
+        Top = 266
         Width = 143
-        BorderSpacing.Top = 7
+        Anchors = [akTop]
+        BorderSpacing.Top = 20
         Caption = 'Set Dictionary'
         OnClick = ButtonSetDictionaryClick
         TabOrder = 2
+      end
+      object Label6: TLabel
+        AnchorSideLeft.Control = TabSpell
+        AnchorSideTop.Control = Label13
+        AnchorSideTop.Side = asrBottom
+        Left = 15
+        Height = 15
+        Top = 55
+        Width = 78
+        BorderSpacing.Left = 15
+        BorderSpacing.Top = 20
+        Caption = 'Library used : '
+        ParentColor = False
+      end
+      object Label7: TLabel
+        AnchorSideLeft.Control = TabSpell
+        AnchorSideTop.Control = Label6
+        AnchorSideTop.Side = asrBottom
+        Left = 15
+        Height = 15
+        Top = 90
+        Width = 82
+        BorderSpacing.Left = 15
+        BorderSpacing.Top = 20
+        Caption = 'Library status :'
+        ParentColor = False
+      end
+      object Label8: TLabel
+        AnchorSideLeft.Control = TabSpell
+        AnchorSideTop.Control = Label10
+        AnchorSideTop.Side = asrBottom
+        Left = 15
+        Height = 15
+        Top = 196
+        Width = 109
+        BorderSpacing.Left = 15
+        BorderSpacing.Top = 20
+        Caption = 'Dictionnary in use : '
+        ParentColor = False
+      end
+      object Label9: TLabel
+        AnchorSideLeft.Control = TabSpell
+        AnchorSideTop.Control = Label8
+        AnchorSideTop.Side = asrBottom
+        Left = 15
+        Height = 15
+        Top = 231
+        Width = 110
+        BorderSpacing.Left = 15
+        BorderSpacing.Top = 20
+        Caption = 'Dictionnary status : '
+        ParentColor = False
+      end
+      object Label10: TLabel
+        AnchorSideLeft.Control = TabSpell
+        AnchorSideTop.Control = ListBoxDic
+        Left = 15
+        Height = 15
+        Top = 161
+        Width = 114
+        BorderSpacing.Left = 15
+        Caption = 'Directionary folder : '
+        ParentColor = False
+      end
+      object LabelPath: TLabel
+        AnchorSideLeft.Control = TabSpell
+        AnchorSideTop.Control = Label10
+        AnchorSideTop.Side = asrCenter
+        Left = 150
+        Height = 15
+        Top = 161
+        Width = 55
+        BorderSpacing.Left = 150
+        Caption = 'LabelPath'
+        ParentColor = False
       end
     end
   end
@@ -817,63 +879,6 @@ object Settings: TSettings
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000
     }
-  end
-  object SelectDirectoryDialog1: TSelectDirectoryDialog
-    left = 408
-  end
-  object PopupDay: TPopupMenu
-    left = 376
-    top = 72
-    object MenuMonday: TMenuItem
-      AutoCheck = True
-      Caption = 'Monday'
-    end
-    object MenuTuesday: TMenuItem
-      AutoCheck = True
-      Caption = 'Tuesday'
-    end
-    object MenuWednesday: TMenuItem
-      AutoCheck = True
-      Caption = 'Wednesday'
-    end
-    object MenuThursday: TMenuItem
-      AutoCheck = True
-      Caption = 'Thursday'
-    end
-    object MenuFriday: TMenuItem
-      AutoCheck = True
-      Caption = 'Friday'
-    end
-    object MenuSaturday: TMenuItem
-      AutoCheck = True
-      Caption = 'Saturday'
-    end
-    object MenuSunday: TMenuItem
-      AutoCheck = True
-      Caption = 'Sunday'
-    end
-  end
-  object OpenDialogLibrary: TOpenDialog
-    Options = [ofPathMustExist, ofFileMustExist, ofNoDereferenceLinks, ofEnableSizing, ofViewDetail]
-    left = 480
-  end
-  object OpenDialogDictionary: TOpenDialog
-    left = 288
-    top = 72
-  end
-  object FontDialog1: TFontDialog
-    MinFontSize = 0
-    MaxFontSize = 0
-    left = 552
-  end
-  object PMenuMain: TPopupMenu
-    left = 376
-    top = 144
-  end
-  object TimerAutoSync: TTimer
-    Enabled = False
-    OnTimer = TimerAutoSyncTimer
-    left = 456
-    top = 72
+    OnClick = SettingsOKClick
   end
 end

@@ -85,7 +85,7 @@ var
 
 procedure TFormSync.MarkNoteReadOnly(const Filename : string; const WasDeleted : Boolean = False);
 begin
-    SearchForm.MarkNoteReadOnly(FileName, WasDeleted);
+    //SearchForm.MarkNoteReadOnly(FileName, WasDeleted);
 end;
 
 function TFormSync.DefineDefaultAction(const ClashRec : TClashRecord) : TSyncAction;
@@ -259,10 +259,10 @@ begin
         Application.ProcessMessages;
 
         ASync.StartSync(false);
-        SearchForm.UpdateSyncStatus(rsLastSync + ' ' + FormatDateTime('YYYY-MM-DD hh:mm', now)  + ' ' + DisplaySync());
+        //SearchForm.UpdateSyncStatus(rsLastSync + ' ' + FormatDateTime('YYYY-MM-DD hh:mm', now)  + ' ' + DisplaySync());
         ShowReport();
-        SearchForm.ProcessSyncUpdates(Async.DeletedList, Async.DownList);
-        Label1.Caption:=rsAllDone;
+        //SearchForm.ProcessSyncUpdates(Async.DeletedList, Async.DownList);
+        //Label1.Caption:=rsAllDone;
         Label2.Caption := rsPressClose;
         ButtonClose.Enabled := True;
         Result := True;
@@ -325,9 +325,9 @@ begin
     ButtonSave.Enabled := False;
     //ASync.TestRun := False;
     if ASync.StartSync(false) then begin
-        SearchForm.UpdateSyncStatus(rsLastSync + ' ' + FormatDateTime('YYYY-MM-DD hh:mm', now)  + ' ' + DisplaySync());
+        //SearchForm.UpdateSyncStatus(rsLastSync + ' ' + FormatDateTime('YYYY-MM-DD hh:mm', now)  + ' ' + DisplaySync());
         ShowReport();
-        SearchForm.ProcessSyncUpdates(Async.DeletedList, Async.DownList);
+        //SearchForm.ProcessSyncUpdates(Async.DeletedList, Async.DownList);
         Label1.Caption:=rsAllDone;
         Label2.Caption := rsPressClose;
 	SyncFirstRun := false;

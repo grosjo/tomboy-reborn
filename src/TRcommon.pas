@@ -4,8 +4,9 @@ interface
 
 uses
     Classes, Forms, SysUtils, Dialogs, StdCtrls, LazFileUtils, laz2_DOM,
-    laz2_XMLRead, DateUtils, fphttpclient, ssockets, sslsockets, fpopenssl,
-    openssl, hmac, strutils, IniFiles, LazLogger, Graphics;
+    ExtCtrls, laz2_XMLRead, DateUtils, fphttpclient, ssockets, sslsockets,
+    fpopenssl, openssl, hmac, strutils, IniFiles, LazLogger, Graphics,
+    FileInfo, TRAutoStartCtrl, Trtexts;
 
 
 type TFontRange = (FontHuge, FontBig, FontMedium, FontSmall);	// Relating to sync clash pref in config file
@@ -78,6 +79,22 @@ type TNoteInfo =
 
 type PNoteInfo=^TNoteInfo;
 
+type TNoteInfoList =
+  class(TList)
+    private
+     	function Get(Index: integer): PNoteInfo;
+    public
+        ServerID : string;              // Partially implemented, don't rely yet ....
+        LastSyncDateSt : string;        // Partially implemented, don't rely yet ....
+        LastSyncDate : TDateTime;       // Partially implemented, don't rely yet ....
+        LastRev : integer;              // Partially implemented, don't rely yet ....
+        destructor Destroy; override;
+        function Add(ANote : PNoteInfo) : integer;
+        function FindID(const ID : ANSIString) : PNoteInfo;
+        function ActionName(Act : TSyncAction) : string;
+        property Items[Index: integer]: PNoteInfo read Get; default;
+  end;
+
 type
     TClashRecord =
       record
@@ -90,13 +107,14 @@ type    TClashFunction = function(const ClashRec : TClashRecord): TSyncAction of
 
 // Environmment
 const Backup = 'Backup';
+function AboutString() : String;
 function GetDefaultConfigDir() : string;
 function GetDefaultNotesDir() : string;
 function GetLocalNoteFile(NoteID : string; altrep : String = ''): string;
 function GetLocalBackupPath(): string;
 function GetTempFile() : string;
-function ConfigSave(source : String) : boolean;
-procedure ConfigRead(source : String);
+function ConfigWrite(source : String) : boolean;
+function ConfigRead(source : String) : boolean;
 
 // Note generic function
 function GetNewID() : String;
@@ -105,7 +123,7 @@ function FileToNote(xml : String; NoteInfo : PNoteInfo) : boolean;
 
 // Font
 function GetDefaultFixedFont() : string;
-function GetUsualFont() : string;
+function GetDefaultUsualFont() : string;
 procedure setFontSizes();
 
 // Datetime
@@ -113,7 +131,8 @@ function GetGMTFromStr(const DateStr: ANSIString): TDateTime;
 function GetTimeFromGMT(d : TDateTime) : String;
 
 // Spelling
-procedure SetDictDefaults();
+function GetDictDefaultPath() : String;
+function GetDictDefaultLibrary() : String;
 
 // Network
 function URLDecode(s: String): String;
@@ -140,8 +159,8 @@ var
     ConfigReading : boolean;
     ConfigWriting : boolean;
 
-    ShowIntLinks,ShowExtLinks, ManyNoteBooks, SearchCaseSensitive, ShowSplash,
-      Autostart, SearchAtStart : boolean;
+    ShowIntLinks,ShowExtLinks, ManyNoteBooks, SearchCaseSensitive,
+      Autostart, SearchAtStart, UseTrayIcon : boolean;
 
     UsualFont, FixedFont : string;
     FontRange : TFontRange;
@@ -157,23 +176,46 @@ var
     SyncFileRepo, SyncNCurl, SyncNCKey, SyncNCToken, SyncNCSecret : String;
     SyncRepeat : integer;
 
-    DictLibrary, DictPath, DictFile, DictPathAlt : String;
+    DictLibrary, DictPath, DictFile : String;
 
     BackGndColour, TextColour, HiColour, TitleColour : TColor;
 
+    mainWindow : TForm;
+
+Const
+  Placement = 45;
 
 implementation
 
 
 { ===== ENVIRONMENT ==== }
 
+function AboutString() : string;
+var
+   Stg : string;
+   FileVerInfo: TFileVersionInfo;
+begin
+   Stg := rsAbout + #10;
+   FileVerInfo:=TFileVersionInfo.Create(nil);
+   try
+      FileVerInfo.ReadFileInfo;
+      Stg := Stg + 'Company: ' + FileVerInfo.VersionStrings.Values['CompanyName'] + #10;
+      Stg := Stg + 'File description: ' + FileVerInfo.VersionStrings.Values['FileDescription'] + #10;
+      Stg := Stg + 'File version: ' + FileVerInfo.VersionStrings.Values['FileVersion'] + #10;
+      Stg := Stg + 'Internal name: ' + FileVerInfo.VersionStrings.Values['InternalName'] + #10;
+      Stg := Stg + 'Product name:  ' + FileVerInfo.VersionStrings.Values['ProductName'] + #10;
+      Stg := Stg + 'Product version:  ' + FileVerInfo.VersionStrings.Values['ProductVersion'] + #10;
+   finally
+      FileVerInfo.Free;
+   end;
+   Result := Stg + rsAboutCPU + ' ' + {$i %FPCTARGETCPU%} + '  '
+            + rsAboutOperatingSystem + ' ' + {$i %FPCTARGETOS%}
+            + ' ' + GetEnvironmentVariable('XDG_CURRENT_DESKTOP');
+end;
+
 function GetDefaultConfigDir() : string;
 begin
-    Result := '';
-    if Application.HasOption('config-dir') then
-        Result := Application.GetOptionValue('config-dir');
-    if Result = '' then begin
-        {$ifdef DARWIN}
+    {$ifdef DARWIN}
         // First we try the right place, if there use it, else try unix place, if
         // its not there, go back to right place.
         Result := GetEnvironmentVariable('HOME') + '/Library/Application Support/Tomboy-Reborn/Config';
@@ -182,18 +224,19 @@ begin
             if not DirectoryExistsUTF8(Result) then  // must be new install, put in right place
                 Result := GetEnvironmentVariable('HOME') + '/Library/Application Support/Tomboy-Reborn/Config';
         end;
-        {$else}
+    {$else}
         Result := GetAppConfigDirUTF8(False);
-        {$endif}
-    end;
+    {$endif}
+
     Result := AppendPathDelim(ChompPathDelim(Result));
     ForceDirectoriesUTF8(Result);
+    debugln('Default Conf Dir ='+Result);
 end;
 
 function GetDefaultNotesDir() : string;
 begin
     {$IFDEF UNIX}
-    Result := GetEnvironmentVariable('HOME') + '/.local/share/tomboy-reborn/';
+    Result := GetEnvironmentVariable('HOME') + '/.local/share/TomboyReborn/';
     {$ENDIF}
     {$IFDEF DARWIN}
     // try the correct place first, if not there, lets try the old, wrong place
@@ -234,12 +277,13 @@ begin
     Result := GetTempFileName(d, 'TB_');
 end;
 
-function ConfigSave(source : String) : boolean;
+function ConfigWrite(source : String) : boolean;
 var
-	f : TINIFile;
+    f : TINIFile;
+    autos : TAutoStartCtrl;
 begin
     Result := True;
-    debugln('ConfigSave '+source);
+    debugln('ConfigWrite '+source);
 
     if ConfigWriting then
     begin
@@ -254,7 +298,7 @@ begin
 
     ConfigWriting := true;
 
-    debugln('ConfigSave proceeding '+source);
+    debugln('ConfigWrite('+source+') proceeding '+ConfigFile);
 
     try
       DeleteFile(ConfigFile);
@@ -266,15 +310,14 @@ begin
        end;
     end;
 
-    f.writestring('BasicSettings', 'NotesDir', NotesDir);
+    f.writestring('Basic', 'NotesDir', NotesDir);
 
-    f.writestring('BasicSettings', 'ManyNotebooks', BoolToStr(ManyNoteBooks) );
-    f.writestring('BasicSettings', 'CaseSensitive', BoolToStr(SearchCaseSensitive));
-    f.writestring('BasicSettings', 'ShowIntLinks', BoolToStr(ShowIntLinks));
-    f.writestring('BasicSettings', 'ShowExtLinks', BoolToStr(ShowExtLinks));
-    f.WriteString('BasicSettings', 'ShowSplash', BoolToStr(ShowSplash));
-    f.WriteString('BasicSettings', 'Autostart', BoolToStr(Autostart));
-    f.WriteString('BasicSettings', 'ShowSearchAtStart', BoolToStr(SearchAtStart));
+    f.writestring('Basic', 'ManyNotebooks', BoolToStr(ManyNoteBooks) );
+    f.writestring('Basic', 'CaseSensitive', BoolToStr(SearchCaseSensitive));
+    f.writestring('Basic', 'ShowIntLinks', BoolToStr(ShowIntLinks));
+    f.writestring('Basic', 'ShowExtLinks', BoolToStr(ShowExtLinks));
+    f.WriteString('Basic', 'Autostart', BoolToStr(Autostart));
+    f.WriteString('Basic', 'ShowSearchAtStart', BoolToStr(SearchAtStart));
 
     f.writestring('Fonts', 'UsualFont', UsualFont);
     f.writestring('Fonts', 'FixedFont', FixedFont);
@@ -318,36 +361,47 @@ begin
 
     f.Free;
 
+    autos := TAutoStartCtrl.Create('tomboy-reborn', AutoStart);
+    if autos.ErrorMessage <> '' then
+          ShowMessage('Error setting autstart' + Autos.ErrorMessage);
+    FreeAndNil(Autos);
+
     ConfigWriting := false;
 end;
 
-procedure ConfigRead(source : String);
+function ConfigRead(source : String) : boolean;
 var
     f : TINIFile;
     s : String;
 begin
 
     if(ConfigReading) then begin
-        debugln('already reading');
-        exit;
+        debugln('ConfigRead(' + source + ') already reading');
+        exit(false);
     end;
     ConfigReading := True;
+    debugln('ConfigRead(' + source + ') go reading');
 
     if fileexists(ConfigFile) then
     begin
-         f :=  TINIFile.Create(ConfigFile);
+         try
+            f :=  TINIFile.Create(ConfigFile);
+         except on E: Exception do begin
+           debugln(E.Message);
+           exit(false);
+           end;
+         end;
 
-         NotesDir:= f.readstring('BasicSettings', 'NotesDir', GetDefaultNotesDir());
+         NotesDir:= f.readstring('Basic', 'NotesDir', GetDefaultNotesDir());
 
-         ManyNoteBooks        := StrToBool(f.readstring('BasicSettings', 'ManyNotebooks', 'false'));
-         SearchCaseSensitive  := StrToBool(f.readstring('BasicSettings', 'CaseSensitive', 'false'));
-         ShowIntLinks         := StrToBool(f.readstring('BasicSettings', 'ShowIntLinks', 'true'));
-         ShowExtLinks         := StrToBool(f.readstring('BasicSettings', 'ShowExtLinks', 'true'));
-         ShowSplash           := StrToBool(f.readstring('BasicSettings', 'ShowSplash', 'true'));
-         Autostart            := StrToBool(f.readstring('BasicSettings', 'Autostart', 'false'));
-         SearchAtStart        := StrToBool(f.readstring('BasicSettings', 'ShowSearchAtStart', 'true'));
+         ManyNoteBooks        := StrToBool(f.readstring('Basic', 'ManyNotebooks', 'false'));
+         SearchCaseSensitive  := StrToBool(f.readstring('Basic', 'CaseSensitive', 'false'));
+         ShowIntLinks         := StrToBool(f.readstring('Basic', 'ShowIntLinks', 'true'));
+         ShowExtLinks         := StrToBool(f.readstring('Basic', 'ShowExtLinks', 'true'));
+         Autostart            := StrToBool(f.readstring('Basic', 'Autostart', 'false'));
+         SearchAtStart        := StrToBool(f.readstring('Basic', 'ShowSearchAtStart', 'true'));
 
-         UsualFont            := f.readstring('Fonts', 'UsualFont', GetUsualFont());
+         UsualFont            := f.readstring('Fonts', 'UsualFont', GetDefaultUsualFont());
          FixedFont            := f.readstring('Fonts', 'FixedFont', GetDefaultFixedFont());
          FontRange := TFontRange.FontMedium;
          case f.readstring('Fonts', 'FontRange', 'medium') of
@@ -381,18 +435,17 @@ begin
          SyncNCToken      := f.ReadString('Sync', 'NCToken', '');
          SyncNCSecret     := f.ReadString('Sync', 'NCSecret', '');
 
-         SetDictDefaults();
-         DictLibrary      := f.ReadString('Spelling', 'Library',DictLibrary  );
-         DictPath         := f.ReadString('Spelling', 'DictPath', DictPath);
+         DictLibrary      := f.ReadString('Spelling', 'Library',GetDictDefaultLibrary());
+         DictPath         := f.ReadString('Spelling', 'DictPath', GetDictDefaultPath());
          DictFile         := f.ReadString('Spelling', 'DictFile', DictFile);
+         DictPath := AppendPathDelim(ChompPathDelim(DictPath));
 
          f.free;
 
          ConfigReading := false;
 
-         ConfigSave('CheckConfigFile1');
-
     end else begin
+
     // No config file
         GetDefaultNotesDir();
 
@@ -400,7 +453,6 @@ begin
         ShowExtLinks := true;
         ManyNoteBooks := false;
         SearchCaseSensitive := false;
-        ShowSplash := true;
         Autostart := true;
         SearchAtStart := false;
 
@@ -421,10 +473,12 @@ begin
         SyncNCSecret    := '';
 
         FixedFont := GetDefaultFixedFont();
-        UsualFont := GetUsualFont();
+        UsualFont := GetDefaultUsualFont();
         FontRange := TFontRange.FontMedium;
 
-        SetDictDefaults();
+        DictLibrary      := GetDictDefaultLibrary();
+        DictPath         := GetDictDefaultPath();
+        DictFile         := '';
 
         BackGndColour := clCream;
         HiColour := clYellow;
@@ -433,10 +487,12 @@ begin
 
         ConfigReading := false;
 
-        ConfigSave('CheckConfigFile2');
+        ConfigWrite('CheckConfigFile');
     end;
 
     SetFontSizes();
+
+    Result := true;
 
 end;
 
@@ -599,48 +655,51 @@ var  T : string;
     FontNames : array[1..7] of string
       = ('Monospace', 'Monaco', 'Nimbus Mono L', 'Liberation Mono', 'Lucida Console', 'Lucida Sans Typewriter', 'Courier New' );
 
-    Label1 : TLabel;
+    f : TForm;
 
     function IsMono(FontName : String) : boolean;
     begin
-      Label1 := TLabel.Create(nil);
-      Label1.Canvas.Font.Name := FontName;
-      result := Label1.Canvas.TextWidth('i') = Label1.Canvas.TextWidth('w');
-      FreeAndNil(Label1);
+      f.Canvas.Font.Name := FontName;
+      debugln('IsMono '+FontName);
+      result := f.Canvas.TextWidth('i') = f.Canvas.TextWidth('w');
     end;
 
     function IsDifferentSizes() : boolean;
     var
         ASize : integer;
     begin
-        Label1.Canvas.Font.Size := 13;
-        ASize := Label1.Canvas.TextHeight('H');
-        Label1.Canvas.Font.Size := 14;
-        if ASize = Label1.Canvas.TextHeight('H')
+        f.Canvas.Font.Size := 13;
+        ASize := f.Canvas.TextHeight('H');
+        f.Canvas.Font.Size := 14;
+        if ASize = f.Canvas.TextHeight('H')
             then exit(False);
-        ASize := Label1.Canvas.TextHeight('H');
-        Label1.Canvas.Font.Size := 15;
-        If ASize = Label1.Canvas.TextHeight('H')
+        ASize := f.Canvas.TextHeight('H');
+        f.Canvas.Font.Size := 15;
+        If ASize = f.Canvas.TextHeight('H')
             then exit(False);
         result := True;
     end;
 
 begin
+    f := TForm.Create(nil);
     Result := '';
     for T in FontNames do begin
         if not IsMono(T) then continue;
         if not IsDifferentSizes() then continue;
+        debugln('Found : '+T);
         Result := T;
-        exit;
+        break;
     end;
+    FreeAndNil(f);
 end;
 
-function GetUsualFont() : String;
+function GetDefaultUsualFont() : String;
 var
     f : TForm;
 begin
     f := TForm.Create(nil);
     Result := GetFontData(f.Font.Handle).Name;
+    debugln('DefaultUsualFont = ' + Result);
     FreeAndNil(f);
 end;
 
@@ -936,6 +995,8 @@ begin
 
   hashkey := Key + '&' + secret;
 
+  debugln('HASHKEY = '+hashkey);
+
   data := mode + '&' + URLEncode(u) + '&' + URLEncode(p);
 
   signature := HMACSHA1(hashkey, data);
@@ -970,23 +1031,32 @@ end;
 
 { ===== SPELLING ==== }
 
-procedure SetDictDefaults();
+function GetDictDefaultPath() : String;
 begin
-    DictPathAlt := ExtractFilePath(Application.ExeName);
     {$ifdef WINDOWS}
-    DictPath := 'C:\Program Files\LibreOffice 5\share\extensions\dict-en\';
+    Result := 'C:\Program Files\LibreOffice 5\share\extensions\dict-en\';
     {$ENDIF}
     {$ifdef DARWIN}
-    DictPath := '/Library/Spelling/';
-    DictPathAlt := '/Applications/tomboy-reborn.app/Contents/Resources/';
+    Result := '/Library/Spelling/';
     {$endif}
     {$ifdef LINUX}
-    DictPath := '/usr/share/hunspell/';
-    DictPathAlt := '/usr/share/myspell/';
+    Result := '/usr/share/hunspell/';
     {$ENDIF}
-    DictLibrary := '';
-    DictFile := '';
 end;
+
+function GetDictDefaultLibrary() : String;
+begin
+    {$ifdef WINDOWS}
+    Result := 'C:\Program Files\LibreOffice 5\share\extensions\dict-en\';
+    {$ENDIF}
+    {$ifdef DARWIN}
+    Result := '/Library/Spelling/';
+    {$endif}
+    {$ifdef LINUX}
+    Result := '/usr/lib/libhunspell.so';
+    {$ENDIF}
+end;
+
 
 { ===== SYNC ==== }
 
@@ -1003,6 +1073,64 @@ begin
        exit(true);
     end;
   exit(false);
+end;
+
+
+{ ========= TNoteInfoList ========= }
+
+function TNoteInfoList.Add(ANote : PNoteInfo) : integer;
+begin
+    result := inherited Add(ANote);
+end;
+
+{ This will be quite slow with a big list notes, consider an AVLTree ? }
+function TNoteInfoList.FindID(const ID: ANSIString): PNoteInfo;
+var
+    Index : longint;
+begin
+    Result := Nil;
+    for Index := 0 to Count-1 do begin
+        if Items[Index]^.ID = ID then begin
+            Result := Items[Index];
+            exit()
+        end;
+    end;
+end;
+
+function TNoteInfoList.ActionName(Act: TSyncAction): string;
+begin
+    Result := ' Unknown ';
+    case Act of
+        SynUnset : Result := ' Unset ';
+        SynNothing : Result := ' Nothing ';
+        SynUploadNew  : Result := ' UploadNew ';   // we differentiate in case of a write to remote fail.
+        SynUpLoadEdit : Result := ' UpLoadEdit ';
+        SynDownload: Result := ' Download ';
+        SynCopy: Result := ' MakeCopy ';
+        SynDeleteLocal  : Result := ' DeleteLocal ';
+        SynDeleteRemote : Result := ' DeleteRemote ';
+        SynError : Result := ' ** ERROR **';
+        SynAllLocal : Result := ' AllLocal ';
+        SynAllCopy : Result := ' AllCopy ';
+        SynAllRemote : Result := ' AllRemote ';
+        SynAllNewest : Result := ' AllNewest ';
+        SynAllOldest : Result := ' AllOldest ';
+    end;
+    while length(result) < 15 do Result := Result + ' ';
+end;
+
+destructor TNoteInfoList.Destroy;
+var
+I : integer;
+begin
+    for I := 0 to Count-1 do
+        dispose(Items[I]);
+    inherited;
+end;
+
+function TNoteInfoList.Get(Index: integer): PNoteInfo;
+begin
+    Result := PNoteInfo(inherited get(Index));
 end;
 
 initialization

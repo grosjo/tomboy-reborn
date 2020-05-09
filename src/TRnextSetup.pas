@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, LCLIntf, StdCtrls,
-  fpjson, jsonparser, strutils, fphttpserver, LazLogger, openssl,
+  fpjson, jsonparser, strutils, fphttpserver, LazLogger, openssl, md5,
   TRcommon;
 
 type     { TRServer }
@@ -54,9 +54,6 @@ type    { TFormNCSetup }
   end;
 
 
-var
-  FormNCSetup: TFormNCSetup;
-
 implementation
 
 {$R *.lfm}
@@ -96,39 +93,43 @@ end;
 
 procedure TFormNCSetup.FormCreate(Sender: TObject);
 begin
-     success :=false;
-     listening := false;
+  debugln('NC FormCreate');
+  success :=false;
+  listening := false;
 end;
 
 
 function TFormNCSetup.isSuccess() : boolean;
 begin
-     Result := success;
+  debugln('NC isSuccess '+BoolToStr(success));
+  Result := success;
 end;
 
 function TFormNCSetup.getKey() : String;
 begin
-        Result := Key;
+  Result := Key;
 end;
 
 function TFormNCSetup.getToken() : String;
 begin
-        Result := Token;
+  Result := Token;
 end;
 
 function TFormNCSetup.getTokenSecret() : String;
 begin
-        Result := TokenSecret;
+  Result := TokenSecret;
 end;
 
 procedure TFormNCSetup.setKey(s : String);
 begin
-        Key := s;
+  if(length(s)<5) then
+     Key := MD5Print(MD5String(Format('%d',[Random(9999999-123400)+123400])))
+  else Key := s;
 end;
 
 procedure TFormNCSetup.setToken(s : String);
 begin
-        Token :=s;
+  Token :=s;
 end;
 
 procedure TFormNCSetup.NCAuthClick(Sender: TObject);
@@ -163,7 +164,7 @@ begin
         ok := true; s1 :=''; s2:=''; s3:='';
         try
            jData := GetJSON(res);
-           debugln('JSON OAUTH = ' + jData.FormatJSON());
+           debugln('JSON1 OAUTH = ' + jData.FormatJSON());
            jObject := TJSONObject(jData);
            s1 := jObject.Get('oauth_request_token_url');
            s2 := jObject.Get('oauth_authorize_url');
@@ -191,6 +192,7 @@ begin
         res := WebPost(requestTokenUrl,p);
         FreeAndNil(p);
 
+        debugln('Request token reply : '+res);
         //Example : oauth_token=r36747eda81d3a14c&oauth_token_secret=s05507586554bb6bf&oauth_callback_confirmed=true
 
         ts:=['&'];

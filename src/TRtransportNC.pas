@@ -1,24 +1,14 @@
-unit transnext;
+unit TRtransportNC;
 
-{ A unit that does the file transfer side of a NextSync operation.
-  Depends on external (Ruby) modules, as yet unimplemented.
-  *
-  *  See attached licence file.
-}
 {$mode objfpc}{$H+}
 
 interface
 
 uses
     Classes, LazLogger, SysUtils, Dialogs, fpjson, jsonparser,
-    TRcommon, Trans, SyncUtils;
+    TRcommon, TRTransport;
 
-type               { ----------- TNextSync ------------ }
-
-
-{ TNextSync }
-
-TNextSync = Class(TTomboyTrans)
+type TNextSync = Class(TTomboyTrans)
     public
         constructor create;
         destructor Destroy; override;
@@ -37,7 +27,6 @@ TNextSync = Class(TTomboyTrans)
 
 implementation
 
-{ TNextSync }
 
 constructor TNextSync.create;
 begin
