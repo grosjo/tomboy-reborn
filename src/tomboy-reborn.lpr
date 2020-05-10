@@ -9,14 +9,13 @@ uses
     {$ENDIF}{$ENDIF}
     Interfaces, Classes, Forms, SysUtils, StdCtrls, LazFileUtils, LazLogger,
     ExtCtrls,
-    TRcommon, TRtexts , TRsearchUnit{, TRsettings, TRsyncUI,
-    TRcolours, Mainunit, markdown, Index, SyncError, Spelling,
-    hunspell, syncutils, TRtexts, TRnextSetup};
+    TRcommon, TRtexts , TRsearchUnit, TRsettings;
 
 {$R *.res}
 
 var
     CmdLineErrorMsg : String;
+    s : TSettings;
 begin
     Application.Scaled:=True;
   Application.Title:='TomboyReborn';
@@ -50,9 +49,16 @@ begin
        exit();
     end;
 
-    if(not ConfigRead('main')) then begin
-	debugln('Error reading config');
-	exit();
+    case ConfigRead('main') of
+        -1 : begin
+	     debugln('Error reading config');
+	     exit();
+           end;
+        0 : begin
+             Application.CreateForm(TSettings, s);
+             s.ShowModal;
+             FreeAndNil(s);
+           end;
     end;
 
     UseTrayIcon := true;

@@ -20,10 +20,10 @@ type TMenuTarget = (mtSep=1, mtNewNote, mtSearch, mtAbout=10, mtSync, mtTomdroid
 type TMenuKind = (mkFileMenu, mkRecentMenu, mkHelpMenu, mkAllMenu);
 
 
-type        { TSearchForm }
-    TSearchForm = class(TForm)
-        ButtonNotebookOptions: TButton;
-	ButtonClearFilters: TButton;
+type TSearchForm = class(TForm)
+
+    ButtonNotebookOptions: TButton;
+    ButtonClearFilters: TButton;
 	ButtonRefresh: TButton;
         CheckCaseSensitive: TCheckBox;
         Edit1: TEdit;
@@ -44,7 +44,7 @@ type        { TSearchForm }
         TrayIcon: TTrayIcon;
         TrayMenu : TPopupMenu;
         procedure TrayIconClick(Sender: TObject);
-        procedure BuildTrayMenu();
+        procedure BuildTrayMenu(Sender: TObject);
         procedure TrayMenuClicked(Sender : TObject);
 
 
@@ -78,6 +78,7 @@ type        { TSearchForm }
         procedure StringGridNotebooksResize(Sender: TObject);
 private
         HelpNotes : TNoteLister;
+        LocalTimer : TTimer;
         procedure AddItemMenu(TheMenu: TPopupMenu; Item: string;
             mtTag: TMenuTarget; OC: TNotifyEvent; MenuKind: TMenuKind);
         procedure CreateMenus();
@@ -150,9 +151,9 @@ implementation
 uses
     LCLType,
     LazFileUtils,
-    TRnoteEdit,
     TRsettings,		// Manages settings.
-    TRsync,           // because we need it to manhandle local manifest when a file is deleted
+    TRsync,
+    TRnoteEdit,
     process,        // Linux, we call wmctrl to move note to current workspace
     NoteBook;
 
@@ -167,10 +168,14 @@ begin
     TrayMenu.PopUp();
 end;
 
-procedure TSearchForm.BuildTrayMenu();
+procedure TSearchForm.BuildTrayMenu(Sender : TObject);
 var
     m1,m2 : TMenuItem;
 begin
+   debugln('BuildTrayMenu');
+
+   LocalTimer.Enabled := False;
+   FreeAndNil(LocalTimer);
 
    TrayMenu.Items.Clear;
    // New Note
@@ -192,11 +197,14 @@ begin
    m2.OnClick := @TrayMenuClicked;
    m1.Add(m2);
    // Sync
-   m2 := TMenuItem.Create(m1);
-   m2.Tag := ord(ttSync);
-   m2.Caption := rsTraySync;
-   m2.OnClick := @TrayMenuClicked;
-   m1.Add(m2);
+   if(isSyncConfigured()) then
+   begin
+      m2 := TMenuItem.Create(m1);
+      m2.Tag := ord(ttSync);
+      m2.Caption := rsTraySync;
+      m2.OnClick := @TrayMenuClicked;
+      m1.Add(m2);
+   end;
    // Settings
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttSettings);
@@ -236,6 +244,7 @@ end;
 procedure TSearchForm.TrayMenuClicked(Sender : TObject);
 var
     FormSettings : TSettings;
+    FormSync : TFormSync;
 begin
 
    debugln('TrayMenuClicked');
@@ -245,9 +254,20 @@ begin
                   then ShowMessage(rsSetupNotesDirFirst)
                   else OpenNote();
         ttSettings: begin
-            Application.CreateForm(TSettings, FormSettings);
+            debugln('TrayMenuClicked Settings');
+            FormSettings := TSettings.Create(self);
             FormSettings.ShowModal;
             FreeAndNil(FormSettings);
+            LocalTimer := TTimer.Create(Nil);
+            LocalTimer.OnTimer:= @BuildTrayMenu;
+            LocalTimer.Interval:=500;
+            LocalTimer.Enabled := True;
+            end;
+        ttSync : begin
+            debugln('TrayMenuClicked Sync');
+            FormSync := TFormSync.Create(Self);
+            FormSync.ShowModal;
+            FreeAndNil(FormSync);
             end;
         //mtAbout :   MainForm.ShowAbout();
         //mtSync :    if(Sett.getSyncConfigured()) then Sett.Synchronise()
@@ -314,8 +334,7 @@ end;
 procedure TSearchForm.DeleteNote(const FullFileName: ANSIString);
 var
     NewName, ShortFileName : ANSIString;
-    // LocalMan : TTomboyLocalManifest;
-    LocalMan : TSync;
+    //LocalMan : TSync;
 begin
     ShortFileName := ExtractFileNameOnly(FullFileName);
     if NoteLister.IsATemplate(ShortFileName) then begin
@@ -744,7 +763,10 @@ begin
         TrayMenu := TPopupMenu.Create(Self);
         TrayIcon.PopUpMenu := TrayMenu;
         TrayIcon.Show;
-        BuildTrayMenu();
+        LocalTimer := TTimer.Create(Nil);
+        LocalTimer.OnTimer:= @BuildTrayMenu;
+        LocalTimer.Interval:=200;
+        LocalTimer.Enabled := True;
     end;
 
     CreateMenus();

@@ -609,7 +609,7 @@ object Settings: TSettings
         AnchorSideTop.Side = asrCenter
         Left = 150
         Height = 15
-        Top = 231
+        Top = 271
         Width = 83
         BorderSpacing.Left = 150
         Caption = 'LabelDicStatus'
@@ -634,7 +634,7 @@ object Settings: TSettings
         AnchorSideTop.Side = asrCenter
         Left = 150
         Height = 15
-        Top = 196
+        Top = 236
         Width = 48
         BorderSpacing.Left = 150
         BorderSpacing.Top = 50
@@ -680,15 +680,15 @@ object Settings: TSettings
         TabOrder = 1
       end
       object ButtonSetDictionary: TButton
-        AnchorSideTop.Control = LabelDicStatus
-        AnchorSideTop.Side = asrBottom
-        Left = 64
-        Height = 40
-        Top = 266
-        Width = 143
-        Anchors = [akTop]
-        BorderSpacing.Top = 20
-        Caption = 'Set Dictionary'
+        AnchorSideLeft.Control = TabSpell
+        AnchorSideTop.Control = Label10
+        Left = 150
+        Height = 30
+        Top = 186
+        Width = 184
+        BorderSpacing.Left = 150
+        BorderSpacing.Top = 25
+        Caption = 'Select Dictionary folder'
         OnClick = ButtonSetDictionaryClick
         TabOrder = 2
       end
@@ -720,11 +720,11 @@ object Settings: TSettings
       end
       object Label8: TLabel
         AnchorSideLeft.Control = TabSpell
-        AnchorSideTop.Control = Label10
+        AnchorSideTop.Control = ButtonSetDictionary
         AnchorSideTop.Side = asrBottom
         Left = 15
         Height = 15
-        Top = 196
+        Top = 236
         Width = 109
         BorderSpacing.Left = 15
         BorderSpacing.Top = 20
@@ -737,7 +737,7 @@ object Settings: TSettings
         AnchorSideTop.Side = asrBottom
         Left = 15
         Height = 15
-        Top = 231
+        Top = 271
         Width = 110
         BorderSpacing.Left = 15
         BorderSpacing.Top = 20

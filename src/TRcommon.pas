@@ -6,6 +6,7 @@ uses
     Classes, Forms, SysUtils, Dialogs, StdCtrls, LazFileUtils, laz2_DOM,
     ExtCtrls, laz2_XMLRead, DateUtils, fphttpclient, ssockets, sslsockets,
     fpopenssl, openssl, hmac, strutils, IniFiles, LazLogger, Graphics,
+    {$ifdef LINUX} Unix, {$endif} LazUTF8,
     FileInfo, TRAutoStartCtrl, Trtexts;
 
 
@@ -74,6 +75,7 @@ type TNoteInfo =
         Height : integer;
         X : integer;
         Y : integer;
+        Tags : TStringList;
         Deleted : boolean;
   end;
 
@@ -84,10 +86,6 @@ type TNoteInfoList =
     private
      	function Get(Index: integer): PNoteInfo;
     public
-        ServerID : string;              // Partially implemented, don't rely yet ....
-        LastSyncDateSt : string;        // Partially implemented, don't rely yet ....
-        LastSyncDate : TDateTime;       // Partially implemented, don't rely yet ....
-        LastRev : integer;              // Partially implemented, don't rely yet ....
         destructor Destroy; override;
         function Add(ANote : PNoteInfo) : integer;
         function FindID(const ID : ANSIString) : PNoteInfo;
@@ -95,14 +93,11 @@ type TNoteInfoList =
         property Items[Index: integer]: PNoteInfo read Get; default;
   end;
 
-type
-    TClashRecord =
+type TClashRecord =
       record
          RemoteNote : PNoteInfo;
          LocalNote : PNoteInfo;
       end;
-
-type    TClashFunction = function(const ClashRec : TClashRecord): TSyncAction of object;
 
 
 // Environmment
@@ -114,12 +109,14 @@ function GetLocalNoteFile(NoteID : string; altrep : String = ''): string;
 function GetLocalBackupPath(): string;
 function GetTempFile() : string;
 function ConfigWrite(source : String) : boolean;
-function ConfigRead(source : String) : boolean;
+function ConfigRead(source : String) : integer;
 
 // Note generic function
 function GetNewID() : String;
 function NoteIDLooksOK(const ID : string) : boolean;
 function FileToNote(xml : String; NoteInfo : PNoteInfo) : boolean;
+function RemoveBadXMLCharacters(const InStr : String; DoQuotes : boolean = false) : String;
+function RemoveXml(const St : String) : String;
 
 // Font
 function GetDefaultFixedFont() : string;
@@ -129,6 +126,7 @@ procedure setFontSizes();
 // Datetime
 function GetGMTFromStr(const DateStr: ANSIString): TDateTime;
 function GetTimeFromGMT(d : TDateTime) : String;
+function GetCurrentTimeStr() : String;
 
 // Spelling
 function GetDictDefaultPath() : String;
@@ -156,8 +154,6 @@ var
     ConfigDir : String;
     NotesDir : String;
     ConfigFile : String;
-    ConfigReading : boolean;
-    ConfigWriting : boolean;
 
     ShowIntLinks,ShowExtLinks, ManyNoteBooks, SearchCaseSensitive,
       Autostart, SearchAtStart, UseTrayIcon : boolean;
@@ -285,39 +281,23 @@ begin
     Result := True;
     debugln('ConfigWrite '+source);
 
-    if ConfigWriting then
-    begin
-         debugln('Already writing');
-         exit(false);
-    end;
-    if ConfigReading then
-    begin
-         debugln('Reading in process');
-         exit(false);
-    end;
-
-    ConfigWriting := true;
-
-    debugln('ConfigWrite('+source+') proceeding '+ConfigFile);
-
     try
       DeleteFile(ConfigFile);
       f :=  TINIFile.Create(ConfigFile);
     except on E: Exception do begin
        showmessage('Unable to write config '+ ConfigFile);
-       ConfigWriting := false;
        exit(False);
        end;
     end;
 
     f.writestring('Basic', 'NotesDir', NotesDir);
 
-    f.writestring('Basic', 'ManyNotebooks', BoolToStr(ManyNoteBooks) );
-    f.writestring('Basic', 'CaseSensitive', BoolToStr(SearchCaseSensitive));
-    f.writestring('Basic', 'ShowIntLinks', BoolToStr(ShowIntLinks));
-    f.writestring('Basic', 'ShowExtLinks', BoolToStr(ShowExtLinks));
-    f.WriteString('Basic', 'Autostart', BoolToStr(Autostart));
-    f.WriteString('Basic', 'ShowSearchAtStart', BoolToStr(SearchAtStart));
+    f.writestring('Basic', 'ManyNotebooks', BoolToStr(ManyNoteBooks, true) );
+    f.writestring('Basic', 'CaseSensitive', BoolToStr(SearchCaseSensitive, true));
+    f.writestring('Basic', 'ShowIntLinks', BoolToStr(ShowIntLinks, true));
+    f.writestring('Basic', 'ShowExtLinks', BoolToStr(ShowExtLinks, true));
+    f.WriteString('Basic', 'Autostart', BoolToStr(Autostart, true));
+    f.WriteString('Basic', 'ShowSearchAtStart', BoolToStr(SearchAtStart, true));
 
     f.writestring('Fonts', 'UsualFont', UsualFont);
     f.writestring('Fonts', 'FixedFont', FixedFont);
@@ -341,7 +321,7 @@ begin
          TSyncClashOption.UseServer :  f.writestring('Sync', 'ClashOption', 'UseServer');
 	 TSyncClashOption.MakeCopy :   f.writestring('Sync', 'ClashOption', 'MakeCopy');
     end;
-    f.writestring('Sync', 'Tested', BoolToStr(not SyncFirstRun));
+    f.writestring('Sync', 'Tested', BoolToStr(not SyncFirstRun, true));
 
     if(SyncType = TSyncTransport.SyncNone)
     then f.writestring('Sync', 'Type', 'none')
@@ -366,49 +346,44 @@ begin
           ShowMessage('Error setting autstart' + Autos.ErrorMessage);
     FreeAndNil(Autos);
 
-    ConfigWriting := false;
+    debugln('ConfigWrite DONE '+source);
 end;
 
-function ConfigRead(source : String) : boolean;
+function ConfigRead(source : String) : integer;
 var
     f : TINIFile;
-    s : String;
 begin
 
-    if(ConfigReading) then begin
-        debugln('ConfigRead(' + source + ') already reading');
-        exit(false);
-    end;
-    ConfigReading := True;
-    debugln('ConfigRead(' + source + ') go reading');
+    debugln('ConfigRead(' + source + ')');
 
     if fileexists(ConfigFile) then
     begin
-         try
-            f :=  TINIFile.Create(ConfigFile);
-         except on E: Exception do begin
-           debugln(E.Message);
-           exit(false);
-           end;
-         end;
+       try
+          f :=  TINIFile.Create(ConfigFile);
+       except on E: Exception do
+          begin
+             debugln(E.Message);
+             exit(-1);
+          end;
+       end;
 
-         NotesDir:= f.readstring('Basic', 'NotesDir', GetDefaultNotesDir());
+       NotesDir:= f.readstring('Basic', 'NotesDir', GetDefaultNotesDir());
 
-         ManyNoteBooks        := StrToBool(f.readstring('Basic', 'ManyNotebooks', 'false'));
-         SearchCaseSensitive  := StrToBool(f.readstring('Basic', 'CaseSensitive', 'false'));
-         ShowIntLinks         := StrToBool(f.readstring('Basic', 'ShowIntLinks', 'true'));
-         ShowExtLinks         := StrToBool(f.readstring('Basic', 'ShowExtLinks', 'true'));
-         Autostart            := StrToBool(f.readstring('Basic', 'Autostart', 'false'));
-         SearchAtStart        := StrToBool(f.readstring('Basic', 'ShowSearchAtStart', 'true'));
+       ManyNoteBooks        := StrToBool(f.readstring('Basic', 'ManyNotebooks', 'false'));
+       SearchCaseSensitive  := StrToBool(f.readstring('Basic', 'CaseSensitive', 'false'));
+       ShowIntLinks         := StrToBool(f.readstring('Basic', 'ShowIntLinks', 'true'));
+       ShowExtLinks         := StrToBool(f.readstring('Basic', 'ShowExtLinks', 'true'));
+       Autostart            := StrToBool(f.readstring('Basic', 'Autostart', 'false'));
+       SearchAtStart        := StrToBool(f.readstring('Basic', 'ShowSearchAtStart', 'true'));
 
-         UsualFont            := f.readstring('Fonts', 'UsualFont', GetDefaultUsualFont());
-         FixedFont            := f.readstring('Fonts', 'FixedFont', GetDefaultFixedFont());
-         FontRange := TFontRange.FontMedium;
-         case f.readstring('Fonts', 'FontRange', 'medium') of
-              'huge'    : FontRange := TFontRange.FontHuge;
-              'big'     : FontRange := TFontRange.FontBig;
-              'small'   : FontRange := TFontRange.FontSmall;
-         end;
+       UsualFont            := f.readstring('Fonts', 'UsualFont', GetDefaultUsualFont());
+       FixedFont            := f.readstring('Fonts', 'FixedFont', GetDefaultFixedFont());
+       FontRange := TFontRange.FontMedium;
+       case f.readstring('Fonts', 'FontRange', 'medium') of
+          'huge'    : FontRange := TFontRange.FontHuge;
+          'big'     : FontRange := TFontRange.FontBig;
+          'small'   : FontRange := TFontRange.FontSmall;
+       end;
 
          BackGndColour := StringToColor(f.ReadString('Colors', 'BackGndColour',ColorToString(clCream)));
          HiColour      := StringToColor(f.ReadString('Colors', 'HiColour',ColorToString(clYellow)));
@@ -422,7 +397,10 @@ begin
               'UseServer' : SyncClashOption := TSyncClashOption.UseServer;
               'MakeCopy'  : SyncClashOption := TSyncClashOption.MakeCopy;
          end;
-         SyncFirstRun     := StrToBool(f.ReadString('Sync', 'Tested', 'false'));
+         SyncFirstRun     := not StrToBool(f.ReadString('Sync', 'Tested', 'true'));
+
+         debugln('READSYNCTYPE = '+f.ReadString('Sync', 'Type','none'));
+
          SyncType         := TSyncTransport.SyncNone;
          case f.ReadString('Sync', 'Type','none') of
               'file'      : SyncType := TSyncTransport.SyncFile;
@@ -442,7 +420,7 @@ begin
 
          f.free;
 
-         ConfigReading := false;
+         Result:= 1;
 
     end else begin
 
@@ -485,14 +463,14 @@ begin
         TextColour := clBlack;
         TitleColour := clBlue;
 
-        ConfigReading := false;
-
         ConfigWrite('CheckConfigFile');
+
+        Result := 0;
     end;
 
-    SetFontSizes();
+    debugln('ConfigRead(' + source + ') DONE');
 
-    Result := true;
+    SetFontSizes();
 
 end;
 
@@ -520,58 +498,120 @@ function FileToNote(xml : String; NoteInfo : PNoteInfo) : boolean;
 var
     Doc : TXMLDocument;
     Node : TDOMNode;
-
+    NodeList : TDOMNodeList;
+    j : integer;
 begin
+   debugln('File to note '+xml);
      try
         ReadXMLFile(Doc, xml);
      except on E:Exception do begin debugln(E.message); exit(false); end;
      end;
 
      try
+        debugln('Looking for create date');
         Node := Doc.DocumentElement.FindNode('create-date');
-        NoteInfo^.CreateDate := Node.FirstChild.NodeValue;
-        if NoteInfo^.CreateDate <> '' then
-           NoteInfo^.CreateDateGMT := GetGMTFromStr(NoteInfo^.CreateDate)
-           else NoteInfo^.CreateDateGMT := 0;
+        NoteInfo^.CreateDate := '';
+        if(assigned(Node)) then NoteInfo^.CreateDate := Node.FirstChild.NodeValue;
+        if NoteInfo^.CreateDate = '' then NoteInfo^.CreateDate := GetCurrentTimeStr();
+        NoteInfo^.CreateDateGMT := GetGMTFromStr(NoteInfo^.CreateDate);
+        debugln('Found ' + NoteInfo^.CreateDate);
 
+        debugln('Looking for last-change-date');
         Node := Doc.DocumentElement.FindNode('last-change-date');
-        NoteInfo^.LastChange := Node.FirstChild.NodeValue;
-        if NoteInfo^.LastChange <> '' then
-           NoteInfo^.LastChangeGMT := GetGMTFromStr(NoteInfo^.LastChange)
-        else NoteInfo^.LastChangeGMT := 0;
+        NoteInfo^.LastChange := '';
+        if(assigned(Node)) then NoteInfo^.LastChange := Node.FirstChild.NodeValue;
+        if NoteInfo^.LastChange = '' then NoteInfo^.LastChange := GetCurrentTimeStr();
+        NoteInfo^.LastChangeGMT := GetGMTFromStr(NoteInfo^.LastChange);
+        debugln('Found ' + NoteInfo^.LastChange);
 
+        debugln('Looking for last-metadata-change-date');
         Node := Doc.DocumentElement.FindNode('last-metadata-change-date');
-        NoteInfo^.LastMetaChange := Node.FirstChild.NodeValue;
-        if NoteInfo^.LastMetaChange <> '' then
-           NoteInfo^.LastMetaChangeGMT := GetGMTFromStr(NoteInfo^.LastMetaChange)
-        else NoteInfo^.LastMetaChangeGMT := 0;
+        NoteInfo^.LastMetaChange := '';
+        if(assigned(Node)) then NoteInfo^.LastMetaChange := Node.FirstChild.NodeValue;
+        if NoteInfo^.LastMetaChange = '' then NoteInfo^.LastMetaChange := GetCurrentTimeStr();
+        NoteInfo^.LastMetaChangeGMT := GetGMTFromStr(NoteInfo^.LastMetaChange);
+        debugln('Found ' + NoteInfo^.LastMetaChange);
 
-        NoteInfo^.Title := Doc.DocumentElement.FindNode('title').FirstChild.NodeValue;
+        debugln('Looking for title');
+        Node := Doc.DocumentElement.FindNode('title');
+        if(assigned(Node)) then NoteInfo^.Title := Node.FirstChild.NodeValue
+        else NoteInfo^.Title := 'Note ' + NoteInfo^.ID;
+        debugln('Found ' + NoteInfo^.Title);
 
-        Node := Doc.DocumentElement.FindNode('text');
-        NoteInfo^.Content := Node.FindNode('note-content').NodeValue;
-        NoteInfo^.Version := Node.FindNode('note-content').Attributes.GetNamedItem('version').NodeValue;
-
-        Node := Doc.DocumentElement.FindNode('open-on-startup');
-        NoteInfo^.OpenOnStartup := (Node.FirstChild.NodeValue.ToLower = 'true');
-
-        Node := Doc.DocumentElement.FindNode('pinned');
-        NoteInfo^.Pinned := (Node.FirstChild.NodeValue.ToLower = 'true');
-
+        debugln('Looking for cursor-position');
         Node := Doc.DocumentElement.FindNode('cursor-position');
-        NoteInfo^.CursorPosition := StrToInt(Node.FirstChild.NodeValue);
+        NoteInfo^.CursorPosition := 0;
+        if(assigned(Node)) then NoteInfo^.CursorPosition := StrToInt(Node.FirstChild.NodeValue);
+        debugln('Found '+ IntToStr(NoteInfo^.CursorPosition));
+
+        debugln('Looking for selection-bound-position');
         Node := Doc.DocumentElement.FindNode('selection-bound-position');
-        NoteInfo^.SelectBoundPosition := StrToInt(Node.FirstChild.NodeValue);
+        NoteInfo^.SelectBoundPosition := 0;
+        if(assigned(Node)) then NoteInfo^.SelectBoundPosition := StrToInt(Node.FirstChild.NodeValue);
+        debugln('Found '+ IntToStr(NoteInfo^.SelectBoundPosition));
 
+        debugln('Looking for width');
         Node := Doc.DocumentElement.FindNode('width');
-        NoteInfo^.Width := StrToInt(Node.FirstChild.NodeValue);
-        Node := Doc.DocumentElement.FindNode('height');
-        NoteInfo^.Height := StrToInt(Node.FirstChild.NodeValue);
+        NoteInfo^.Width := 0;
+        if(assigned(Node)) then NoteInfo^.Width := StrToInt(Node.FirstChild.NodeValue);
+        debugln('Found '+ IntToStr(NoteInfo^.Width));
 
+        debugln('Looking for height');
+        Node := Doc.DocumentElement.FindNode('height');
+        NoteInfo^.Width := 0;
+        if(assigned(Node)) then NoteInfo^.Width := StrToInt(Node.FirstChild.NodeValue);
+        debugln('Found '+ IntToStr(NoteInfo^.Height));
+
+        debugln('Looking for X');
         Node := Doc.DocumentElement.FindNode('x');
-        NoteInfo^.X := StrToInt(Node.FirstChild.NodeValue);
+        NoteInfo^.X := 0;
+        if(assigned(Node)) then NoteInfo^.X := StrToInt(Node.FirstChild.NodeValue);
+        debugln('Found '+ IntToStr(NoteInfo^.X));
+
+        debugln('Looking for Y');
         Node := Doc.DocumentElement.FindNode('y');
-        NoteInfo^.Y := StrToInt(Node.FirstChild.NodeValue);
+        NoteInfo^.Y := 0;
+        if(assigned(Node)) then NoteInfo^.Y := StrToInt(Node.FirstChild.NodeValue);
+        debugln('Found '+ IntToStr(NoteInfo^.Y));
+
+        debugln('Looking for open-on-startup');
+        Node := Doc.DocumentElement.FindNode('open-on-startup');
+        NoteInfo^.OpenOnStartup := false;
+        if(assigned(Node)) then NoteInfo^.OpenOnStartup := StrToBool(Node.FirstChild.NodeValue);
+        debugln('Found '+ BoolToStr(NoteInfo^.OpenOnStartup, true));
+
+        debugln('Looking for pinned');
+        Node := Doc.DocumentElement.FindNode('pinned');
+        NoteInfo^.Pinned := false;
+        if(assigned(Node)) then NoteInfo^.Pinned := StrToBool(Node.FirstChild.NodeValue);
+        debugln('Found '+ BoolToStr(NoteInfo^.Pinned, true));
+
+
+        debugln('Looking for text');
+        Node := Doc.DocumentElement.FindNode('text');
+        NoteInfo^.Content := 'empty';
+        NoteInfo^.Version := '0.3';
+        if(assigned(Node)) then
+        begin
+             NoteInfo^.Content := Node.FindNode('note-content').NodeValue;
+             Node := Node.FindNode('note-content').Attributes.GetNamedItem('version');
+             if(Assigned(Node)) then NoteInfo^.Version := Node.NodeValue;
+        end
+        else debugln('empty note');
+
+        debugln('Looking for tags');
+        Node := Doc.DocumentElement.FindNode('tags');
+        NoteInfo^.Tags := TStringList.Create;
+        if(assigned(Node)) then
+        begin
+           NodeList := Node.ChildNodes;
+           for j := 0 to NodeList.Count-1 do
+               begin
+                debugln('Found tag ' + NodeList.Item[j].NodeValue.QuotedString);
+                NoteInfo^.Tags.Add(NodeList.Item[j].NodeValue);
+               end;
+        end
+        else debugln('empty note');
 
         //NoteInfo^.Source := Doc.ToString;
         NoteInfo^.Deleted := false;
@@ -584,6 +624,88 @@ begin
 end;
 
 
+function RemoveXml(const St : String) : String;
+var
+    X, Y : integer;
+    FoundOne : boolean = false;
+begin
+    Result := St;
+    repeat
+        FoundOne := False;
+        X := UTF8Pos('<', Result);
+        if X > 0 then begin
+            Y := UTF8Pos('>', Result);
+            if Y > 0 then begin
+                UTF8Delete(Result, X, Y-X+1);
+                FoundOne := True;
+            end;
+        end;
+    until not FoundOne;
+end;
+
+function RemoveBadXMLCharacters(const InStr : String; DoQuotes : boolean = false) : String;
+var
+   Index : longint = 1;
+   Start : longint = 1;
+begin
+   Result := '';
+   while Index <= length(InStr) do
+     begin
+          if InStr[Index] = '<' then
+          begin
+             Result := Result + Copy(InStr, Start, Index - Start);
+             Result := Result + '&lt;';
+             inc(Index);
+             Start := Index;
+             continue;
+          end;
+
+          if InStr[Index] = '>' then
+          begin
+             Result := Result + Copy(InStr, Start, Index - Start);
+             Result := Result + '&gt;';
+             inc(Index);
+             Start := Index;
+             continue;
+          end;
+
+          if InStr[Index] = '&' then
+          begin
+             Result := Result + Copy(InStr, Start, Index - Start);
+             Result := Result + '&amp;';
+             inc(Index);
+             Start := Index;
+             continue;
+          end;
+
+          if DoQuotes then
+          begin
+             if InStr[Index] = '''' then
+             begin
+                Result := Result + Copy(InStr, Start, Index - Start);
+                Result := Result + '&apos;';
+                inc(Index);
+                Start := Index;
+                continue;
+             end;
+
+             if InStr[Index] = '"' then
+             begin
+                Result := Result + Copy(InStr, Start, Index - Start);
+                Result := Result + '&quot;';
+                inc(Index);
+                Start := Index;
+                continue;
+             end;
+          end;
+
+          inc(Index);
+     end;
+
+   Result := Result + Copy(InStr, Start, Index - Start);
+end;
+
+
 { ===== DATETIME ==== }
 
 function GetTimeFromGMT(d : TDateTime) : String;
@@ -593,6 +715,28 @@ begin;
 
 end;
 
+function GetCurrentTimeStr(): ANSIstring;
+var
+   ThisMoment : TDateTime;
+   Res : ANSIString;
+   Off : longint;
+begin
+    {$ifdef LINUX}
+    ReReadLocalTime();    // in case we are near daylight saving time changeover
+    {$endif}
+    ThisMoment:=Now;
+    Result := FormatDateTime('YYYY-MM-DD',ThisMoment) + 'T'
+                   + FormatDateTime('hh:mm:ss.zzz"0000"',ThisMoment);
+    Off := GetLocalTimeOffset();
+    if (Off div -60) >= 0 then Res := '+'
+        else Res := '-';
+        if abs(Off div -60) < 10 then Res := Res + '0';
+        Res := Res + inttostr(abs(Off div -60)) + ':';
+        if (Off mod 60) = 0 then
+                Res := res + '00'
+        else Res := Res + inttostr(abs(Off mod 60));
+    Result := Result + res;
+end;
 
 function GetGMTFromStr(const DateStr: ANSIString): TDateTime;
 var
@@ -643,7 +787,7 @@ begin
        exit(0.0);
        end;
     end;
-    debugln('Date from ' + DateStr + ' is ', DatetoStr(Result), ' ', TimetoStr(Result));
+    debugln('GetGMTFromStr : "' + DateStr + '"  -> ', DatetoStr(Result), ' ', TimetoStr(Result));
 end;
 
 
@@ -1062,8 +1206,10 @@ end;
 
 function isSyncConfigured() : boolean;
 begin
-  if(SyncType = TSyncTransport.SyncNone) then exit(false);
+  debugln('isSyncCOnf : Testing FILE');
   if(SyncType = TSyncTransport.SyncFile) then exit(length(SyncFileRepo)>0);
+
+  debugln('isSyncCOnf : Testing NEXT');
   if(SyncType = TSyncTransport.SyncNextCloud) then
     begin
        if(length(SyncNCURL) = 0) then exit(false);
@@ -1072,6 +1218,8 @@ begin
        if(length(SyncNCSecret) = 0) then exit(false);
        exit(true);
     end;
+
+  debugln('isSyncCOnf : Default NONE');
   exit(false);
 end;
 
@@ -1124,7 +1272,10 @@ var
 I : integer;
 begin
     for I := 0 to Count-1 do
-        dispose(Items[I]);
+        begin
+          FreeAndNil(Items[I]^.tags);
+          dispose(Items[I]);
+        end;
     inherited;
 end;
 
@@ -1138,9 +1289,6 @@ initialization
 debugln('Init TRcommon');
 
 InitSSLInterface;
-
-ConfigReading := false;
-ConfigWriting := false;
 
 end.
 

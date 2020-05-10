@@ -97,11 +97,8 @@ type
 
 
     		{ Returns True if indicated note contains term in its content }
-   	function NoteContains(const TermList: TStringList; FileName: ANSIString
-        ): boolean;
-            { Removes any complete xml tags from passed string, only matches '<' to '>' }
-    function RemoveXml(const St: AnsiString): AnsiString;
-	procedure RewriteBadChangeDate(const Dir, FileName, LCD: ANSIString);
+   	function NoteContains(const TermList: TStringList; FileName: ANSIString): boolean;
+    	procedure RewriteBadChangeDate(const Dir, FileName, LCD: ANSIString);
 
    public
     XMLError : Boolean;   // Indicates a note was found with an XML (or other) error, checked by calling process.
@@ -199,8 +196,7 @@ type
 
 implementation
 
-uses  laz2_DOM, laz2_XMLRead, LazFileUtils, LazUTF8, LazLogger, SyncUtils,
-                TRcommon;
+uses  laz2_DOM, laz2_XMLRead, LazFileUtils, LazUTF8, LazLogger, TRcommon;
 
 { TNoteBookList }
 
@@ -695,25 +691,6 @@ begin
     end else DebugLn('Error, found a note and lost it !');
 end;
 
-
-function TNoteLister.RemoveXml(const St : AnsiString) : AnsiString;
-var
-    X, Y : integer;
-    FoundOne : boolean = false;
-begin
-    Result := St;
-    repeat
-        FoundOne := False;
-        X := UTF8Pos('<', Result);
-        if X > 0 then begin
-            Y := UTF8Pos('>', Result);
-            if Y > 0 then begin
-                UTF8Delete(Result, X, Y-X+1);
-                FoundOne := True;
-            end;
-        end;
-    until not FoundOne;
-end;
 
 procedure TNoteLister.IndexThisNote(const ID: String);
 begin

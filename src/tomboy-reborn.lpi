@@ -704,9 +704,6 @@
       <DestinationDirectory Value="$(ProjPath)/published/"/>
     </PublishOptions>
     <RunParams>
-      <local>
-        <CommandLineParams Value="--config-dir=/home/dbannon/.config/tomboy-reborn-alt/"/>
-      </local>
       <FormatVersion Value="2"/>
       <Modes Count="1">
         <Mode0 Name="default">
@@ -727,18 +724,16 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="30">
+    <Units Count="27">
       <Unit0>
         <Filename Value="tomboy-reborn.lpr"/>
         <IsPartOfProject Value="True"/>
       </Unit0>
       <Unit1>
-        <Filename Value="searchunit.pas"/>
+        <Filename Value="TRsyncClashUI.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="SearchForm"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <UnitName Value="SearchUnit"/>
+        <UnitName Value="TRsyncClashUI"/>
+	<ComponentName Value="FormClash"/>
       </Unit1>
       <Unit2>
         <Filename Value="TRnoteEdit.pas"/>
@@ -746,7 +741,6 @@
         <ComponentName Value="NoteEditForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="TRNoteEdit"/>
       </Unit2>
       <Unit3>
         <Filename Value="Notes.txt"/>
@@ -770,12 +764,11 @@
         <ResourceBaseClass Value="Form"/>
       </Unit6>
       <Unit7>
-        <Filename Value="syncgui.pas"/>
+        <Filename Value="TRsync.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormSync"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="TRsyncGUI"/>
       </Unit7>
       <Unit8>
         <Filename Value="notebook.pas"/>
@@ -833,79 +826,65 @@
         <UnitName Value="Note_Lister"/>
       </Unit15>
       <Unit16>
-        <Filename Value="syncutils.pas"/>
+        <Filename Value="TRhunspell.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit16>
       <Unit17>
-        <Filename Value="TRsync.pas"/>
+        <Filename Value="k_prn.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit17>
       <Unit18>
-        <Filename Value="hunspell.pas"/>
+        <Filename Value="TRtransport.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit18>
       <Unit19>
-        <Filename Value="transandroid.pas"/>
+        <Filename Value="TRtransportFile.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit19>
       <Unit20>
-        <Filename Value="k_prn.pas"/>
+        <Filename Value="TRtransportNC.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit20>
       <Unit21>
-        <Filename Value="syncclash.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="FormSDiff"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <UnitName Value="TRsyncclash"/>
-      </Unit21>
-      <Unit22>
-        <Filename Value="trans.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit22>
-      <Unit23>
-        <Filename Value="transfile.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit23>
-      <Unit24>
-        <Filename Value="transnet.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit24>
-      <Unit25>
         <Filename Value="helpnotes.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormHelpNotes"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit25>
-      <Unit26>
+      </Unit21>
+      <Unit22>
         <Filename Value="TRtexts.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="TrTexts"/>
-      </Unit26>
-      <Unit27>
-        <Filename Value="syncerror.pas"/>
+      </Unit22>
+      <Unit23>
+        <Filename Value="TRsyncError.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormSyncError"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="SyncError"/>
-      </Unit27>
-      <Unit28>
+        <UnitName Value="TRSyncError"/>
+      </Unit23>
+      <Unit24>
         <Filename Value="TRcolours.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormColours"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit28>
-      <Unit29>
+      </Unit24>
+      <Unit25>
         <Filename Value="TRnextSetup.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormNCSetup"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit29>
+      </Unit25>
+      <Unit26>
+        <Filename Value="TRsearchUnit.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="SearchForm"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit26>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

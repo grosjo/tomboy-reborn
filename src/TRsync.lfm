@@ -6,10 +6,11 @@ object FormSync: TFormSync
   Caption = 'Sync'
   ClientHeight = 366
   ClientWidth = 631
-  OnClose = FormClose
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
   OnHide = FormHide
   OnShow = FormShow
-  LCLVersion = '2.0.6.0'
+  LCLVersion = '2.0.8.0'
   object Panel1: TPanel
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner
@@ -24,10 +25,14 @@ object FormSync: TFormSync
     ClientWidth = 631
     TabOrder = 0
     object Label1: TLabel
-      Left = 35
+      AnchorSideLeft.Control = Panel1
+      AnchorSideTop.Control = Panel1
+      Left = 21
       Height = 17
-      Top = 24
+      Top = 21
       Width = 59
+      BorderSpacing.Left = 20
+      BorderSpacing.Top = 20
       Caption = 'Label1'
       Font.Height = -16
       Font.Name = 'Sans'
@@ -36,15 +41,20 @@ object FormSync: TFormSync
       ParentFont = False
     end
     object Label2: TLabel
-      Left = 35
+      AnchorSideLeft.Control = Panel1
+      AnchorSideTop.Control = Label1
+      AnchorSideTop.Side = asrBottom
+      Left = 21
       Height = 15
-      Top = 56
+      Top = 58
       Width = 37
+      BorderSpacing.Left = 20
+      BorderSpacing.Top = 20
       Caption = 'Label2'
       ParentColor = False
     end
   end
-  object Panel2: TPanel
+  object PanelButton: TPanel
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Panel1
     AnchorSideTop.Side = asrBottom
@@ -60,9 +70,9 @@ object FormSync: TFormSync
     ClientWidth = 631
     TabOrder = 1
     object ButtonCancel: TButton
-      AnchorSideLeft.Control = Panel2
-      AnchorSideTop.Control = Panel2
-      AnchorSideBottom.Control = Panel2
+      AnchorSideLeft.Control = PanelButton
+      AnchorSideTop.Control = PanelButton
+      AnchorSideBottom.Control = PanelButton
       AnchorSideBottom.Side = asrBottom
       Left = 1
       Height = 35
@@ -76,8 +86,8 @@ object FormSync: TFormSync
     object ButtonClose: TButton
       AnchorSideLeft.Control = ButtonCancel
       AnchorSideLeft.Side = asrBottom
-      AnchorSideTop.Control = Panel2
-      AnchorSideBottom.Control = Panel2
+      AnchorSideTop.Control = PanelButton
+      AnchorSideBottom.Control = PanelButton
       AnchorSideBottom.Side = asrBottom
       Left = 151
       Height = 35
@@ -91,8 +101,8 @@ object FormSync: TFormSync
     object ButtonSave: TButton
       AnchorSideLeft.Control = ButtonClose
       AnchorSideLeft.Side = asrBottom
-      AnchorSideTop.Control = Panel2
-      AnchorSideBottom.Control = Panel2
+      AnchorSideTop.Control = PanelButton
+      AnchorSideBottom.Control = PanelButton
       AnchorSideBottom.Side = asrBottom
       Left = 301
       Height = 35
@@ -106,7 +116,7 @@ object FormSync: TFormSync
   end
   object Panel3: TPanel
     AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = Panel2
+    AnchorSideTop.Control = PanelButton
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
@@ -164,8 +174,6 @@ object FormSync: TFormSync
       RowCount = 0
       ShowHint = True
       TabOrder = 1
-      TitleFont.Height = -12
-      TitleFont.Name = 'Sans'
       OnGetCellHint = StringGridReportGetCellHint
     end
     object Splitter3: TSplitter

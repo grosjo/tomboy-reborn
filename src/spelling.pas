@@ -53,7 +53,7 @@ var
 
 implementation
 
-uses TRcommon, TRsettings, TRtexts, TRhunspell;
+uses TRcommon, TRtexts, TRhunspell;
 
 const
   SetofDelims = [#10, #13, ' '..'@', '['..'`', '{'..'~'];   // all askii visible char ??

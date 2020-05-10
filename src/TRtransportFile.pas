@@ -45,6 +45,7 @@ var
     repo : String;
     ManExists, ZeroExists : boolean; // for readability of code only
 begin
+    debugln('TransportFIle : TestTransport');
 
     setParam('RemoteAddess',AppendPathDelim(ChompPathDelim(getParam('RemoteAddress'))));
     repo := getParam('RemoteAddress');
@@ -83,6 +84,7 @@ begin
         exit(SyncReady);
     end;
 
+    debugln('Reading XML to search GUID/Rev');
     try
        ReadXMLFile(Doc, repo + 'manifest.xml');
     except on E:Exception do
@@ -92,6 +94,7 @@ begin
        end;
     end;
 
+    debugln('Finalizing');
     try
        ServerID := Doc.DocumentElement.GetAttribute('server-id');
        ServerRev := strtoint(Doc.DocumentElement.GetAttribute('revision'));
@@ -110,6 +113,8 @@ begin
         exit(SyncXMLError);
     end;
 
+    debugln('ServerID : '+ServerID + ' Rev='+IntToStr(ServerRev));
+
     Result := SyncReady;
 end;
 
@@ -122,14 +127,21 @@ var
     NoteInfo : PNoteInfo;
     manifest,note : String;
 begin
+    debugln('TransportFile : Get Notes');
+
     if NoteMeta = Nil then begin
         ErrorString := 'Passed an uncreated list to GetNotes()';
         exit(False);
     end;
 
     manifest:= getParam('RemoteAddress') + 'manifest.xml';
-    if not FileExists(manifest) then exit(true);
+    if not FileExists(manifest) then
+    begin
+        debugln('Manifest notexistant : '+manifest);
+        exit(true);
+    end;
 
+    debugln('Read XML : '+manifest);
     try
          ReadXMLFile(Doc, manifest);
     except on E:Exception do begin debugln(E.message); exit(false); end;
@@ -144,22 +156,47 @@ begin
          exit(false);
     end;
 
+    debugln('Found '+IntToStr(NodeList.Count) + ' remote notes');
     for j := 0 to NodeList.Count-1 do
     begin
+         debugln('new Note '+IntToStr(j));
          new(NoteInfo);
 
          NoteInfo^.Action:=SynUnset;
          Node := NodeList.Item[j].Attributes.GetNamedItem('guid');
+         if(not assigned(Node)) then
+         begin
+              debugln('Wrong XML syntax -> "guid" not found');
+              Node := NodeList.Item[j].Attributes.GetNamedItem('id');
+              if(not assigned(Node)) then
+              begin
+                   debugln('Wrong XML syntax -> even "id" not found');
+                   Dispose(NoteInfo);
+                   continue;
+              end;
+         end;
          NoteInfo^.ID := Node.NodeValue;
-         If(not NoteIdLooksOk(NoteInfo^.ID)) then begin FreeAndNil(NoteInfo); continue; end;
+         debugln('Note ID = ' + NoteInfo^.ID);
+         If(not NoteIdLooksOk(NoteInfo^.ID)) then
+         begin
+              debugln('Note with wrong ID');
+              dispose(NoteInfo);
+              continue;
+         end;
 
          Node := NodeList.Item[j].Attributes.GetNamedItem('latest-revision');
-         NoteInfo^.Rev := strtoint(Node.NodeValue);
+         if(not assigned(Node)) then
+         begin
+              debugln('Wrong XML syntax -> "latest-revision" not found');
+              NoteInfo^.Rev := ServerRev;
+         end
+         else NoteInfo^.Rev := strtoint(Node.NodeValue);
 
          note := GetRemoteNotePath(NoteInfo^.Rev, NoteInfo^.ID);
+         debugln('File to note from '+note);
          if(FileToNote(note, NoteInfo ))
               then NoteMeta.Add(NoteInfo)
-              else FreeAndNil(NoteInfo);
+              else dispose(NoteInfo);
     end;
 
     Doc.Free;

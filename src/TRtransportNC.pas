@@ -246,7 +246,7 @@ begin
        end;
 
        if(ok) then NoteMeta.Add(NoteInfo)
-       else FreeAndNil(NoteInfo);
+       else Dispose(NoteInfo);
 
        i := i+1;
     end;

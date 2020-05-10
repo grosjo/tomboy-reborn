@@ -5,7 +5,8 @@ unit SaveNote;
 interface
 
 uses
-    Classes, SysUtils, KMemo, Graphics, LazLogger, TRcommon;
+    Classes, SysUtils, KMemo, Graphics, LazLogger, FileUtil,LazUTF8,LazFileUtils,
+    TRcommon;
 
 
 {type TNoteLocation = record
@@ -74,8 +75,6 @@ type
 
 
 implementation
-
-uses FileUtil,LazUTF8,TRSearchUnit,LazFileUtils,SyncUtils;
 
 const
   {$ifdef LINUX}

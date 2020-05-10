@@ -51,6 +51,7 @@ RESOURCESTRING
 
 
 // Sync
+  rsNoSync = 'You shall setup sync first in "settings"';
   rsTestingSync = 'Testing Sync';
   rsUnableToSync = 'Unable to sync because ';
   rsRunningSync = 'Running Sync';

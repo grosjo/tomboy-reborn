@@ -66,8 +66,7 @@ implementation
 
 { TNoteBookPick }
 
-uses TRSearchUnit, SaveNote, TRnoteEdit,
-                SyncUtils, TRtexts;
+uses SaveNote, TRtexts;
 
 procedure TNoteBookPick.SetupForNewSelect();
 var

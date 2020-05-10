@@ -1,13 +1,12 @@
-object FormSDiff: TFormSDiff
+object FormClash: TFormClash
   Left = 849
-  Height = 435
+  Height = 449
   Top = 203
   Width = 645
   VertScrollBar.Visible = False
   Caption = 'A Note Sync Clash has been Detected'
-  ClientHeight = 435
+  ClientHeight = 449
   ClientWidth = 645
-  OnShow = FormShow
   LCLVersion = '2.0.8.0'
   object Label1: TLabel
     AnchorSideLeft.Control = Button1
@@ -17,7 +16,7 @@ object FormSDiff: TFormSDiff
     AnchorSideBottom.Control = ButtAllRemote
     Left = 346
     Height = 30
-    Top = 387
+    Top = 401
     Width = 119
     Anchors = [akTop, akRight]
     BorderSpacing.Left = 10
@@ -32,7 +31,7 @@ object FormSDiff: TFormSDiff
     AnchorSideBottom.Side = asrBottom
     Left = 558
     Height = 25
-    Top = 400
+    Top = 414
     Width = 77
     Anchors = [akRight, akBottom]
     BorderSpacing.Right = 10
@@ -47,7 +46,7 @@ object FormSDiff: TFormSDiff
     AnchorSideBottom.Side = asrBottom
     Left = 473
     Height = 25
-    Top = 400
+    Top = 414
     Width = 75
     Anchors = [akRight, akBottom]
     BorderSpacing.Right = 10
@@ -62,7 +61,7 @@ object FormSDiff: TFormSDiff
     AnchorSideBottom.Control = ButtAllOldest
     Left = 560
     Height = 25
-    Top = 370
+    Top = 384
     Width = 75
     Anchors = [akRight, akBottom]
     BorderSpacing.Right = 10
@@ -76,7 +75,7 @@ object FormSDiff: TFormSDiff
     AnchorSideBottom.Control = ButtAllNewest
     Left = 475
     Height = 25
-    Top = 370
+    Top = 384
     Width = 75
     Anchors = [akRight, akBottom]
     BorderSpacing.Right = 10
@@ -94,7 +93,7 @@ object FormSDiff: TFormSDiff
     AnchorSideBottom.Side = asrBottom
     Left = 110
     Height = 38
-    Top = 387
+    Top = 401
     Width = 90
     Anchors = [akLeft, akBottom]
     BorderSpacing.Left = 10
@@ -111,7 +110,7 @@ object FormSDiff: TFormSDiff
     AnchorSideBottom.Side = asrBottom
     Left = 10
     Height = 38
-    Top = 387
+    Top = 401
     Width = 90
     Anchors = [akLeft, akBottom]
     BorderSpacing.Left = 10
@@ -128,7 +127,7 @@ object FormSDiff: TFormSDiff
     AnchorSideBottom.Side = asrBottom
     Left = 209
     Height = 38
-    Top = 387
+    Top = 401
     Width = 90
     Anchors = [akLeft, akBottom]
     BorderSpacing.Left = 9
@@ -141,12 +140,12 @@ object FormSDiff: TFormSDiff
   object NoteID: TLabel
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner
-    Left = 10
+    Left = 15
     Height = 15
-    Top = 10
+    Top = 15
     Width = 71
-    BorderSpacing.Left = 10
-    BorderSpacing.Top = 10
+    BorderSpacing.Left = 15
+    BorderSpacing.Top = 15
     Caption = 'Note ID : '
     Font.Height = -13
     Font.Name = 'Sans'
@@ -158,12 +157,12 @@ object FormSDiff: TFormSDiff
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = NoteID
     AnchorSideTop.Side = asrBottom
-    Left = 10
+    Left = 15
     Height = 15
-    Top = 35
+    Top = 45
     Width = 53
-    BorderSpacing.Left = 10
-    BorderSpacing.Top = 10
+    BorderSpacing.Left = 15
+    BorderSpacing.Top = 15
     Caption = 'TitleLocal'
     ParentColor = False
   end
@@ -171,13 +170,12 @@ object FormSDiff: TFormSDiff
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = TitleLocal
     AnchorSideTop.Side = asrBottom
-    Left = 10
-    Height = 18
-    Top = 60
+    Left = 15
+    Height = 15
+    Top = 75
     Width = 72
-    Anchors = [akTop, akLeft, akBottom]
-    BorderSpacing.Left = 10
-    BorderSpacing.Top = 10
+    BorderSpacing.Left = 15
+    BorderSpacing.Top = 15
     BorderSpacing.Bottom = 10
     Caption = 'ChangeLocal'
     ParentColor = False
@@ -188,10 +186,10 @@ object FormSDiff: TFormSDiff
     AnchorSideTop.Side = asrBottom
     Left = 340
     Height = 15
-    Top = 35
+    Top = 45
     Width = 67
     BorderSpacing.Left = 10
-    BorderSpacing.Top = 10
+    BorderSpacing.Top = 15
     Caption = 'TitleRemote'
     ParentColor = False
   end
@@ -201,10 +199,10 @@ object FormSDiff: TFormSDiff
     AnchorSideTop.Side = asrBottom
     Left = 340
     Height = 15
-    Top = 60
+    Top = 75
     Width = 86
     BorderSpacing.Left = 10
-    BorderSpacing.Top = 10
+    BorderSpacing.Top = 15
     Caption = 'ChangeRemote'
     ParentColor = False
   end
@@ -213,13 +211,12 @@ object FormSDiff: TFormSDiff
     AnchorSideTop.Control = ChangeLocal
     AnchorSideTop.Side = asrBottom
     AnchorSideBottom.Control = ButtAllRemote
-    Left = 10
+    Left = 15
     Height = 272
-    Top = 88
+    Top = 105
     Width = 305
-    Anchors = [akTop, akLeft, akBottom]
-    BorderSpacing.Left = 10
-    BorderSpacing.Top = 10
+    BorderSpacing.Left = 15
+    BorderSpacing.Top = 15
     BorderSpacing.Bottom = 10
     Color = clInfoBk
     Lines.Strings = (
@@ -235,10 +232,10 @@ object FormSDiff: TFormSDiff
     AnchorSideBottom.Control = ButtAllRemote
     Left = 330
     Height = 272
-    Top = 88
+    Top = 105
     Width = 305
-    Anchors = [akTop, akRight, akBottom]
-    BorderSpacing.Top = 10
+    Anchors = [akTop, akRight]
+    BorderSpacing.Top = 15
     BorderSpacing.Right = 10
     BorderSpacing.Bottom = 10
     Lines.Strings = (

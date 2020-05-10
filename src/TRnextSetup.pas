@@ -101,7 +101,7 @@ end;
 
 function TFormNCSetup.isSuccess() : boolean;
 begin
-  debugln('NC isSuccess '+BoolToStr(success));
+  debugln('NC isSuccess '+BoolToStr(success,true));
   Result := success;
 end;
 
