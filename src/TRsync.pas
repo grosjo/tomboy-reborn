@@ -868,6 +868,17 @@ begin
 
     // ====================== Set an exit here to do no-write tests
     Debugln('This is FirstRun :need user confirmation');
+
+    GridReportList.Clear;
+    for i := 0 to NoteMetaData.Count -1 do
+    begin
+         if NoteMetaData.Items[i]^.Action = SynNothing then continue;
+
+         GridReportList.Add(NoteMetaData.ActionName(NoteMetaData.Items[i]^.Action));
+         GridReportList.Add(NoteMetaData.Items[i]^.Title);
+         GridReportList.Add(NoteMetaData.Items[i]^.ID);
+    end;
+
     if SyncFirstRun then exit();
 
     DisplayNoteInfo(NoteMetaData, 'Note Meta Data');
@@ -881,16 +892,6 @@ begin
     if not DoDeleteLocal() then exit(false);
 
     Debugln('Sync done .. reporting');
-
-    GridReportList.Clear;
-    for i := 0 to NoteMetaData.Count -1 do
-    begin
-         if NoteMetaData.Items[i]^.Action = SynNothing then continue;
-
-         GridReportList.Add(NoteMetaData.ActionName(NoteMetaData.Items[i]^.Action));
-         GridReportList.Add(NoteMetaData.Items[i]^.Title);
-         GridReportList.Add(NoteMetaData.Items[i]^.ID);
-    end;
 
     // Write remote manifest (only applicable for SyncFile)
     if not PushChanges() then exit(false);
