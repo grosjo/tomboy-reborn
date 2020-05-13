@@ -63,15 +63,30 @@ RESOURCESTRING
   rsLookingatNotes = 'Looking at notes ....';
   rsSaveAndSync = 'Press Save and Sync if this looks OK';
   rsSyncError = 'A Sync Error occured';
+  rsErrorLoadingRemote = 'Loading remote notes has raised an error';
+  rsErrorLoadingLocal = 'Loading local notes has raised an error';
+  rsFindDeletedServerNotes = 'Finding deleted notes on remote';
+  rsFindDeletedLocalNotes = 'Finding deleted notes locally';
+  rsFindNewLocalNotes = 'Find new notes locally';
+  rsFindNewRemoteNotes = 'Find new notes remotelly';
+  rsSetSystemicActions = 'Applying systemic rules';
+  rsProcessClashes = 'Processing clashes';
+  rsStatistics = 'Doing statistics';
+  rsSyncReport = 'Synchronisation summary';
+  rsSyncDoDownloads = 'Downloading from remote';
+  rsDoDeleteLocal = 'Deleting expired local notes';
+  rsDoManifest = 'Writing manifest';
+  rsSyncCanceledByUser = 'Synchronisation canceled by user';
   rsLastSync = 'Last Sync';     // Followed by a date and simplified sync report
   rsSyncNCDefault = 'https://YOURSERVER/index.php/apps/grauphel';
 
-  rsNewUploads      = 'New Uploads    ';
-  rsEditUploads     = 'Edit Uploads   ';
-  rsDownloads       = 'Downloads      ';
-  rsSynCopies       = 'Copied notes   ';
-  rsLocalDeletes    = 'Local Deletes  ';
-  rsRemoteDeletes   = 'Remote Deletes ';
+  rsNewUploads      = 'Pushed new     ';
+  rsEditUploads     = 'Pushed updated ';
+  rsNewDownloads    = 'Pulled new     ';
+  rseditDownloads   = 'Pulled updated ';
+  rsSynCopies       = 'Duplicated     ';
+  rsLocalDeletes    = 'Local Deleteds ';
+  rsRemoteDeletes   = 'Remote Deleted ';
   rsDoNothing       = 'Do Nothing     ';
   rsUndecided       = 'Unresolved     ';
 
@@ -79,7 +94,7 @@ RESOURCESTRING
   rsNotesWereDealt = ' notes were dealt with.';
   rsChangeExistingSync = 'Change existing sync connection ?';
   rsNotRecommend = 'Generally not recommended.';
-  rsNextBitSlow = 'Next bit can be a bit slow, please wait';
+  //rsNextBitSlow = 'Next bit can be a bit slow, please wait';
 
 
 // Settings

@@ -203,7 +203,6 @@ begin
       LabelNCSyncURL.Caption := SyncNCUrl;
 
       RadioSyncNC.checked := true;
-      SyncFirstRun := true;
    end;
 
    FreeAndNil(FormNCSetup);
@@ -470,7 +469,6 @@ begin
    dd.FileName := SyncFileRepo;
    if dd.Execute then
    begin
-      SyncFirstRun := false;
       LabelFileSync.Caption := AppendPathDelim(ChompPathDelim(dd.FileName));
       SyncFileRepo := LabelFileSync.Caption;
       debugln('ButtonFileSetupClick SyncFileRepo='+SyncFileRepo);
@@ -498,7 +496,6 @@ begin
    if(s <> SyncType) then
    begin
      SyncType :=s;
-     SyncFirstRun := true;
    end;
 end;
 

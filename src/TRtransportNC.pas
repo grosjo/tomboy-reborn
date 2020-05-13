@@ -12,8 +12,7 @@ type TNextSync = Class(TTomboyTrans)
     public
         constructor create;
         destructor Destroy; override;
-        function TestTransport(): TSyncAvailable; override;
-        function SetTransport(): TSyncAvailable; override;
+        function TestTransport(): TSyncStatus; override;
         function GetNotes(const NoteMeta : TNoteInfoList) : boolean; override;
         function PushChanges(notes : TNoteInfoList) : boolean; override;
         function DoRemoteManifest(const RemoteManifest : string) : boolean; override;
@@ -43,7 +42,7 @@ begin
   Result := 'nc';
 end;
 
-function TNextSync.TestTransport(): TSyncAvailable;
+function TNextSync.TestTransport(): TSyncStatus;
 var
   resturl,res : String;
   json : TJSONData;
@@ -130,17 +129,12 @@ begin
 
     if not IDLooksOK() then begin
         ErrorString := 'Invalid ServerID '+ServerID;
-        exit(SyncMismatch);
+        exit(SyncBadRemote);
     end;
 
     Result := SyncReady;
 end;
 
-function TNextSync.SetTransport(): TSyncAvailable;
-begin
-	WriteLn('Next-SetTransport');
-        Result := SyncReady;
-end;
 
 function TNextSync.GetNotes(const NoteMeta: TNoteInfoList): boolean;
 var

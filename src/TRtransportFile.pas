@@ -13,8 +13,7 @@ type TFileSync = Class(TTomboyTrans)
         function GetRemoteNotePath(Rev: integer; NoteID : string = ''): string;
         function GetRemoteNoteLastChange(const ID : string; rev : Integer; out Error : string) : string;
     public
-        function SetTransport(): TSyncAvailable; override;
-        function TestTransport() : TSyncAvailable; override;
+        function TestTransport() : TSyncStatus; override;
         function GetNotes(const NoteMeta : TNoteInfoList) : boolean; override;
         function PushChanges(notes : TNoteInfoList): boolean; override;
         function DoRemoteManifest(const RemoteManifest : string) : boolean; override;
@@ -33,12 +32,7 @@ begin
   Result := 'file';
 end;
 
-function TFileSync.SetTransport(): TSyncAvailable;
-begin
-    Result := SyncReady;
-end;
-
-function TFileSync.TestTransport(): TSyncAvailable;
+function TFileSync.TestTransport(): TSyncStatus;
 var
     Doc : TXMLDocument;
     GUID : TGUID;
@@ -53,7 +47,7 @@ begin
     if not DirectoryExists(repo) then
         if not DirectoryExists(repo) then begin    // try again because it might be just remounted.
            ErrorString := 'Remote Dir does not exist : ' + repo;
-	   exit(SyncNoRemoteDir);
+	   exit(SyncNoRemoteEnd);
         end;
 
     if not DirectoryIsWritable(repo) then begin

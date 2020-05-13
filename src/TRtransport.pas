@@ -29,12 +29,7 @@ type TTomboyTrans = class
         { Tests availability of remote part of connection. For file sync (eg) thats
             existance of remote manifest and 0 dir, write access. Sets its own ServerID.
             This would be a good place to put lock or authenticate as  necessary}
-        function TestTransport() : TSyncAvailable;     virtual; abstract;
-
-        { May (or may not) do some early transport tests, ie, in Tomdroid sync
-              it pings the remote device. Should return SyncReady or an error value
-              if something failed.}
-        function SetTransport() : TSyncAvailable; virtual; abstract;
+        function TestTransport() : TSyncStatus;     virtual; abstract;
 
         {Request a list of all notes the server knows about. Returns with Last Change
             Date (LCD) if easily available and always if GetLCD is true. We don't use all

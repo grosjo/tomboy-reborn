@@ -19,12 +19,13 @@ type TSyncTransport=(
         SyncNextCloud,  // Sync to NextCloud using Nextcloud Notes
         SyncNone); // Not syncing
 
-type TSyncAction=(
+type TSyncAction = (
         SynUnset,      // initial state, should not be like this at end.
         SynNothing,      // This note, previously synced has not changed.
         SynUploadNew,    // This a new local note, upload it.
         SynUploadEdit,   // A previously synced note, edited locally, upload.
-        SynDownload,     // A new or edited note from elsewhere, download.
+        SynDownloadNew,     // A new note from elsewhere, download.
+        SynDownloadEdit,     // An edited note from elsewhere, download.
         SynDeleteLocal,  // Synced previously but no longer present on server, delete locally
         SynDeleteRemote, // Marked as having been deleted locally, so remove from server.
         SynCopy,         // Make a copy hen replace by server
@@ -36,16 +37,13 @@ type TSyncAction=(
         SynAllOldest);   // Clash Decision - Use oldest note for all subsquent clashes
 
         // Indicates the readyness of a sync connection
-type TSyncAvailable=(
+type TSyncStatus = (
         SyncNotYet,        // Initial state.
         SyncReady,          // We are ready to sync, looks good to go.
-        SyncNoLocal,        // We dont have a local manifest, only an error if config thinks there should be one.
+        SyncNoRemoteWrite,  // Remote not writeable
+        SyncNoRemoteEnd,    // Remote end does not exist (no folder, no conenction, ...)
         SyncNoRemoteMan,    // No remote manifest, an uninitialized repo perhaps ?
-        SyncNoRemoteRepo,   // Filesystem is OK but does not look like a repo.
-        SyncBadRemote,      // Has either Manifest or '0' dir but not both.
-        SyncNoRemoteDir,    // Perhaps sync device is not mounted, Tomdroid not installed ?
-        SyncNoRemoteWrite,  // no write permission, do not proceed!
-        SyncMismatch,       // Its a repo, Captain, but not as we know it.
+        SyncBadRemote,      // General error on remote side
         SyncXMLError,       // Housten, we have an XML error in a manifest !
         SyncBadError,       // Some other error, must NOT proceed.
         SyncNetworkError);  // Remove server/device not responding
@@ -168,7 +166,7 @@ var
 
     SyncType : TSyncTransport;
     SyncClashOption : TSyncClashOption;
-    SyncFirstRun : boolean;
+
     SyncFileRepo, SyncNCurl, SyncNCKey, SyncNCToken, SyncNCSecret : String;
     SyncRepeat : integer;
 
@@ -321,7 +319,6 @@ begin
          TSyncClashOption.UseServer :  f.writestring('Sync', 'ClashOption', 'UseServer');
 	 TSyncClashOption.MakeCopy :   f.writestring('Sync', 'ClashOption', 'MakeCopy');
     end;
-    f.writestring('Sync', 'Tested', BoolToStr(not SyncFirstRun, true));
 
     if(SyncType = TSyncTransport.SyncNone)
     then f.writestring('Sync', 'Type', 'none')
@@ -397,7 +394,6 @@ begin
               'UseServer' : SyncClashOption := TSyncClashOption.UseServer;
               'MakeCopy'  : SyncClashOption := TSyncClashOption.MakeCopy;
          end;
-         SyncFirstRun     := not StrToBool(f.ReadString('Sync', 'Tested', 'true'));
 
          debugln('READSYNCTYPE = '+f.ReadString('Sync', 'Type','none'));
 
@@ -437,13 +433,9 @@ begin
         SyncRepeat := 0;
         SyncClashOption  := TSyncClashOption.AlwaysAsk;
 
-        SyncFirstRun     := false;
-        SyncType         := TSyncTransport.SyncNone;
-
         SyncRepeat      := 0;
         SyncType        := TSyncTransport.SyncNone;
         SyncClashOption := TSyncClashOption.AlwaysAsk;
-        SyncFirstRun    := true;
         SyncFileRepo    := '';
         SyncNCUrl       := '';
         SyncNCKey       := '';
@@ -1249,14 +1241,15 @@ function TNoteInfoList.ActionName(Act: TSyncAction): string;
 begin
     Result := ' Unknown ';
     case Act of
-        SynUnset : Result := ' Unset ';
-        SynNothing : Result := ' Nothing ';
-        SynUploadNew  : Result := ' UploadNew ';   // we differentiate in case of a write to remote fail.
-        SynUpLoadEdit : Result := ' UpLoadEdit ';
-        SynDownload: Result := ' Download ';
-        SynCopy: Result := ' MakeCopy ';
-        SynDeleteLocal  : Result := ' DeleteLocal ';
-        SynDeleteRemote : Result := ' DeleteRemote ';
+        SynUnset : Result := rsUndecided;
+        SynNothing : Result := rsDoNothing;
+        SynUploadNew  : Result := rsNewUploads;   // we differentiate in case of a write to remote fail.
+        SynUpLoadEdit : Result := rsEditUploads;
+        SynDownloadNew: Result := rsNewDownloads;
+        SynDownloadEdit: Result := rsEditDownloads;
+        SynCopy: Result := rsSynCopies;
+        SynDeleteLocal  : Result := rsLocalDeletes;
+        SynDeleteRemote : Result := rsRemoteDeletes;
         SynError : Result := ' ** ERROR **';
         SynAllLocal : Result := ' AllLocal ';
         SynAllCopy : Result := ' AllCopy ';

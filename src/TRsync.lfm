@@ -1,194 +1,171 @@
 object FormSync: TFormSync
-  Left = 912
-  Height = 366
-  Top = 331
+  Left = 769
+  Height = 316
+  Top = 575
   Width = 631
   Caption = 'Sync'
-  ClientHeight = 366
+  ClientHeight = 316
   ClientWidth = 631
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnHide = FormHide
   OnShow = FormShow
   LCLVersion = '2.0.8.0'
-  object Panel1: TPanel
+  object LabelTitle: TLabel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    Left = 10
+    Height = 17
+    Top = 10
+    Width = 88
+    BorderSpacing.Left = 10
+    BorderSpacing.Top = 10
+    Caption = 'LabelTitle'
+    Font.Height = -16
+    Font.Name = 'Sans'
+    Font.Style = [fsBold]
+    ParentColor = False
+    ParentFont = False
+  end
+  object StringGridReport: TStringGrid
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    Left = 0
-    Height = 91
-    Top = 0
-    Width = 631
-    Anchors = [akTop, akLeft, akRight]
-    ClientHeight = 91
-    ClientWidth = 631
-    TabOrder = 0
-    object Label1: TLabel
-      AnchorSideLeft.Control = Panel1
-      AnchorSideTop.Control = Panel1
-      Left = 21
-      Height = 17
-      Top = 21
-      Width = 59
-      BorderSpacing.Left = 20
-      BorderSpacing.Top = 20
-      Caption = 'Label1'
-      Font.Height = -16
-      Font.Name = 'Sans'
-      Font.Style = [fsBold]
-      ParentColor = False
-      ParentFont = False
-    end
-    object Label2: TLabel
-      AnchorSideLeft.Control = Panel1
-      AnchorSideTop.Control = Label1
-      AnchorSideTop.Side = asrBottom
-      Left = 21
-      Height = 15
-      Top = 58
-      Width = 37
-      BorderSpacing.Left = 20
-      BorderSpacing.Top = 20
-      Caption = 'Label2'
-      ParentColor = False
-    end
-  end
-  object PanelButton: TPanel
-    AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = Panel1
-    AnchorSideTop.Side = asrBottom
-    AnchorSideRight.Control = Owner
-    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 0
-    Height = 37
-    Top = 91
-    Width = 631
-    Anchors = [akTop, akLeft, akRight]
-    ClientHeight = 37
-    ClientWidth = 631
-    TabOrder = 1
-    object ButtonCancel: TButton
-      AnchorSideLeft.Control = PanelButton
-      AnchorSideTop.Control = PanelButton
-      AnchorSideBottom.Control = PanelButton
-      AnchorSideBottom.Side = asrBottom
-      Left = 1
-      Height = 35
-      Top = 1
-      Width = 150
-      Anchors = [akTop, akLeft, akBottom]
-      Caption = 'Cancel'
-      OnClick = ButtonCancelClick
-      TabOrder = 0
-    end
-    object ButtonClose: TButton
-      AnchorSideLeft.Control = ButtonCancel
-      AnchorSideLeft.Side = asrBottom
-      AnchorSideTop.Control = PanelButton
-      AnchorSideBottom.Control = PanelButton
-      AnchorSideBottom.Side = asrBottom
-      Left = 151
-      Height = 35
-      Top = 1
-      Width = 150
-      Anchors = [akTop, akLeft, akBottom]
-      Caption = 'Close'
-      OnClick = ButtonCloseClick
-      TabOrder = 1
-    end
-    object ButtonSave: TButton
-      AnchorSideLeft.Control = ButtonClose
-      AnchorSideLeft.Side = asrBottom
-      AnchorSideTop.Control = PanelButton
-      AnchorSideBottom.Control = PanelButton
-      AnchorSideBottom.Side = asrBottom
-      Left = 301
-      Height = 35
-      Top = 1
-      Width = 150
-      Anchors = [akTop, akLeft, akBottom]
-      Caption = 'Save and Sync'
-      OnClick = ButtonSaveClick
-      TabOrder = 2
-    end
+    Left = 10
+    Height = 196
+    Top = 40
+    Width = 611
+    Align = alLeft
+    AlternateColor = clWhite
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BorderSpacing.Left = 10
+    BorderSpacing.Top = 40
+    BorderSpacing.Right = 10
+    BorderSpacing.Bottom = 80
+    ColCount = 0
+    FixedCols = 0
+    FixedRows = 0
+    Font.Height = -12
+    Font.Name = 'Sans'
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goThumbTracking, goSmoothScroll, goCellHints]
+    ParentFont = False
+    ParentShowHint = False
+    RowCount = 0
+    ShowHint = True
+    TabOrder = 0
   end
-  object Panel3: TPanel
-    AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = PanelButton
-    AnchorSideTop.Side = asrBottom
+  object SettingsOK: TSpeedButton
+    AnchorSideRight.Control = SettingsCancel
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 419
+    Height = 29
+    Top = 277
+    Width = 96
+    Anchors = [akRight, akBottom]
+    BorderSpacing.Right = 10
+    BorderSpacing.Bottom = 10
+    Caption = 'OK'
+    Glyph.Data = {
+      36040000424D3604000000000000360000002800000010000000100000000100
+      2000000000000004000064000000640000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000000000000000000000000001007B001D00000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000000000010D9019A3149927DC0A870F33000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000000000010D9019A12CBA5AF937C771FF18A031DB0A870F330000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000010D9019A12CBA5AF937C871FF37C871FF37C771FF18A031DB0A87
+      0F33000000000000000000000000000000000000000000000000000000000000
+      00010D9019A32DBC5DF837C871FF2DBC5DF819A133E337C771FF37C771FF179E
+      30DB0A870F330000000000000000000000000000000000000000000000000A8D
+      159B2DBC5DF837C871FF2DBC5DF80D9019A30A890F34179E30DB37C771FF37C7
+      71FF179E30DB0A870F3300000000000000000000000000000000000000000587
+      0A31169D2EDA2EBD5EFA0E901AA6008000020000000005870A31169D2EDA37C7
+      70FF37C771FF18A031DB0A870F33000000000000000000000000000000000000
+      00000A870F330A8D149B000000010000000000000000000000000A870F33179E
+      30DB37C771FF37C771FF179E30DB0A870F330000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000587
+      0A31169D2EDA37C770FF37C771FF18A031DB0A870F3300000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000A870F33179E30DB37C771FF2DBC5DF80A8D159B00000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000005870A31139928DB0E901AA60000000100000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000007B001D000000010000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000
+    }
+    OnClick = SettingsOKClick
+  end
+  object SettingsCancel: TSpeedButton
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 0
-    Height = 238
-    Top = 128
-    Width = 631
-    Anchors = [akTop, akLeft, akRight, akBottom]
-    Caption = 'Panel3'
-    ClientHeight = 238
-    ClientWidth = 631
-    TabOrder = 2
-    object Memo1: TMemo
-      AnchorSideLeft.Control = Splitter3
-      AnchorSideLeft.Side = asrBottom
-      AnchorSideTop.Control = Panel3
-      AnchorSideRight.Control = Panel3
-      AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = Panel3
-      AnchorSideBottom.Side = asrBottom
-      Left = 311
-      Height = 236
-      Top = 1
-      Width = 319
-      Align = alRight
-      Anchors = [akTop, akLeft, akRight, akBottom]
-      Lines.Strings = (
-        'Memo1'
-      )
-      TabOrder = 0
-    end
-    object StringGridReport: TStringGrid
-      AnchorSideLeft.Control = Panel3
-      AnchorSideTop.Control = Panel3
-      AnchorSideRight.Control = Splitter3
-      AnchorSideBottom.Control = Panel3
-      AnchorSideBottom.Side = asrBottom
-      Left = 1
-      Height = 236
-      Top = 1
-      Width = 300
-      Align = alLeft
-      AlternateColor = clWhite
-      Anchors = [akTop, akLeft, akRight, akBottom]
-      ColCount = 0
-      FixedCols = 0
-      FixedRows = 0
-      Font.Height = -12
-      Font.Name = 'Sans'
-      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goThumbTracking, goSmoothScroll, goCellHints]
-      ParentFont = False
-      ParentShowHint = False
-      RowCount = 0
-      ShowHint = True
-      TabOrder = 1
-      OnGetCellHint = StringGridReportGetCellHint
-    end
-    object Splitter3: TSplitter
-      AnchorSideLeft.Control = StringGridReport
-      AnchorSideLeft.Side = asrBottom
-      AnchorSideTop.Control = Panel3
-      AnchorSideRight.Control = Memo1
-      AnchorSideBottom.Control = Panel3
-      AnchorSideBottom.Side = asrBottom
-      Left = 301
-      Height = 236
-      Top = 8
-      Width = 10
-      Align = alNone
-      Anchors = []
-    end
+    Left = 525
+    Height = 29
+    Top = 277
+    Width = 96
+    Anchors = [akRight, akBottom]
+    BorderSpacing.Right = 10
+    BorderSpacing.Bottom = 10
+    Caption = 'Cancel'
+    Glyph.Data = {
+      36040000424D3604000000000000360000002800000010000000100000000100
+      2000000000000004000064000000640000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000500B6690500B669000000000000000000000000000000000000
+      0000000000000500B6690500B669000000000000000000000000000000000000
+      00000200B5680C00CFE90D00D0EB0500B66D0000000000000000000000000000
+      00000200B56B0C00CFE90D00D0EB0500B86B0000000000000000000000000000
+      00000200B5680C00CFE91400E6FF0D00D0EB0500B66D00000000000000000200
+      B56B0C00CFE91400E6FF0D00D0EB0500B86B0000000000000000000000000000
+      0000000000000300B7660C00CFE91400E6FF0D00D1EB0500B66D0300B6650C00
+      CFE91400E6FF0D00D1EB0500B66D000000000000000000000000000000000000
+      000000000000000000000500B66C0C00CFEA1400E6FF0C00D0EA0C00D0EA1400
+      E6FF0C00CFEA0500B66C00000000000000000000000000000000000000000000
+      00000000000000000000000000000200B56B0C00D0E81400E6FF1400E6FF0D00
+      D0EB0500B66D0000000000000000000000000000000000000000000000000000
+      00000000000000000000000000000200B56B0C00D0E81400E6FF1400E6FF0D00
+      D0EB0500B66D0000000000000000000000000000000000000000000000000000
+      000000000000000000000500B66C0C00CFEA1400E6FF0C00D0EA0C00D0EA1400
+      E6FF0C00CFEA0500B66C00000000000000000000000000000000000000000000
+      0000000000000300B6650C00CFE91400E6FF0D00D1EB0500B66D0300B7660C00
+      CFE91400E6FF0D00D1EB0500B66D000000000000000000000000000000000000
+      00000200B5680C00CFE91400E6FF0D00D0EB0500B66D00000000000000000200
+      B56B0C00CFE91400E6FF0D00D0EB0500B86B0000000000000000000000000000
+      00000200B5680C00CFE90D00D0EB0500B66D0000000000000000000000000000
+      00000200B56B0C00CFE90D00D0EB0500B86B0000000000000000000000000000
+      0000000000000500B66C0500B66C000000000000000000000000000000000000
+      0000000000000500B6690500B669000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000
+    }
+    OnClick = SettingsCancelClick
+  end
+  object LabelStats: TLabel
+    Left = 16
+    Height = 56
+    Top = 248
+    Width = 392
+    AutoSize = False
+    Caption = 'LabelStats'
+    ParentColor = False
+    WordWrap = True
   end
 end

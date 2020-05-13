@@ -732,8 +732,9 @@
       <Unit1>
         <Filename Value="TRsyncClashUI.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="TRsyncClashUI"/>
-	<ComponentName Value="FormClash"/>
+        <ComponentName Value="FormClash"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
       </Unit1>
       <Unit2>
         <Filename Value="TRnoteEdit.pas"/>
