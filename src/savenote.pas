@@ -258,7 +258,7 @@ begin
 
     // Underline turns ON
     if ((not Underline) and (fsUnderline in FT.TextStyle.Font.Style)) then begin
-       if not FT.ClassNameIs('TKMemoHyperlink') then begin                            // Hyperlinks also have underline, don't save
+       if not FT.ClassNameIs('TKMemoHyperlink') then begin                            // Hyperlinks also have underline, dont save
            if Bold then Buff := Buff + '</bold>';
            if Italics then Buff := Buff + '</italic>';
            if HiLight then Buff := Buff + '</highlight>';
@@ -424,14 +424,12 @@ end;
 
 procedure TSaveNote.SaveNewTemplate(NotebookName : ANSIString);
 var
-   GUID : TGUID;
    OStream:TFilestream;
    Buff { TemplateID }: ANSIString;
    Loc :  TNoteUpdateRec {TNoteLocation};
 begin
-   CreateGUID(GUID);
    Title := NotebookName  + ' Template';
-   ID := copy(GUIDToString(GUID), 2, 36) ;
+   ID := GetNewID();
    //SearchForm.NoteLister.AddNoteBook(ID, NotebookName, True);
    Ostream :=TFilestream.Create(GetLocalNoteFile(ID), fmCreate);
    Loc.Y := '20'; Loc.X := '20'; Loc.Height := '200'; Loc.Width:='300';

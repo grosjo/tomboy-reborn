@@ -11,21 +11,6 @@ unit TRhunspell;
     As such, its assumed to be free to use by anyone for any purpose.
 }
 
-{	A Unit to connect to the hunspell library and check some spelling.
-	First, create the class, it will try and find a library to load.
-    Check ErrorMessage.
-    Then call SetDictionary(), with a full filename of the dictionary to use.
-    If GoodToGo is true, you can call Spell() and Suggests()
-    otherwise, look in ErrorString for what went wrong.
-
-    Look in FindLibrary() for default locations of Library.
-    2018/10/31  Changed to TLibHandle to accomadate Mac 64bit
-    2018/11/01  Added /usr/local/Cellar/hunspell/1.6.2/lib/ as place to look
-                for hunspell library on Mac. Need to make that more flexible.
-    2018/11/29  Better debug messages
-}
-
-
 interface
 uses Classes, dynlibs;
 

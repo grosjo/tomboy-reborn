@@ -84,6 +84,7 @@ type TNoteInfoList =
     private
      	function Get(Index: integer): PNoteInfo;
     public
+        LName : String;
         destructor Destroy; override;
         function Add(ANote : PNoteInfo) : integer;
         function FindID(const ID : ANSIString) : PNoteInfo;
@@ -470,12 +471,14 @@ end;
 
 { ===== NOTE FUNCTIONS ==== }
 
-function GetNewID() : ANSIString;
+function GetNewID() : String;
 var
   GUID : TGUID;
+  s : String;
 begin
    CreateGUID(GUID);
-   Result := copy(GUIDToString(GUID), 2, 36);
+   s := copy(GUIDToString(GUID), 2, 36);
+   Result := LowerCase(s);
 end;
 
 
@@ -578,14 +581,13 @@ begin
         if(assigned(Node)) then NoteInfo^.Pinned := StrToBool(Node.FirstChild.NodeValue);
         debugln('Found '+ BoolToStr(NoteInfo^.Pinned, true));
 
-
         debugln('Looking for text');
         Node := Doc.DocumentElement.FindNode('text');
         NoteInfo^.Content := 'empty';
         NoteInfo^.Version := '0.3';
         if(assigned(Node)) then
         begin
-             NoteInfo^.Content := Node.FindNode('note-content').NodeValue;
+             NoteInfo^.Content := Node.FindNode('note-content').TextContent;
              Node := Node.FindNode('note-content').Attributes.GetNamedItem('version');
              if(Assigned(Node)) then NoteInfo^.Version := Node.NodeValue;
         end
@@ -599,8 +601,8 @@ begin
            NodeList := Node.ChildNodes;
            for j := 0 to NodeList.Count-1 do
                begin
-                debugln('Found tag ' + NodeList.Item[j].NodeValue.QuotedString);
-                NoteInfo^.Tags.Add(NodeList.Item[j].NodeValue);
+                debugln('Found tag ' + NodeList.Item[j].TextContent);
+                NoteInfo^.Tags.Add(NodeList.Item[j].TextContent);
                end;
         end
         else debugln('empty note');
@@ -627,7 +629,7 @@ begin
         X := UTF8Pos('<', Result);
         if X > 0 then begin
             Y := UTF8Pos('>', Result);
-            if Y > 0 then begin
+            if Y > X then begin
                 UTF8Delete(Result, X, Y-X+1);
                 FoundOne := True;
             end;
@@ -1229,6 +1231,7 @@ var
     Index : longint;
 begin
     Result := Nil;
+    debugln('Searching TNoteList ' + LName + ' for ID=' + ID);
     for Index := 0 to Count-1 do begin
         if Items[Index]^.ID = ID then begin
             Result := Items[Index];
@@ -1264,12 +1267,16 @@ destructor TNoteInfoList.Destroy;
 var
 I : integer;
 begin
-    for I := 0 to Count-1 do
-        begin
-          FreeAndNil(Items[I]^.tags);
-          dispose(Items[I]);
-        end;
-    inherited;
+  debugln('Destroy NoteInfoList ' + LName);
+  for I := 0 to Count-1 do
+  begin
+       //debugln('Destroy NoteInfoList FreeAndNil '+IntToStr(I) + ' ID='+Items[I]^.ID);
+       //Items[I]^.tags.Free;
+       //debugln('Destroy NoteInfoList Disposed '+IntToStr(I));
+       dispose(Items[I]);
+  end;
+  debugln('Destroy NoteInfoList '+LName+' done');
+  inherited;
 end;
 
 function TNoteInfoList.Get(Index: integer): PNoteInfo;

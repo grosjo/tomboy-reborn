@@ -231,7 +231,7 @@ private
         procedure SetBullet(PB: TKMemoParagraph; Bullet: boolean);
         // Advises other apps we can do middle button paste
         procedure SetPrimarySelection;
-        // Cancels any indication we can do middle button paste 'cos nothing is selected
+        // Cancels any indication we can do middle button paste cos nothing is selected
         procedure UnsetPrimarySelection;
         function UpdateNote(NRec: TNoteUpdaterec): boolean;
     public
@@ -1187,26 +1187,12 @@ end;
 	{ This gets called when the TrayMenu quit entry is clicked }
     { No it does not, only when user manually closes this form. }
 procedure TNoteEditForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
-{var
-    OutFile: TextFile; }
 begin
-{    debugln('^^^^^^^^^^ DANGER writing debug file Unix only editBox.pas#1292 ^^^^^^^^^^^^^');
-    AssignFile(OutFile, '/home/dbannon/closelogEditFormClose.txt');
-    Rewrite(OutFile);
-    writeln(OutFile, 'FormClose just closing ' + self.NoteTitle);
-    CloseFile(OutFile); }
     Release;
 end;
 
 procedure TNoteEditForm.FormCloseQuery(Sender: TObject; var CanClose: boolean);
-{var
-    OutFile: TextFile;      }
 begin
-{    debugln('^^^^^^^^^^ DANGER writing debug file Unix only editBox.pas#1304 ^^^^^^^^^^^^^');
-    AssignFile(OutFile, '/home/dbannon/closelogEditForm.txt');
-    Rewrite(OutFile);
-    writeln(OutFile, 'FormCloseQuery just closing ' + self.NoteTitle);
-    CloseFile(OutFile);   }
     CanClose := True;
 end;
 

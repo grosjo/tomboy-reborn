@@ -33,22 +33,20 @@ type
      procedure SettingsOKClick(Sender: TObject);
 
 
-     { Do actual sync, but if TestRun=True just report on what you'd do.
-              Assumes a Transport has been selected and remote address is set.
-              We must already be a member of this sync, ie, its remote ID is recorded
-              in our local manifest. }
-     function StartSync(display : boolean) : boolean;
 
      procedure FormCreate(Sender: TObject);
      procedure FormDestroy(Sender: TObject);
 
-     procedure SyncEvent(Sender : TObject);
+     procedure SyncVisible();
+     procedure SyncHidden();
 
 public
      ErrorString : String;
-     DeletedList, DownList, GridReportList : TStringList;
+     DeletedList, DownList: TStringList;
 
 private
+
+    UpNew, UpEdit, DownNew, DownEdit, DelLoc, DelRem, CreateCopy, DoNothing, Undecided : integer;
 
     LocalTimer : TTimer;
     Transport : TTomboyTrans;
@@ -68,13 +66,16 @@ private
               do something first, setup new connect, consult user etc.}
     function TestConnection() : TSyncStatus;
 
+    // Load memory and sort out the job to be done
+    procedure PrepareSync(Sender : TObject);
+    // Execute the job to be done
+    function DoSync() : boolean;
+
+
     function GetNoteTitle(const ID : ANSIString) : ANSIString;
 
-    { Reports on contents of a created and filled list }
-    function ReportMetaData(out UpNew, UpEdit, DownNew, DownEdit, DelLoc, DelRem, CreateCopy, DoNothing, Undecided: integer) : integer;
-
-    { Populates the string grid with details of notes to be actioned }
-    procedure ShowReport;
+    { Stats }
+    procedure SyncSummary();
 
     { we will pass address of this function to Sync }
     function ResolveClashUI(const ClashRec : TClashRecord) : TSyncAction;
@@ -145,10 +146,13 @@ begin
   debugln('FormSync Create');
 
   NoteMetaData := TNoteInfoList.Create;
+  NoteMetaData.LName := 'Remote list';
+
   LocalMetaData := TNoteInfoList.Create;
+  LocalMetaData.LName := 'Local list';
+
   DeletedList := TStringList.Create;
   DownList := TStringList.Create;
-  GridReportList := TStringList.Create;
   Transport := nil;
 end;
 
@@ -162,10 +166,7 @@ begin
    FreeandNil(Transport);
    FreeandNil(DeletedList);
    FreeandNil(DownList);
-
-   if LocalTimer = Nil then exit();
-    LocalTimer.Free;
-    LocalTimer := nil;
+   FreeAndNil(LocalTimer);
 end;
 
 function TFormSync.getManifestName() : String;
@@ -173,36 +174,6 @@ begin
     debugln('GetManifestName');
 
     Result := Format('%s%s-%s-manifest.xml',[NotesDir, Transport.getPrefix() , Transport.ServerID ]);
-end;
-
-
-{ =================   E X T E R N A L   C A L L   O U T S ===========================}
-
-
-function TFormSync.ReportMetaData(out UpNew, UpEdit, DownNew, DownEdit, DelLoc, DelRem, CreateCopy, DoNothing, Undecided : integer) : integer;
-var
-    Index : integer;
-begin
-    debugln('ReportMetaData');
-
-    UpNew := 0; UpEdit := 0; DownNew := 0; DownEdit := 0; Undecided := 0;
-    DelLoc := 0; DelRem := 0; DoNothing := 0; CreateCopy :=0;
-
-    for Index := 0 to NoteMetaData.Count -1 do
-    begin
-        case NoteMetaData.Items[Index]^.Action of
-            SynUpLoadNew : inc(UpNew);
-            SynCopy : inc(CreateCopy);
-            SynUpLoadEdit : inc(UpEdit);
-            SynDownLoadNew : inc(DownNew);
-            SynDownLoadEdit : inc(DownEdit);
-            SynDeleteLocal : inc(DelLoc);
-            SynDeleteRemote : inc(DelRem);
-            SynNothing : inc(DoNothing);
-            SynUnset : inc(Undecided);
-	end;
-    end;
-    result := NoteMetaData.Count;
 end;
 
 
@@ -311,6 +282,7 @@ begin
         PNote := NoteMetaData.FindID(ID);
         if(PNote <> Nil) then continue;
 
+        debugln('New local note : '+ID);
         new(PNote);
         PNote^ := LocalMetaData.Items[i]^;
         PNote^.Action:=SynUploadNew;
@@ -335,8 +307,9 @@ begin
 
          ID := NoteMetaData.Items[i]^.ID;
          PNote := LocalMetaData.FindID(ID);
-         if(PNote = Nil) then continue;
+         if(PNote <> Nil) then continue;
 
+         debugln('New remote note : '+ID);
          NoteMetaData.Items[i]^.Action := SynDownLoadNew;
          inc(c);
     end;
@@ -453,7 +426,6 @@ var
     dest,backupdir,backup,ID : String;
     f : TextFile;
     note : PNoteInfo;
-    GUID : TGUID;
 begin
     debugln('DoDownloads');
 
@@ -472,8 +444,7 @@ begin
         new(note);
         note^ := NoteMetaData.Items[i]^;
         note^.Title := note^.Title + ' (Server)';
-        CreateGUID(GUID);
-        note^.ID := copy(GUIDToString(GUID), 2, 36);
+        note^.ID := GetNewID();
         note^.Action := SynDownloadNew;
         NoteMetaData.Add(note);
         NoteMetaData.Items[i]^.Action := SynUploadEdit;
@@ -678,8 +649,9 @@ var
 begin
     debugln('LoadLocalNotes ' + GetLocalNoteFile('*'));
 
-    FreeAndNil(LocalMetaData);
-    LocalMetaData := TNoteInfoList.Create;
+    //FreeAndNil(LocalMetaData);
+    //LocalMetaData := TNoteInfoList.Create;
+    LocalMetaData.Clear;
     c :=0;
     if FindFirst(GetLocalNoteFile('*'), faAnyFile, Info)=0 then
     repeat
@@ -753,26 +725,34 @@ begin
     debugln('LoadRemoteNotes');
 
     Result := True;
-    FreeAndNil(NoteMetaData);
-    NoteMetaData := TNoteInfoList.Create;
+    //FreeAndNil(NoteMetaData);
+    //NoteMetaData := TNoteInfoList.Create;
+
+    NoteMetaData.Clear;
 
     Result := Transport.GetNotes(NoteMetaData);
 
     debugln('LoadRemoteNotes found ' + inttostr(NoteMetaData.Count) + ' remote notes');
 end;
 
-                        { ---------- The Lets Do it Function ------------- }
 
-function TFormSync.StartSync(display : boolean): boolean;
+procedure TFormSync.PrepareSync(Sender : TObject);
 var
-   i : integer;
+   i,j : integer;
    SyncAvail : TSyncStatus;
-   UpNew, UpEdit, DownNew, DownEdit, DelLoc, DelRem, CreateCopy, DoNothing, Undecided : integer;
    St : String;
 begin
+
+    if(LocalTimer <> nil) then
+    begin
+        LocalTimer.Enabled := False;
+        FreeAndNil(LocalTimer);
+    end;
+
     debugln('StartSync');
 
     LabelTitle.Caption:= rsTestingRepo;
+    LabelStats.Caption := '';
     StringGridReport.Clear;
 
     Application.ProcessMessages;
@@ -796,7 +776,10 @@ begin
                 end;
         SyncNone : begin
             ErrorString := rsNoSync;
-            exit(true);
+            LabelStats.Caption := ErrorString;
+            SettingsOK.Enabled:=false;
+            SettingsOK.Visible:=false;
+            exit();
         end;
     end;
 
@@ -810,21 +793,16 @@ begin
     if SyncAvail <> SyncReady then
     begin
        LabelTitle.Caption:= rsUnableToProceed;
-       LabelStats.Caption := ErrorString;
+       LabelStats.Caption := Transport.ErrorString;
        ErrorString := rsUnableToProceed + ' ' + ErrorString;
        debugln(ErrorString);
 
-       SettingsCancel.Enabled:=false;
-       SettingsCancel.Visible:=false;
-       self.ShowModal;
-       SettingsCancel.Enabled:=true;
-       SettingsCancel.Visible:=true;
-
-       exit(false);
+       SettingsOK.Enabled:=false;
+       SettingsOK.Visible:=false;
+       exit();
     end;
 
-    LabelTitle.Caption:=rsLookingatNotes;
-
+    LabelTitle.Caption:=rsLookingatLocalNotes;
     Application.ProcessMessages;
 
     Debugln('Step 0.1 : LoadRemoteNotes');
@@ -837,15 +815,12 @@ begin
        ErrorString := rsUnableToProceed + ' ' + ErrorString;
        debugln(ErrorString);
 
-       SettingsCancel.Enabled:=false;
-       SettingsCancel.Visible:=false;
-       self.ShowModal;
-       SettingsCancel.Enabled:=true;
-       SettingsCancel.Visible:=true;
-
-       exit(False);
+       SettingsOK.Enabled:=false;
+       SettingsOK.Visible:=false;
+       exit();
     end;
 
+    LabelTitle.Caption:=rsLookingatRemoteNotes;
     Application.ProcessMessages;
 
     Debugln('Step 0.2 : LoadLocalNotes');
@@ -858,117 +833,79 @@ begin
        ErrorString := rsUnableToProceed + ' ' + ErrorString;
        debugln(ErrorString);
 
-       SettingsCancel.Enabled:=false;
-       SettingsCancel.Visible:=false;
-       self.ShowModal;
-       SettingsCancel.Enabled:=true;
-       SettingsCancel.Visible:=true;
-
-       exit(false);
+       SettingsOK.Enabled:=false;
+       SettingsOK.Visible:=false;
+       exit();
     end;
 
     Debugln('Step 1 : FindDeletedServerNotes');
     LabelTitle.Caption:= rsFindDeletedServerNotes;
-    LabelStats.Caption := '';
     Application.ProcessMessages;
     FindDeletedServerNotes(); // Step 1 : compare local manifest and server status for locally existing notes
 
     Debugln('Step 2 : FindDeletedLocalNotes');
     LabelTitle.Caption:= rsFindDeletedLocalNotes;
-    LabelStats.Caption := '';
     Application.ProcessMessages;
     FindDeletedLocalNotes();  // Step 2 : compare local manifest and server status for none locally existing notes
 
     Debugln('Step 3 : FindNewLocalNotes');
     LabelTitle.Caption:= rsFindNewLocalNotes;
-    LabelStats.Caption := '';
     Application.ProcessMessages;
     FindNewLocalNotes();      // Step 3 : Add newly created local notes
 
     Debugln('Step 4 : FindNewRemoteNotes');
     LabelTitle.Caption:= rsFindNewRemoteNotes;
-    LabelStats.Caption := '';
     Application.ProcessMessages;
     FindNewRemoteNotes();     // Step 4 : Add newly created remote notes
 
     Debugln('Step 5 : SetSystemicActions');
     LabelTitle.Caption:= rsSetSystemicActions;
-    LabelStats.Caption := '';
     Application.ProcessMessages;
     SetSystemicActions();     // Step 5 : Set systemic actions
 
     Debugln('Step 6 : ProcessClashes');
     LabelTitle.Caption:= rsProcessClashes;
-    LabelStats.Caption := '';
     Application.ProcessMessages;
     ProcessClashes();         // Step 6 : Process unresolved cases
 
     Debugln('Step 7 : Statistics');
     LabelTitle.Caption := rsStatistics;
-    LabelStats.Caption := '';
     Application.ProcessMessages;
-    ReportMetaData(UpNew, UpEdit, DownNew, DownEdit, DelLoc, DelRem, CreateCopy, DoNothing, Undecided);
+    SyncSummary();
 
-    if(display or (Undecided>0) or (DelLoc>0) or (DelRem>0)) then
-       begin
-          debugln('Dump status');
+end;
 
-          for I := 0 to NoteMetaData.Count -1 do
-          begin
-              St := ' ' + inttostr(NoteMetaData.Items[i]^.Rev);
-              while length(St) < 5 do St := St + ' ';
-              debugln(NoteMetaData.Items[I]^.ID + St + NoteMetaData.ActionName(NoteMetaData.Items[i]^.Action)
-                 + NoteMetaData.Items[i]^.LastChange + '   ' + NoteMetaData.Items[I]^.Title);
-          end;
-
-          GridReportList.Clear;
-          for i := 0 to NoteMetaData.Count -1 do
-          begin
-               if NoteMetaData.Items[i]^.Action = SynNothing then continue;
-
-               GridReportList.Add(NoteMetaData.ActionName(NoteMetaData.Items[i]^.Action));
-               GridReportList.Add(NoteMetaData.Items[i]^.Title);
-               GridReportList.Add(NoteMetaData.Items[i]^.ID);
-          end;
-
-          LabelTitle.Caption := rsSyncReport;
-          LabelStats.Caption := 'New local notes : '+IntToStr(UpNew)+', Updated locally : '+IntToStr(UpEdit)
-            +', New remote notes : '+IntToStr(DownNew)+', Updated remotely : '+IntToStr(DownEdit)
-            +', Deleted locally : '+IntToStr(DelLoc)+', Deleted remotely : '+IntToStr(DelRem)
-            +', Duplicated : '+IntToStr(CreateCopy)+', Unchanged : '+IntToStr(DoNothing)
-            +', Errors : '+IntToStr(Undecided);
-
-          if(self.ShowModal = mrCancel) then
-          begin
-             ErrorString := rsSyncCanceledByUser;
-             debugln(ErrorString);
-             exit(false);
-          end;
-       end;
-
-    // ========= Proceed with real actions
-
+function TFormSync.DoSync() : boolean;
+// ========= Proceed with real actions
+begin
     Debugln('Step 8 : DoDownLoads');
-    LabelTitle.Caption := rsSyncDoDownloads;
-    LabelStats.Caption := '';
-    Application.ProcessMessages;
-    if not DoDownLoads() then exit(false);
+    if not DoDownLoads() then
+    begin
+        ShowMessage(ErrorString);
+        exit(false);
+    end;
 
     Debugln('Step 9 : DoDeleteLocal');
-    LabelTitle.Caption := rsDoDeleteLocal;
-    LabelStats.Caption := '';
-    Application.ProcessMessages;
-    if not DoDeleteLocal() then exit(false);
+    if not DoDeleteLocal() then
+    begin
+        ShowMessage(ErrorString);
+        exit(false);
+    end;
 
     // Write remote manifest (only applicable for SyncFile)
-    LabelTitle.Caption := rsDoManifest;
-    LabelStats.Caption := '';
-    Application.ProcessMessages;
-    if not PushChanges() then exit(false);
+    if not PushChanges() then
+    begin
+        ShowMessage(ErrorString);
+        exit(false);
+    end;
 
-    DebugLn('Sync done .. reporting');
-
-    Result := DoManifest();
+    DebugLn('Sync done .. reporting (manifies)');
+    if not DoManifest() then
+    begin
+        ShowMessage(ErrorString);
+        exit(false);
+    end;
+    Result:=true;
 end;
 
 
@@ -1008,6 +945,63 @@ begin
     Application.ProcessMessages;
 end;
 
+procedure TFormSync.SyncSummary();
+var
+    i,j : integer;
+    St : String;
+begin
+    UpNew := 0; UpEdit := 0; DownNew := 0; DownEdit := 0; Undecided := 0;
+    DelLoc := 0; DelRem := 0; DoNothing := 0; CreateCopy :=0;
+
+    for i := 0 to NoteMetaData.Count -1 do
+    begin
+        case NoteMetaData.Items[i]^.Action of
+            SynUpLoadNew : inc(UpNew);
+            SynCopy : inc(CreateCopy);
+            SynUpLoadEdit : inc(UpEdit);
+            SynDownLoadNew : inc(DownNew);
+            SynDownLoadEdit : inc(DownEdit);
+            SynDeleteLocal : inc(DelLoc);
+            SynDeleteRemote : inc(DelRem);
+            SynNothing : inc(DoNothing);
+            SynUnset : inc(Undecided);
+	end;
+    end;
+
+    debugln('Dump status');
+
+    for I := 0 to NoteMetaData.Count -1 do
+    begin
+       St := ' ' + inttostr(NoteMetaData.Items[i]^.Rev);
+       while length(St) < 5 do St := St + ' ';
+       debugln(NoteMetaData.Items[I]^.ID + St + NoteMetaData.ActionName(NoteMetaData.Items[i]^.Action)
+          + NoteMetaData.Items[i]^.LastChange + '   ' + NoteMetaData.Items[I]^.Title);
+    end;
+
+    StringGridReport.Clean;
+    j :=0;
+    for i := 0 to NoteMetaData.Count -1 do
+    begin
+         if NoteMetaData.Items[i]^.Action = SynNothing then continue;
+
+         StringGridReport.InsertRowWithValues(j,
+                       [NoteMetaData.ActionName(NoteMetaData.Items[i]^.Action),
+                       NoteMetaData.Items[i]^.Title,
+                       NoteMetaData.Items[i]^.ID]);
+         inc(j);
+    end;
+
+    StringGridReport.AutoSizeColumn(0);
+    StringGridReport.AutoSizeColumn(1);
+
+    LabelTitle.Caption := rsSyncReport;
+    LabelStats.Caption := 'New local notes : '+IntToStr(UpNew)+', Updated locally : '+IntToStr(UpEdit)
+            +', New remote notes : '+IntToStr(DownNew)+', Updated remotely : '+IntToStr(DownEdit)
+            +', Deleted locally : '+IntToStr(DelLoc)+', Deleted remotely : '+IntToStr(DelRem)
+            +', Duplicated : '+IntToStr(CreateCopy)+', Unchanged : '+IntToStr(DoNothing)
+            +', Errors : '+IntToStr(Undecided);
+end;
+
 procedure TFormSync.FormHide(Sender: TObject);
 begin
     debugln('FormHide');
@@ -1024,70 +1018,55 @@ begin
 end;
 
 
-procedure TFormSync.SyncEvent(Sender : TObject);
+procedure TFormSync.SyncVisible();
 begin
-    debugln('SyncEvent 1');
-
-    LocalTimer.Enabled := False;
-    FreeAndNil(LocalTimer);
-
-    debugln('SyncEvent 2');
-
-    // A REFAIRE (AFFICHAGE)
-
-    if(isSyncConfigured()) then
-    begin
-       debugln('SyncEvent 3');
-       if(not StartSync(true)) then ShowMessage(ErrorString);
-    end
-    else ShowMessage(rsNoSync);
-
-end;
-
-procedure TFormSync.FormShow(Sender: TObject);
-begin
-    Left := 55 + random(55);
-    Top := 55 + random(55);
-
     LabelTitle.Caption := rsRunningSync;
     LabelStats.Caption := rsRunningSync;
     StringGridReport.Clear;
 
-    //LocalTimer := TTimer.Create(Nil);
-    //LocalTimer.OnTimer:= @AfterShown;
-    //LocalTimer.Interval:=500;
-    //LocalTimer.Enabled := True;
-end;
+    LocalTimer := TTimer.Create(Nil);
+    LocalTimer.OnTimer:= @PrepareSync;
+    LocalTimer.Interval:=500;
+    LocalTimer.Enabled := True;
 
-
-procedure TFormSync.ShowReport;
-
-var
-    Rows,i : integer;
-begin
-    StringGridReport.Clean;
-    i := 0;
-    Rows :=0;
-    while (i<GridReportList.Count) do
+    if(self.ShowModal = mrCancel) then
     begin
-        StringGridReport.InsertRowWithValues(
-            Rows,
-            [GridReportList.Strings[i],
-            GridReportList.Strings[i+1],
-            GridReportList.Strings[i+2]]);
-
-        // HintText := FileSync.ReportList.Items[ARow]^.Message;
-
-        inc(Rows);
-        i := i+3;
+        debugln('User canceled operation');
+        exit();
     end;
 
-    StringGridReport.AutoSizeColumn(0);
-    StringGridReport.AutoSizeColumn(1);
+    DoSync();
 
-    //if  Rows = 0
-    //then Memo1.Append(rsNoNotesNeededSync)
-    //else Memo1.Append(inttostr(Rows) + rsNotesWereDealt);
+end;
+
+procedure TFormSync.SyncHidden();
+begin
+    LabelTitle.Caption := rsRunningSync;
+    LabelStats.Caption := rsRunningSync;
+    StringGridReport.Clear;
+
+    PrepareSync(nil);
+
+    if((Undecided>0) or (DelLoc>0) or (DelRem>0)) then
+    begin
+        debugln('Hidden raise errors');
+
+        if(self.ShowModal = mrCancel) then
+        begin
+             debugln('User did not confirm');
+             ErrorString := rsSyncCanceledByUser;
+             debugln(ErrorString);
+             exit();
+        end;
+    end;
+
+    DoSync();
+end;
+
+procedure TFormSync.FormShow(Sender: TObject);
+    begin
+    Left := 55 + random(55);
+    Top := 55 + random(55);
 end;
 
 

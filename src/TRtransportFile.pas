@@ -35,7 +35,6 @@ end;
 function TFileSync.TestTransport(): TSyncStatus;
 var
     Doc : TXMLDocument;
-    GUID : TGUID;
     repo : String;
     ManExists, ZeroExists : boolean; // for readability of code only
 begin
@@ -71,8 +70,7 @@ begin
 
     if (not ManExists) and (not ZeroExists) then
     begin
-        CreateGUID(GUID);
-        ServerID := copy(GUIDToString(GUID), 2, 36);      // it arrives here wrapped in {}
+        ServerID := GetNewID();
         ServerRev := -1;
         ForceDirectoriesUTF8(GetRemoteNotePath(0));
         exit(SyncReady);

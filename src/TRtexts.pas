@@ -60,7 +60,8 @@ RESOURCESTRING
   rsTestingRepo = 'Testing Repo ....';
   rsCreateNewRepo = 'Create a new Repo ?';
   rsUnableToProceed = 'Unable to proceed because';
-  rsLookingatNotes = 'Looking at notes ....';
+  rsLookingatLocalNotes = 'Looking at local notes ....';
+  rsLookingatRemoteNotes = 'Looking at remote notes ....';
   rsSaveAndSync = 'Press Save and Sync if this looks OK';
   rsSyncError = 'A Sync Error occured';
   rsErrorLoadingRemote = 'Loading remote notes has raised an error';
@@ -80,15 +81,15 @@ RESOURCESTRING
   rsLastSync = 'Last Sync';     // Followed by a date and simplified sync report
   rsSyncNCDefault = 'https://YOURSERVER/index.php/apps/grauphel';
 
-  rsNewUploads      = 'Pushed new     ';
-  rsEditUploads     = 'Pushed updated ';
-  rsNewDownloads    = 'Pulled new     ';
-  rseditDownloads   = 'Pulled updated ';
-  rsSynCopies       = 'Duplicated     ';
-  rsLocalDeletes    = 'Local Deleteds ';
-  rsRemoteDeletes   = 'Remote Deleted ';
-  rsDoNothing       = 'Do Nothing     ';
-  rsUndecided       = 'Unresolved     ';
+  rsNewUploads      = 'New upload       ';
+  rsEditUploads     = 'Edited upload    ';
+  rsNewDownloads    = 'New download     ';
+  rseditDownloads   = 'Edited download  ';
+  rsSynCopies       = 'To be Duplicated ';
+  rsLocalDeletes    = 'Local obsolete   ';
+  rsRemoteDeletes   = 'Remote obosolete ';
+  rsDoNothing       = 'Unchanged        ';
+  rsUndecided       = 'Unresolved       ';
 
   rsNoNotesNeededSync = 'No notes needed syncing. You need to write more.';
   rsNotesWereDealt = ' notes were dealt with.';

@@ -265,18 +265,26 @@ begin
             end;
         ttSync : begin
             debugln('TrayMenuClicked Sync');
-            FormSync := TFormSync.Create(Self);
-            FormSync.ShowModal;
-            FreeAndNil(FormSync);
+            try
+               FormSync := TFormSync.Create(Self);
+               FormSync.SyncVisible();
+               debugln('menu click ttSync done');
+               FreeAndNil(FormSync);
+            except on E:Exception do
+               begin
+                  debugln(E.message);
+               end;
             end;
+            end;
+
         //mtAbout :   MainForm.ShowAbout();
         //mtSync :    if(Sett.getSyncConfigured()) then Sett.Synchronise()
         //            else showmessage(rsSetupSyncFirst);
         //mtSettings : begin
-                     //MoveWindowHere(FormSettings.Caption);
-                     //FormSettings.EnsureVisible(true);
-                     //FormSettings.Show;
-          //          end;
+        //MoveWindowHere(FormSettings.Caption);
+        //FormSettings.EnsureVisible(true);
+        //FormSettings.Show;
+        //          end;
         //mtQuit :      //MainForm.close;
     end;
 end;
@@ -289,11 +297,13 @@ var
     Index : integer;
 begin
     if NoteLister <> nil then begin
-        for Index := 0 to DeletedList.Count -1 do begin
+        for Index := 0 to DeletedList.Count -1 do
+        begin
             MarkNoteReadOnly(DeletedList.Strings[Index], True);
             //debugln('We have tried to mark read only on ' + DeletedList.Strings[Index]);
         end;
-        for Index := 0 to DownList.Count -1 do begin
+        for Index := 0 to DownList.Count -1 do
+        begin
             MarkNoteReadOnly(DownList.Strings[Index], False);
             if NoteLister.IsIDPresent(DownList.Strings[Index]) then begin
                 NoteLister.DeleteNote(DownList.Strings[Index]);
