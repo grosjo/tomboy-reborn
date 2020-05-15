@@ -74,6 +74,7 @@ type TNoteInfo =
         X : integer;
         Y : integer;
         Tags : TStringList;
+        Error : String;
         Deleted : boolean;
   end;
 
@@ -116,6 +117,7 @@ function NoteIDLooksOK(const ID : string) : boolean;
 function FileToNote(xml : String; NoteInfo : PNoteInfo) : boolean;
 function RemoveBadXMLCharacters(const InStr : String; DoQuotes : boolean = false) : String;
 function RemoveXml(const St : String) : String;
+function CopyNote(A : PNoteInfo) : PNoteInfo;
 
 // Font
 function GetDefaultFixedFont() : string;
@@ -502,6 +504,8 @@ begin
      except on E:Exception do begin debugln(E.message); exit(false); end;
      end;
 
+     NoteInfo^.Tags := TStringList.Create;
+
      try
         debugln('Looking for create date');
         Node := Doc.DocumentElement.FindNode('create-date');
@@ -595,7 +599,6 @@ begin
 
         debugln('Looking for tags');
         Node := Doc.DocumentElement.FindNode('tags');
-        NoteInfo^.Tags := TStringList.Create;
         if(assigned(Node)) then
         begin
            NodeList := Node.ChildNodes;
@@ -1220,9 +1223,48 @@ end;
 
 { ========= TNoteInfoList ========= }
 
+function CopyNote(A : PNoteInfo) : PNoteInfo;
+var
+   c : PNoteInfo;
+   i : integer;
+begin
+  new(c);
+
+  c^.ID := A^.ID;
+  c^.CreateDate := A^.CreateDate;
+  c^.CreateDateGMT := A^.CreateDateGMT;
+  c^.LastChange := A^.LastChange;
+  c^.LastChangeGMT := A^.LastChangeGMT;
+  c^.LastMetaChange := A^.LastMetaChange;
+  c^.LastMetaChangeGMT := A^.LastMetaChangeGMT;
+  c^.Version := A^.Version;
+  c^.Rev := A^.Rev;
+  c^.LastSync := A^.LastSync;
+  c^.LastSyncGMT := A^.LastSyncGMT;
+  c^.Action := A^.Action;
+  c^.Title := A^.Title;
+  c^.Content := A^.Content;
+  c^.OpenOnStartup := A^.OpenOnStartup;
+  c^.Pinned := A^.Pinned;
+  c^.CursorPosition := A^.CursorPosition;
+  c^.SelectBoundPosition := A^.SelectBoundPosition;
+  c^.Width := A^.Width;
+  c^.Height := A^.Height;
+  c^.X := A^.X;
+  c^.Y := A^.Y;
+  c^.X := A^.X;
+  if(A^.Tags = nil) then A^.Tags := TStringList.Create;
+  c^.Tags := TStringList.Create;
+  for i:=0 to A^.Tags.Count -1 do c^.Tags.Add(A^.Tags.Strings[i]);
+  c^.Error := A^.Error;
+  c^.Deleted := A^.Deleted;
+  result := c;
+end;
+
 function TNoteInfoList.Add(ANote : PNoteInfo) : integer;
 begin
-    result := inherited Add(ANote);
+  if(ANote^.Tags = nil) then ANote^.Tags := TStringList.Create;
+  result := inherited Add(ANote);
 end;
 
 { This will be quite slow with a big list notes, consider an AVLTree ? }

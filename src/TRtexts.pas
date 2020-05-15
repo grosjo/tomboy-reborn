@@ -81,6 +81,10 @@ RESOURCESTRING
   rsLastSync = 'Last Sync';     // Followed by a date and simplified sync report
   rsSyncNCDefault = 'https://YOURSERVER/index.php/apps/grauphel';
 
+  rsSyncRevisionError = 'Revision error : Old sync ?';
+  rsSyncNeverSynced = 'Synced data error';
+  rsSyncChangeError = 'Changes on both sides';
+
   rsNewUploads      = 'New upload       ';
   rsEditUploads     = 'Edited upload    ';
   rsNewDownloads    = 'New download     ';

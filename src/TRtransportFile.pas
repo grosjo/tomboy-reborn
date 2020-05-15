@@ -72,7 +72,7 @@ begin
     begin
         ServerID := GetNewID();
         ServerRev := -1;
-        ForceDirectoriesUTF8(GetRemoteNotePath(0));
+        GetRemoteNotePath(0);
         exit(SyncReady);
     end;
 
@@ -204,49 +204,50 @@ function TFileSync.PushChanges(notes : TNoteInfoList): boolean;
 var
     i : integer;
     d,n : string;
-    f : TextFile;
+    f : TStringList;
     note : PNoteInfo;
+    ok : boolean;
 begin
    d := GetRemoteNotePath(ServerRev + 1);
-   ForceDirectoriesUTF8(d);
 
-
+   ok := true;
    for i := 0 to notes.Count -1 do
    begin
        note := notes.Items[i];
-
        if(not (note^.Action in [SynUploadEdit, SynUploadNew])) then continue;
 
-       debugln('Uploading ' + note^.ID );
        n := GetRemoteNotePath(ServerRev + 1,note^.ID);
 
+       f := TStringList.Create;
+       f.Add('<?xml version="1.0" encoding="utf-8"?>');
+       f.Add('<note version="' + note^.Version + '" xmlns:link="http://beatniksoftware.com/tomboy/link" xmlns:size="http://beatniksoftware.com/tomboy/size" xmlns="http://beatniksoftware.com/tomboy">');
+       f.Add('<title>' + note^.Title + '</title>');
+       f.Add('<create-date>' + note^.CreateDate + '</create-date>');
+       f.Add('<last-change-date>' + note^.LastChange + '</last-change-date>');
+       f.Add('<last-metadata-change-date>' + note^.LastMetaChange + '</last-metadata-change-date>');
+       f.Add('<width>' + IntToStr(note^.Width) + '</width>');
+       f.Add('<height>' + IntToStr(note^.Height) + '</height>');
+       f.Add('<x>' + IntToStr(note^.X) + '</x>');
+       f.Add('<y>' + IntToStr(note^.Y) + '</y>');
+       f.Add('<selection-bound-position>' + IntToStr(note^.SelectBoundPosition) + '</selection-bound-position>');
+       f.Add('<cursor-position>' + IntToStr(note^.CursorPosition) + '</cursor-position>');
+       f.Add('<pinned>' + BoolToStr(note^.Pinned) + '</pinned>');
+       f.Add('<open-on-startup>' + BoolToStr(note^.OpenOnStartup) + '</open-on-startup>');
+       f.Add('<text xml:space="preserve"><note-content version="' + note^.Version + '">' + note^.Content + '</note-content></text> ');
+
+       debugln('Uploading ' + note^.ID + ' into '+n );
        try
-            AssignFile(f,n);
-            WriteLn(f,'<?xml version="1.0" encoding="utf-8"?>');
-            WriteLn(f,'<note version="' + note^.Version + '" xmlns:link="http://beatniksoftware.com/tomboy/link" xmlns:size="http://beatniksoftware.com/tomboy/size" xmlns="http://beatniksoftware.com/tomboy">');
-            WriteLn(f,'<title>' + note^.Title + '</title>');
-            WriteLn(f,'<create-date>' + note^.CreateDate + '</create-date>');
-            WriteLn(f,'<last-change-date>' + note^.LastChange + '</last-change-date>');
-            WriteLn(f,'<last-metadata-change-date>' + note^.LastMetaChange + '</last-metadata-change-date>');
-            WriteLn(f,'<width>' + IntToStr(note^.Width) + '</width>');
-            WriteLn(f,'<height>' + IntToStr(note^.Height) + '</height>');
-            WriteLn(f,'<x>' + IntToStr(note^.X) + '</x>');
-            WriteLn(f,'<y>' + IntToStr(note^.Y) + '</y>');
-            WriteLn(f,'<selection-bound-position>' + IntToStr(note^.SelectBoundPosition) + '</selection-bound-position>');
-            WriteLn(f,'<cursor-position>' + IntToStr(note^.CursorPosition) + '</cursor-position>');
-            WriteLn(f,'<pinned>' + BoolToStr(note^.Pinned) + '</pinned>');
-            WriteLn(f,'<open-on-startup>' + BoolToStr(note^.OpenOnStartup) + '</open-on-startup>');
-            WriteLn(f,'<text xml:space="preserve"><note-content version=">' + note^.Version + '">' + note^.Content + '</note-content></text> ');
-            CloseFile(f);
+          f.SaveToFile(n);
        except on E:Exception do
            begin
               ErrorString := E.message;
               debugln(ErrorString);
-              exit(false);
+              ok := false;
            end;
        end;
+       f.Free;
    end;
-   result := True;
+   result := ok;
 end;
 
 function TFileSync.DoRemoteManifest(const RemoteManifest: string): boolean;
@@ -263,7 +264,6 @@ begin
        Close(f);
 
        d := GetRemoteNotePath(ServerRev + 1);
-       ForceDirectoriesUTF8(d);
 
        AssignFile(f,d + 'manifest.xml');
        Rewrite(f);
@@ -295,10 +295,13 @@ begin
 
     path := getParam('RemoteAddress');
 
-    if ((Rev<0) or (FindFirst(path + '*.note',faAnyFile,SearchResult) = 0))
+    //if ((Rev<0) or (FindFirst(path + '*.note',faAnyFile,SearchResult) = 0))
+    if (Rev<0)
     then s := path
     else s := appendpathDelim(path
         + inttostr(Rev div 100) + pathDelim + inttostr(rev));
+
+    ForceDirectoriesUTF8(path);
 
     if NoteID <> '' then
         s := s + NoteID + '.note';

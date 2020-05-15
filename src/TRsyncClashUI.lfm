@@ -1,11 +1,11 @@
 object FormClash: TFormClash
-  Left = 849
-  Height = 449
-  Top = 203
+  Left = 1086
+  Height = 489
+  Top = 258
   Width = 645
   VertScrollBar.Visible = False
   Caption = 'A Note Sync Clash has been Detected'
-  ClientHeight = 449
+  ClientHeight = 489
   ClientWidth = 645
   LCLVersion = '2.0.8.0'
   object Label1: TLabel
@@ -16,7 +16,7 @@ object FormClash: TFormClash
     AnchorSideBottom.Control = ButtAllRemote
     Left = 346
     Height = 30
-    Top = 401
+    Top = 431
     Width = 119
     Anchors = [akTop, akRight]
     BorderSpacing.Left = 10
@@ -31,7 +31,7 @@ object FormClash: TFormClash
     AnchorSideBottom.Side = asrBottom
     Left = 558
     Height = 25
-    Top = 414
+    Top = 454
     Width = 77
     Anchors = [akRight, akBottom]
     BorderSpacing.Right = 10
@@ -46,7 +46,7 @@ object FormClash: TFormClash
     AnchorSideBottom.Side = asrBottom
     Left = 473
     Height = 25
-    Top = 414
+    Top = 454
     Width = 75
     Anchors = [akRight, akBottom]
     BorderSpacing.Right = 10
@@ -61,7 +61,7 @@ object FormClash: TFormClash
     AnchorSideBottom.Control = ButtAllOldest
     Left = 560
     Height = 25
-    Top = 384
+    Top = 424
     Width = 75
     Anchors = [akRight, akBottom]
     BorderSpacing.Right = 10
@@ -75,7 +75,7 @@ object FormClash: TFormClash
     AnchorSideBottom.Control = ButtAllNewest
     Left = 475
     Height = 25
-    Top = 384
+    Top = 424
     Width = 75
     Anchors = [akRight, akBottom]
     BorderSpacing.Right = 10
@@ -91,13 +91,13 @@ object FormClash: TFormClash
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 110
+    Left = 115
     Height = 38
-    Top = 401
+    Top = 431
     Width = 90
     Anchors = [akLeft, akBottom]
     BorderSpacing.Left = 10
-    BorderSpacing.Bottom = 10
+    BorderSpacing.Bottom = 20
     Caption = 'Use Local'
     Color = clAqua
     ModalResult = 7
@@ -108,13 +108,13 @@ object FormClash: TFormClash
     AnchorSideRight.Control = BitBtnUseLocal
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 10
+    Left = 15
     Height = 38
-    Top = 401
+    Top = 431
     Width = 90
     Anchors = [akLeft, akBottom]
-    BorderSpacing.Left = 10
-    BorderSpacing.Bottom = 10
+    BorderSpacing.Left = 15
+    BorderSpacing.Bottom = 20
     Caption = 'Use Remote'
     Color = clYellow
     ModalResult = 6
@@ -125,13 +125,13 @@ object FormClash: TFormClash
     AnchorSideLeft.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 209
+    Left = 214
     Height = 38
-    Top = 401
+    Top = 431
     Width = 90
     Anchors = [akLeft, akBottom]
     BorderSpacing.Left = 9
-    BorderSpacing.Bottom = 10
+    BorderSpacing.Bottom = 20
     Caption = 'Make Copy'
     Color = clGradientActiveCaption
     ModalResult = 4
@@ -155,15 +155,15 @@ object FormClash: TFormClash
   end
   object TitleLocal: TLabel
     AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = NoteID
+    AnchorSideTop.Control = LabelSyncError
     AnchorSideTop.Side = asrBottom
-    Left = 15
+    Left = 65
     Height = 15
-    Top = 45
-    Width = 53
-    BorderSpacing.Left = 15
+    Top = 75
+    Width = 245
+    BorderSpacing.Left = 65
     BorderSpacing.Top = 15
-    Caption = 'TitleLocal'
+    Caption = '12345678901234567890123456789012345'
     ParentColor = False
   end
   object ChangeLocal: TLabel
@@ -172,7 +172,7 @@ object FormClash: TFormClash
     AnchorSideTop.Side = asrBottom
     Left = 15
     Height = 15
-    Top = 75
+    Top = 105
     Width = 72
     BorderSpacing.Left = 15
     BorderSpacing.Top = 15
@@ -182,13 +182,13 @@ object FormClash: TFormClash
   end
   object TitleRemote: TLabel
     AnchorSideLeft.Control = MemoRemote
-    AnchorSideTop.Control = NoteID
+    AnchorSideTop.Control = LabelSyncError
     AnchorSideTop.Side = asrBottom
-    Left = 340
+    Left = 390
     Height = 15
-    Top = 45
+    Top = 75
     Width = 67
-    BorderSpacing.Left = 10
+    BorderSpacing.Left = 60
     BorderSpacing.Top = 15
     Caption = 'TitleRemote'
     ParentColor = False
@@ -197,11 +197,10 @@ object FormClash: TFormClash
     AnchorSideLeft.Control = MemoRemote
     AnchorSideTop.Control = TitleRemote
     AnchorSideTop.Side = asrBottom
-    Left = 340
+    Left = 330
     Height = 15
-    Top = 75
+    Top = 105
     Width = 86
-    BorderSpacing.Left = 10
     BorderSpacing.Top = 15
     Caption = 'ChangeRemote'
     ParentColor = False
@@ -213,7 +212,7 @@ object FormClash: TFormClash
     AnchorSideBottom.Control = ButtAllRemote
     Left = 15
     Height = 272
-    Top = 105
+    Top = 135
     Width = 305
     BorderSpacing.Left = 15
     BorderSpacing.Top = 15
@@ -232,7 +231,7 @@ object FormClash: TFormClash
     AnchorSideBottom.Control = ButtAllRemote
     Left = 330
     Height = 272
-    Top = 105
+    Top = 135
     Width = 305
     Anchors = [akTop, akRight]
     BorderSpacing.Top = 15
@@ -242,5 +241,47 @@ object FormClash: TFormClash
       'MemoRemote'
     )
     TabOrder = 8
+  end
+  object Label2: TLabel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = LabelSyncError
+    AnchorSideTop.Side = asrBottom
+    Left = 15
+    Height = 15
+    Top = 75
+    Width = 38
+    BorderSpacing.Left = 15
+    BorderSpacing.Top = 15
+    Caption = 'Local : '
+    ParentColor = False
+  end
+  object Label3: TLabel
+    AnchorSideLeft.Control = MemoRemote
+    AnchorSideTop.Control = LabelSyncError
+    AnchorSideTop.Side = asrBottom
+    Left = 330
+    Height = 15
+    Top = 75
+    Width = 52
+    BorderSpacing.Top = 15
+    Caption = 'Remote : '
+    ParentColor = False
+  end
+  object LabelSyncError: TLabel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = NoteID
+    AnchorSideTop.Side = asrBottom
+    Left = 15
+    Height = 15
+    Top = 45
+    Width = 97
+    BorderSpacing.Left = 15
+    BorderSpacing.Top = 15
+    Caption = 'LabelSyncError'
+    Font.Height = -13
+    Font.Name = 'Sans'
+    Font.Style = [fsItalic]
+    ParentColor = False
+    ParentFont = False
   end
 end

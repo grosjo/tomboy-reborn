@@ -8,7 +8,11 @@ uses
     Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
     ExtCtrls, ComCtrls, Buttons;
 
-type TFormClash = class(TForm)
+type
+
+{ TFormClash }
+
+ TFormClash = class(TForm)
      BitBtnUseRemote: TBitBtn;
      BitBtnUseLocal: TBitBtn;
      ButtAllOldest: TButton;
@@ -16,6 +20,9 @@ type TFormClash = class(TForm)
      ButtAllLocal: TButton;
      ButtAllRemote: TButton;
      Button1: TButton;
+     Label2: TLabel;
+     Label3: TLabel;
+     LabelSyncError: TLabel;
      MemoRemote: TMemo;
      MemoLocal: TMemo;
      TitleLocal: TLabel;
