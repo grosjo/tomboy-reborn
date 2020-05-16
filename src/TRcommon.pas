@@ -102,6 +102,7 @@ type TClashRecord =
 
 // Environmment
 const Backup = 'Backup';
+procedure TRlog(s : String);
 function AboutString() : String;
 function GetDefaultConfigDir() : string;
 function GetDefaultNotesDir() : string;
@@ -181,6 +182,7 @@ var
 
     mainWindow : TForm;
 
+    Debug : boolean;
 Const
   Placement = 45;
 
@@ -188,6 +190,11 @@ implementation
 
 
 { ===== ENVIRONMENT ==== }
+
+procedure TRlog(s : String);
+begin
+  if(Debug) then DebugLn(s);
+end;
 
 function AboutString() : string;
 var
@@ -229,7 +236,7 @@ begin
 
     Result := AppendPathDelim(ChompPathDelim(Result));
     ForceDirectoriesUTF8(Result);
-    debugln('Default Conf Dir ='+Result);
+    TRlog('Default Conf Dir ='+Result);
 end;
 
 function GetDefaultNotesDir() : string;
@@ -261,7 +268,7 @@ begin
       ForceDirectoriesUTF8(altrep);
       Result := altrep + PathDelim + NoteID + '.note';
     end else Result := NotesDir + NoteID + '.note';
-    debugln('GetLocalNoteFile -> '+Result);
+    TRlog('GetLocalNoteFile -> '+Result);
 
 end;
 
@@ -284,7 +291,7 @@ var
     autos : TAutoStartCtrl;
 begin
     Result := True;
-    debugln('ConfigWrite '+source);
+    TRlog('ConfigWrite '+source);
 
     try
       DeleteFile(ConfigFile);
@@ -350,7 +357,7 @@ begin
           ShowMessage('Error setting autstart' + Autos.ErrorMessage);
     FreeAndNil(Autos);
 
-    debugln('ConfigWrite DONE '+source);
+    TRlog('ConfigWrite DONE '+source);
 end;
 
 function ConfigRead(source : String) : integer;
@@ -358,7 +365,7 @@ var
     f : TINIFile;
 begin
 
-    debugln('ConfigRead(' + source + ')');
+    TRlog('ConfigRead(' + source + ')');
 
     if fileexists(ConfigFile) then
     begin
@@ -366,7 +373,7 @@ begin
           f :=  TINIFile.Create(ConfigFile);
        except on E: Exception do
           begin
-             debugln(E.Message);
+             TRlog(E.Message);
              exit(-1);
           end;
        end;
@@ -402,7 +409,7 @@ begin
               'MakeCopy'  : SyncClashOption := TSyncClashOption.MakeCopy;
          end;
 
-         debugln('READSYNCTYPE = '+f.ReadString('Sync', 'Type','none'));
+         TRlog('READSYNCTYPE = '+f.ReadString('Sync', 'Type','none'));
 
          SyncType         := TSyncTransport.SyncNone;
          case f.ReadString('Sync', 'Type','none') of
@@ -467,7 +474,7 @@ begin
         Result := 0;
     end;
 
-    debugln('ConfigRead(' + source + ') DONE');
+    TRlog('ConfigRead(' + source + ') DONE');
 
     SetFontSizes();
 
@@ -500,7 +507,7 @@ var
    f : TStringList;
    ok : boolean;
 begin
-   debugln('Note to file ' + note^.ID + ' into ' + filename );
+   TRlog('Note to file ' + note^.ID + ' into ' + filename );
 
    ok:=false;
 
@@ -528,7 +535,7 @@ begin
    try
       f.SaveToFile(filename);
       ok :=true;
-   except on E:Exception do debugln(E.message);
+   except on E:Exception do TRlog(E.message);
    end;
 
    f.Free;
@@ -543,12 +550,12 @@ var
     NodeList : TDOMNodeList;
     j : integer;
 begin
-   debugln('File to note '+filename);
+   TRlog('File to note '+filename);
      try
         ReadXMLFile(Doc, filename);
      except on E:Exception do
         begin
-          debugln(E.message);
+          TRlog(E.message);
           NoteInfo^.Error := E.message;
           NoteInfo^.Action:= SynClash;
           exit();
@@ -558,85 +565,85 @@ begin
      NoteInfo^.Tags := TStringList.Create;
 
      try
-        debugln('Looking for create date');
+        TRlog('Looking for create date');
         Node := Doc.DocumentElement.FindNode('create-date');
         NoteInfo^.CreateDate := '';
         if(assigned(Node)) then NoteInfo^.CreateDate := Node.FirstChild.NodeValue;
         if NoteInfo^.CreateDate = '' then NoteInfo^.CreateDate := GetCurrentTimeStr();
         NoteInfo^.CreateDateGMT := GetGMTFromStr(NoteInfo^.CreateDate);
-        debugln('Found ' + NoteInfo^.CreateDate);
+        TRlog('Found ' + NoteInfo^.CreateDate);
 
-        debugln('Looking for last-change-date');
+        TRlog('Looking for last-change-date');
         Node := Doc.DocumentElement.FindNode('last-change-date');
         NoteInfo^.LastChange := '';
         if(assigned(Node)) then NoteInfo^.LastChange := Node.FirstChild.NodeValue;
         if NoteInfo^.LastChange = '' then NoteInfo^.LastChange := GetCurrentTimeStr();
         NoteInfo^.LastChangeGMT := GetGMTFromStr(NoteInfo^.LastChange);
-        debugln('Found ' + NoteInfo^.LastChange);
+        TRlog('Found ' + NoteInfo^.LastChange);
 
-        debugln('Looking for last-metadata-change-date');
+        TRlog('Looking for last-metadata-change-date');
         Node := Doc.DocumentElement.FindNode('last-metadata-change-date');
         NoteInfo^.LastMetaChange := '';
         if(assigned(Node)) then NoteInfo^.LastMetaChange := Node.FirstChild.NodeValue;
         if NoteInfo^.LastMetaChange = '' then NoteInfo^.LastMetaChange := GetCurrentTimeStr();
         NoteInfo^.LastMetaChangeGMT := GetGMTFromStr(NoteInfo^.LastMetaChange);
-        debugln('Found ' + NoteInfo^.LastMetaChange);
+        TRlog('Found ' + NoteInfo^.LastMetaChange);
 
-        debugln('Looking for title');
+        TRlog('Looking for title');
         Node := Doc.DocumentElement.FindNode('title');
         if(assigned(Node)) then NoteInfo^.Title := Node.FirstChild.NodeValue
         else NoteInfo^.Title := 'Note ' + NoteInfo^.ID;
-        debugln('Found ' + NoteInfo^.Title);
+        TRlog('Found ' + NoteInfo^.Title);
 
-        debugln('Looking for cursor-position');
+        TRlog('Looking for cursor-position');
         Node := Doc.DocumentElement.FindNode('cursor-position');
         NoteInfo^.CursorPosition := 0;
         if(assigned(Node)) then NoteInfo^.CursorPosition := StrToInt(Node.FirstChild.NodeValue);
-        debugln('Found '+ IntToStr(NoteInfo^.CursorPosition));
+        TRlog('Found '+ IntToStr(NoteInfo^.CursorPosition));
 
-        debugln('Looking for selection-bound-position');
+        TRlog('Looking for selection-bound-position');
         Node := Doc.DocumentElement.FindNode('selection-bound-position');
         NoteInfo^.SelectBoundPosition := 0;
         if(assigned(Node)) then NoteInfo^.SelectBoundPosition := StrToInt(Node.FirstChild.NodeValue);
-        debugln('Found '+ IntToStr(NoteInfo^.SelectBoundPosition));
+        TRlog('Found '+ IntToStr(NoteInfo^.SelectBoundPosition));
 
-        debugln('Looking for width');
+        TRlog('Looking for width');
         Node := Doc.DocumentElement.FindNode('width');
         NoteInfo^.Width := 0;
         if(assigned(Node)) then NoteInfo^.Width := StrToInt(Node.FirstChild.NodeValue);
-        debugln('Found '+ IntToStr(NoteInfo^.Width));
+        TRlog('Found '+ IntToStr(NoteInfo^.Width));
 
-        debugln('Looking for height');
+        TRlog('Looking for height');
         Node := Doc.DocumentElement.FindNode('height');
         NoteInfo^.Width := 0;
         if(assigned(Node)) then NoteInfo^.Width := StrToInt(Node.FirstChild.NodeValue);
-        debugln('Found '+ IntToStr(NoteInfo^.Height));
+        TRlog('Found '+ IntToStr(NoteInfo^.Height));
 
-        debugln('Looking for X');
+        TRlog('Looking for X');
         Node := Doc.DocumentElement.FindNode('x');
         NoteInfo^.X := 0;
         if(assigned(Node)) then NoteInfo^.X := StrToInt(Node.FirstChild.NodeValue);
-        debugln('Found '+ IntToStr(NoteInfo^.X));
+        TRlog('Found '+ IntToStr(NoteInfo^.X));
 
-        debugln('Looking for Y');
+        TRlog('Looking for Y');
         Node := Doc.DocumentElement.FindNode('y');
         NoteInfo^.Y := 0;
         if(assigned(Node)) then NoteInfo^.Y := StrToInt(Node.FirstChild.NodeValue);
-        debugln('Found '+ IntToStr(NoteInfo^.Y));
+        TRlog('Found '+ IntToStr(NoteInfo^.Y));
 
-        debugln('Looking for open-on-startup');
+        TRlog('Looking for open-on-startup');
         Node := Doc.DocumentElement.FindNode('open-on-startup');
         NoteInfo^.OpenOnStartup := false;
         if(assigned(Node)) then NoteInfo^.OpenOnStartup := StrToBool(Node.FirstChild.NodeValue);
-        debugln('Found '+ BoolToStr(NoteInfo^.OpenOnStartup, true));
+        TRlog('Found '+ BoolToStr(NoteInfo^.OpenOnStartup, true));
 
-        debugln('Looking for pinned');
+        TRlog('Looking for pinned');
         Node := Doc.DocumentElement.FindNode('pinned');
         NoteInfo^.Pinned := false;
         if(assigned(Node)) then NoteInfo^.Pinned := StrToBool(Node.FirstChild.NodeValue);
-        debugln('Found '+ BoolToStr(NoteInfo^.Pinned, true));
+        TRlog('Found '+ BoolToStr(NoteInfo^.Pinned, true));
 
-        debugln('Looking for text');
+        TRlog('Looking for text');
         Node := Doc.DocumentElement.FindNode('text');
         NoteInfo^.Content := 'empty';
         NoteInfo^.Version := '0.3';
@@ -646,20 +653,20 @@ begin
              Node := Node.FindNode('note-content').Attributes.GetNamedItem('version');
              if(Assigned(Node)) then NoteInfo^.Version := Node.NodeValue;
         end
-        else debugln('No text');
+        else TRlog('No text');
 
-        debugln('Looking for tags');
+        TRlog('Looking for tags');
         Node := Doc.DocumentElement.FindNode('tags');
         if(assigned(Node)) then
         begin
            NodeList := Node.ChildNodes;
            for j := 0 to NodeList.Count-1 do
                begin
-                debugln('Found tag ' + NodeList.Item[j].TextContent);
+                TRlog('Found tag ' + NodeList.Item[j].TextContent);
                 NoteInfo^.Tags.Add(NodeList.Item[j].TextContent);
                end;
         end
-        else debugln('No tags');
+        else TRlog('No tags');
 
         NoteInfo^.Deleted := false;
 
@@ -667,7 +674,7 @@ begin
         begin
           NoteInfo^.Error := E.Message;
           NoteInfo^.Action:= SynClash;
-          debugln(E.message);
+          TRlog(E.message);
         end;
      end;
 
@@ -796,16 +803,16 @@ begin
     if DateStr = '' then exit(0);
 
     if length(DateStr) <> 33 then begin
-        debugln('ERROR received invalid date string - [' + DateStr + ']');
+        TRlog('ERROR received invalid date string - [' + DateStr + ']');
         exit(0);
     end;
 
     try
        if not TryEncodeTimeInterval( strtoint(copy(DateStr, 29, 2)),strtoint(copy(DateStr, 32, 2)),0,0,TimeZone)
-       then DebugLn('Fail on interval encode ');
+       then TRlog('Fail on interval encode ');
     except on EConvertError do begin
-       DebugLn('FAIL on converting time interval ' + DateStr);
-       DebugLn('Hour ', copy(DateStr, 29, 2), ' minutes ', copy(DateStr, 32, 2));
+       TRlog('FAIL on converting time interval ' + DateStr);
+       TRlog('Hour ' + copy(DateStr, 29, 2) + ' minutes ' + copy(DateStr, 32, 2));
        end;
     end;
 
@@ -818,10 +825,10 @@ begin
 	  strtoint(copy(DateStr, 18, 2)),				// Seconds
 	  strtoint(copy(DateStr, 21, 3)),				// mSeconds
 	  Result)
-       then DebugLn('Fail on date time encode ');
+       then TRlog('Fail on date time encode ');
     except on EConvertError do
        begin
-          DebugLn('FAIL on converting date time ' + DateStr);
+          TRlog('FAIL on converting date time ' + DateStr);
           exit(0.0);
        end;
     end;
@@ -831,14 +838,14 @@ begin
        then Result := Result - TimeZone
        else if DateStr[28] = '-'
           then Result := Result + TimeZone
-	  else debugLn('******* Bugger, we are not parsing DATE String ********');
+	  else TRlog('******* Bugger, we are not parsing DATE String ********');
     except on EConvertError do
        begin
-       DebugLn('FAIL on calculating GMT ' + DateStr);
+       TRlog('FAIL on calculating GMT ' + DateStr);
        exit(0.0);
        end;
     end;
-    debugln('GetGMTFromStr : "' + DateStr + '"  -> ', DatetoStr(Result), ' ', TimetoStr(Result));
+    TRlog('GetGMTFromStr : "' + DateStr + '"  -> ' + DatetoStr(Result) + ' '+ TimetoStr(Result));
 end;
 
 
@@ -855,7 +862,7 @@ var  T : string;
     function IsMono(FontName : String) : boolean;
     begin
       f.Canvas.Font.Name := FontName;
-      debugln('IsMono '+FontName);
+      TRlog('IsMono '+FontName);
       result := f.Canvas.TextWidth('i') = f.Canvas.TextWidth('w');
     end;
 
@@ -881,7 +888,7 @@ begin
     for T in FontNames do begin
         if not IsMono(T) then continue;
         if not IsDifferentSizes() then continue;
-        debugln('Found : '+T);
+        TRlog('Found : '+T);
         Result := T;
         break;
     end;
@@ -894,7 +901,7 @@ var
 begin
     f := TForm.Create(nil);
     Result := GetFontData(f.Font.Handle).Name;
-    debugln('DefaultUsualFont = ' + Result);
+    TRlog('DefaultUsualFont = ' + Result);
     FreeAndNil(f);
 end;
 
@@ -1014,7 +1021,7 @@ begin
   end;
 
   auth := 'OAuth realm="Snowy"'+auth;
-  debugln('Adding headers : '+auth);
+  TRlog('Adding headers : '+auth);
 
   Client.AddHeader('Authorization',auth);
   Client.AddHeader('content-type', 'application/json');
@@ -1195,7 +1202,7 @@ begin
 
   hashkey := Key + '&' + secret;
 
-  debugln('HASHKEY = '+hashkey);
+  TRlog('HASHKEY = '+hashkey);
 
   data := mode + '&' + URLEncode(u) + '&' + URLEncode(p);
 
@@ -1262,10 +1269,10 @@ end;
 
 function isSyncConfigured() : boolean;
 begin
-  debugln('isSyncCOnf : Testing FILE');
+  TRlog('isSyncCOnf : Testing FILE');
   if(SyncType = TSyncTransport.SyncFile) then exit(length(SyncFileRepo)>0);
 
-  debugln('isSyncCOnf : Testing NEXT');
+  TRlog('isSyncCOnf : Testing NEXT');
   if(SyncType = TSyncTransport.SyncNextCloud) then
     begin
        if(length(SyncNCURL) = 0) then exit(false);
@@ -1275,7 +1282,7 @@ begin
        exit(true);
     end;
 
-  debugln('isSyncCOnf : Default NONE');
+  TRlog('isSyncCOnf : Default NONE');
   exit(false);
 end;
 
@@ -1310,7 +1317,7 @@ var
    i : integer;
 begin
 
-  debugln('Copy note '+A^.ID);
+  TRlog('Copy note '+A^.ID);
 
   c^.ID := A^.ID;
   c^.CreateDate := A^.CreateDate;
@@ -1357,7 +1364,7 @@ var
     Index : longint;
 begin
     Result := Nil;
-    debugln('Searching TNoteList ' + LName + ' for ID=' + ID);
+    TRlog('Searching TNoteList ' + LName + ' for ID=' + ID);
     for Index := 0 to Count-1 do begin
         if Items[Index]^.ID = ID then begin
             Result := Items[Index];
@@ -1370,15 +1377,15 @@ destructor TNoteInfoList.Destroy;
 var
 I : integer;
 begin
-  debugln('Destroy NoteInfoList ' + LName);
+  TRlog('Destroy NoteInfoList ' + LName);
   for I := 0 to Count-1 do
   begin
-       //debugln('Destroy NoteInfoList FreeAndNil '+IntToStr(I) + ' ID='+Items[I]^.ID);
+       //TRlog('Destroy NoteInfoList FreeAndNil '+IntToStr(I) + ' ID='+Items[I]^.ID);
        //Items[I]^.tags.Free;
-       debugln('Destroy NoteInfoList Disposing '+IntToStr(I)+' '+Items[I]^.ID);
+       TRlog('Destroy NoteInfoList Disposing '+IntToStr(I)+' '+Items[I]^.ID);
        dispose(Items[I]);
   end;
-  debugln('Destroy NoteInfoList '+LName+' done');
+  TRlog('Destroy NoteInfoList '+LName+' done');
   inherited;
 end;
 
@@ -1389,7 +1396,7 @@ end;
 
 initialization
 
-debugln('Init TRcommon');
+TRlog('Init TRcommon');
 
 InitSSLInterface;
 

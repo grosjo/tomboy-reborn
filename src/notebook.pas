@@ -108,9 +108,9 @@ begin
     Label7.Caption := Title;
     //if SearchForm.NoteLister.GetNotesInNoteBook(NBIDList, Title) then begin
     //    for NoteID in NBIDList do
-    //        DebugLn('Notebook.pas #158 Note - '+ NoteID);
+    //        TRlog('Notebook.pas #158 Note - '+ NoteID);
     //end else
-        debugln('Notebook.pas #160 No member notes found');
+        TRlog('Notebook.pas #160 No member notes found');
     Label1.Caption := format(rsNumbNotesAffected, [NBIDList.Count]);
     EditNewNotebookName.SetFocus;
 end;
@@ -193,7 +193,7 @@ begin
       end;
   except
     on E: EInOutError do begin
-        debugln('File handling error occurred updating clean note location. Details: ' + E.Message);
+        TRlog('File handling error occurred updating clean note location. Details: ' + E.Message);
         exit(False);
     end;
   end;
@@ -271,7 +271,7 @@ begin
       end;
   except
     on E: EInOutError do begin
-        debugln('File handling error occurred updating template. Details: ' + E.Message);
+        TRlog('File handling error occurred updating template. Details: ' + E.Message);
         exit(False);
     end;
   end;
@@ -315,7 +315,7 @@ begin
         //else RewriteWithNewNotebookName(IDstr);
     end;
     // OK, now change template ......
-    // debugln('template is ' + SearchForm.notelister.NotebookTemplateID(Title));
+    // TRlog('template is ' + SearchForm.notelister.NotebookTemplateID(Title));
     RewriteTempate(TemplateID, RemoveBadXMLCharacters(NewName));
 end;
 

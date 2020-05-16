@@ -38,7 +38,7 @@ var
     repo : String;
     ManExists, ZeroExists : boolean; // for readability of code only
 begin
-    debugln('TransportFIle : TestTransport');
+    TRlog('TransportFIle : TestTransport');
 
     setParam('RemoteAddess',AppendPathDelim(ChompPathDelim(getParam('RemoteAddress'))));
     repo := getParam('RemoteAddress');
@@ -76,7 +76,7 @@ begin
         exit(SyncReady);
     end;
 
-    debugln('Reading XML to search GUID/Rev');
+    TRlog('Reading XML to search GUID/Rev');
     try
        ReadXMLFile(Doc, repo + 'manifest.xml');
     except on E:Exception do
@@ -86,7 +86,7 @@ begin
        end;
     end;
 
-    debugln('Finalizing');
+    TRlog('Finalizing');
     try
        ServerID := Doc.DocumentElement.GetAttribute('server-id');
        ServerRev := strtoint(Doc.DocumentElement.GetAttribute('revision'));
@@ -105,7 +105,7 @@ begin
         exit(SyncXMLError);
     end;
 
-    debugln('ServerID : '+ServerID + ' Rev='+IntToStr(ServerRev));
+    TRlog('ServerID : '+ServerID + ' Rev='+IntToStr(ServerRev));
 
     Result := SyncReady;
 end;
@@ -119,7 +119,7 @@ var
     NoteInfo : PNoteInfo;
     manifest,note : String;
 begin
-    debugln(#10 + '******* TransportFile : Get Notes');
+    TRlog(#10 + '******* TransportFile : Get Notes');
 
     if NoteMeta = Nil then begin
         ErrorString := 'Passed an uncreated list to GetNotes()';
@@ -129,14 +129,14 @@ begin
     manifest:= getParam('RemoteAddress') + 'manifest.xml';
     if not FileExists(manifest) then
     begin
-        debugln('Manifest notexistant : '+manifest);
+        TRlog('Manifest notexistant : '+manifest);
         exit(true);
     end;
 
-    debugln('Read XML : '+manifest);
+    TRlog('Read XML : '+manifest);
     try
          ReadXMLFile(Doc, manifest);
-    except on E:Exception do begin debugln(E.message); exit(false); end;
+    except on E:Exception do begin TRlog(E.message); exit(false); end;
     end;
 
     NodeList := Doc.DocumentElement.ChildNodes;
@@ -144,34 +144,34 @@ begin
     if not assigned(NodeList) then
     begin
          Doc.Free;
-         debugln('We failed to read XML children in the remote manifest file '+manifest);
+         TRlog('We failed to read XML children in the remote manifest file '+manifest);
          exit(false);
     end;
 
-    debugln('Found '+IntToStr(NodeList.Count) + ' remote notes');
+    TRlog('Found '+IntToStr(NodeList.Count) + ' remote notes');
     for j := 0 to NodeList.Count-1 do
     begin
-         debugln('new Note '+IntToStr(j));
+         TRlog('new Note '+IntToStr(j));
          new(NoteInfo);
 
          NoteInfo^.Action:=SynUnset;
          Node := NodeList.Item[j].Attributes.GetNamedItem('guid');
          if(not assigned(Node)) then
          begin
-              debugln('Wrong XML syntax -> "guid" not found');
+              TRlog('Wrong XML syntax -> "guid" not found');
               Node := NodeList.Item[j].Attributes.GetNamedItem('id');
               if(not assigned(Node)) then
               begin
-                   debugln('Wrong XML syntax -> even "id" not found');
+                   TRlog('Wrong XML syntax -> even "id" not found');
                    Dispose(NoteInfo);
                    continue;
               end;
          end;
          NoteInfo^.ID := Node.NodeValue;
-         debugln('Note ID = ' + NoteInfo^.ID);
+         TRlog('Note ID = ' + NoteInfo^.ID);
          If(not NoteIdLooksOk(NoteInfo^.ID)) then
          begin
-              debugln('Note with wrong ID');
+              TRlog('Note with wrong ID');
               dispose(NoteInfo);
               continue;
          end;
@@ -179,14 +179,14 @@ begin
          Node := NodeList.Item[j].Attributes.GetNamedItem('last-revision');
          if(not assigned(Node)) then
          begin
-              debugln('Wrong XML syntax -> "last-revision" not found');
+              TRlog('Wrong XML syntax -> "last-revision" not found');
               NoteInfo^.Rev := ServerRev;
          end
          else NoteInfo^.Rev := strtoint(Node.NodeValue);
 
          note := GetRemoteNotePath(NoteInfo^.Rev, NoteInfo^.ID);
 
-         debugln('TRANSPORT File to note from '+note);
+         TRlog('TRANSPORT File to note from '+note);
          FileToNote(note, NoteInfo );
 
          NoteMeta.Add(NoteInfo)
@@ -194,7 +194,7 @@ begin
 
     Doc.Free;
 
-    Debugln('Transfile.ReadRemoteManifest - read OK');
+    TRlog('Transfile.ReadRemoteManifest - read OK');
     Result := true;
 
 end;
@@ -208,11 +208,11 @@ var
     note : PNoteInfo;
     ok : boolean;
 begin
-   Debugln('SyncFile Push Changes Rev=' + IntToStr(ServerRev));
+   TRlog('SyncFile Push Changes Rev=' + IntToStr(ServerRev));
 
    inc(ServerRev);
    d := GetRemoteNotePath(ServerRev);
-   Debugln('SyncFile Push folder = '+d);
+   TRlog('SyncFile Push folder = '+d);
 
    ok := true;
    for i := 0 to notes.Count -1 do
@@ -233,13 +233,13 @@ var
 begin
    d := getParam('RemoteAddress') + 'manifest.xml';
 
-   debugln('DoRemote Manifest ' + d);
+   TRlog('DoRemote Manifest ' + d);
 
     try
        RemoteManifest.SaveToFile(d);
     except on E:Exception do begin
        ErrorString := E.message;
-       debugln(ErrorString);
+       TRlog(ErrorString);
        exit(false);
        end;
     end;
@@ -259,7 +259,7 @@ function TFileSync.GetRemoteNotePath(Rev: integer; NoteID : string = ''): string
 var
    s,path : String;
 begin
-    debugln('GetRemoteNotePath ( '+IntToStr(Rev)+' , '+ NoteID+' ) ');
+    TRlog('GetRemoteNotePath ( '+IntToStr(Rev)+' , '+ NoteID+' ) ');
 
     path := getParam('RemoteAddress');
 
@@ -268,7 +268,7 @@ begin
     else s := appendpathDelim(path
         + inttostr(Rev div 100) + pathDelim + inttostr(rev));
 
-    debugln('Creating path '+s);
+    TRlog('Creating path '+s);
     ForceDirectoriesUTF8(s);
 
     if NoteID <> '' then
@@ -297,7 +297,7 @@ begin
        Result := Node.FirstChild.NodeValue;
     except on E:Exception do begin
        Error := E.message;
-       debugln(Error);
+       TRlog(Error);
        Result := '';
        end;
     end;

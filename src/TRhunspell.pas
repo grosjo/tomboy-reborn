@@ -12,7 +12,7 @@ unit TRhunspell;
 }
 
 interface
-uses Classes, dynlibs;
+uses Classes, dynlibs, TRcommon;
 
 
 type
@@ -88,7 +88,7 @@ begin
     Result := false;
     HunLibHandle := LoadLibrary(PAnsiChar(libraryName));
     if HunLibHandle = NilHandle then begin
-        debugln('Failed to load library ' + libraryName);
+        TRlog('Failed to load library ' + libraryName);
         ErrorMessage := 'Failed to load library ' + libraryName;
     end else begin
         Result := True;
@@ -117,9 +117,9 @@ begin
     if ErrorMessage = '' then
         if not Result then begin
             ErrorMessage := 'Failed to find functions in ' + LibraryName;
-            debugln('Hunspell Failed to find functions in ' + LibraryName);
+            TRlog('Hunspell Failed to find functions in ' + LibraryName);
         end;
-    if Result then  debugln('Loaded library OK ' + LibraryName);
+    if Result then  TRlog('Loaded library OK ' + LibraryName);
 end;
 
 constructor THunspell.Create(const FullLibName : ANSIString = '');
@@ -128,18 +128,18 @@ begin
     LibraryFullName := FullLibName;
     if LibraryFullName = '' then
         if Not FindLibrary(LibraryFullName) then begin
-            debugln('Cannot find Hunspell library');
+            TRlog('Cannot find Hunspell library');
             ErrorMessage := 'Cannot find Hunspell library';
             exit();
         end;
-    debugln('Creating Hunspell with library = ' + LibraryFullName);
+    TRlog('Creating Hunspell with library = ' + LibraryFullName);
     LoadHunspellLibrary(LibraryFullName);    // will flag any errors it finds
     Speller := nil;           // we are not GoodToGo yet, need a dictionary ....
 end;
 
 destructor THunspell.Destroy;
 begin
-    debugln('About to destry Hunspell');
+    TRlog('About to destry Hunspell');
     if (HunLibHandle <> 0) and HunLibLoaded then begin
         if Speller<>nil then hunspell_destroy(Speller);
         Speller:=nil;
@@ -237,16 +237,16 @@ begin
     FindClose(Info);
     {$endif}
     if Result then begin
-        debugln('FindLibrary looks promising [', FullName, ']');
+        TRlog('FindLibrary looks promising ['+ FullName + ']');
     end else
-        debugln('FindLibrary Failed to find a Hunspell Library', FullName, ']');
+        TRlog('FindLibrary Failed to find a Hunspell Library' + FullName +']');
 end;
 
 function THunspell.SetDictionary(const FullDictName: string) : boolean;
 var
     FullAff : string;
 begin
-    debugln('about to try to set dictionary');
+    TRlog('about to try to set dictionary');
     Result := False;
     if not FileExistsUTF8(FullDictName) then exit();
     FullAff := FullDictName;
@@ -262,14 +262,14 @@ begin
     try
         if assigned(Speller) then begin
                 hunspell_destroy(Speller);
-                debugln('Speller destroyed');
+                TRlog('Speller destroyed');
         end;
         Speller := hunspell_create(PChar(FullAff), PChar(FullDictName));
                         // Create does not test the dictionaries !
     except
-        on E: Exception do debugln('Hunspell ' + E.Message);
+        on E: Exception do TRlog('Hunspell ' + E.Message);
     else
-        debugln('Hunspell has lost it !');
+        TRlog('Hunspell has lost it !');
     end;
     Result := false;
     GoodToGo := assigned(Speller);

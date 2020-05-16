@@ -200,7 +200,7 @@ var
 					end;
                     if Block.ClassNameIs('TKMemoHyperlink') then
                         Buff := Buff + Block.Text;
-                    // debugln('Block=' + inttostr(BlockNo) + ' ' +BlockAttributes(Block));
+                    // TRlog('Block=' + inttostr(BlockNo) + ' ' +BlockAttributes(Block));
                     inc(BlockNo);
                     if BlockNo >= TheKMemo.Blocks.Count then break;
 				end;
@@ -312,7 +312,7 @@ begin
 	// Processing Order is the reverse -
     // ListOff BoldOff ItalicsOff HiLiteOff FontSize HiLite Ital Bold List
 
-    //debugln(BlockAttributes(FT));
+    //TRlog(BlockAttributes(FT));
 
   // When Bold Turns OFF
    if Buff <> '' then           // remove, temporarly, any trailing spaces

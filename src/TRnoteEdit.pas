@@ -1034,11 +1034,11 @@ begin
     }
     Result := False;
 {
-    debugln('Path = [' + ExtractFilePath(NoteFileName) + ']');
-    debugln('Filename = [' + ExtractFileNameOnly(NoteFileName) + ']');
+    TRlog('Path = [' + ExtractFilePath(NoteFileName) + ']');
+    TRlog('Filename = [' + ExtractFileNameOnly(NoteFileName) + ']');
     if DirectoryExistsUTF8(ExtractFilePath(NoteFileName)) then
-        debugln('Dir is writable');
-    debugln('New name =' + AppendPathDelim(ExtractFilePath(NoteFileName)) +
+        TRlog('Dir is writable');
+    TRlog('New name =' + AppendPathDelim(ExtractFilePath(NoteFileName)) +
         ExtractFileNameOnly(NoteFileName) + '.note');    }
 
     FileType := '';
@@ -1063,9 +1063,9 @@ begin
             FreeAndNil(SLNote);
           end;
     end;
-      if Verbose then debugln('Decided the file is of type ' + FileType);
+      if Verbose then TRlog('Decided the file is of type ' + FileType);
       case FileType of
-          'tomboy' : try ImportNote(NoteFileName); except on E: Exception do debugln('!!! EXCEPTION during IMPORT ' + E.Message); end;
+          'tomboy' : try ImportNote(NoteFileName); except on E: Exception do TRlog('!!! EXCEPTION during IMPORT ' + E.Message); end;
      //     'rtf'    : KMemo1.LoadFromRTF(NoteFileName);  // Wrong, will write back there !
           'text', 'rtf'   : begin
                         try
@@ -1074,21 +1074,21 @@ begin
                         NoteFileName := AppendPathDelim(ExtractFilePath(NoteFileName)) +
                             ExtractFileNameOnly(NoteFileName) + '.note';
 
-                        except on E: Exception do debugln('!!! EXCEPTION during LoadFromFile ' + E.Message);
+                        except on E: Exception do TRlog('!!! EXCEPTION during LoadFromFile ' + E.Message);
                         end;
                      end;
           'new'    : begin
                         Result := True;
                         NoteTitle := NewNoteTitle();
                     end;
-          ''       : debugln('Error, cannot identify that file type');
+          ''       : TRlog('Error, cannot identify that file type');
       end;
 
     if Application.HasOption('save-exit') then begin
         MarkDirty();
         NoteFileName := '';
         SaveTheNote();
-        // debugln('hmm, this should be a close.');
+        // TRlog('hmm, this should be a close.');
         close;
     end;
 end;
@@ -1151,7 +1151,7 @@ begin
                 ItsANewNote := True;
 		    end;
     end;
-    //debugln('OK, back in EditBox.OnShow');
+    //TRlog('OK, back in EditBox.OnShow');
     if ItsANewNote then begin
         CreateDate := '';
         Caption := NoteTitle;
@@ -1254,14 +1254,14 @@ begin
       end;
   except
     on E: EInOutError do begin
-        debugln('File handling error occurred updating clean note location. Details: ' + E.Message);
+        TRlog('File handling error occurred updating clean note location. Details: ' + E.Message);
         exit(False);
     end;
   end;
   result := CopyFile(TempName, Nrec.FFName);    // wrap this in a Try
-  if result = false then debugln('ERROR copying [' + TempName + '] to [' + NRec.FFName + ']');
+  if result = false then TRlog('ERROR copying [' + TempName + '] to [' + NRec.FFName + ']');
   result := DeleteFile(TempName);
-  if result = false then debugln('ERROR deleting [' + TempName + '] ');
+  if result = false then TRlog('ERROR deleting [' + TempName + '] ');
 end;
 
 procedure TNoteEditForm.FormDestroy(Sender: TObject);
@@ -1476,7 +1476,7 @@ begin
                 end;
                 {$endif}
                 MakeLink({copy(PText, Offset+http, Len), } UTF8Length(PText, OffSet + http)-1 -NumbCR, Len);
-//    debugln('CheckForHTTP Index = ' + inttostr(UTF8Length(PText, OffSet + http)-1 -NumbCR) + ' and Len = ' + inttostr(Len));
+//    TRlog('CheckForHTTP Index = ' + inttostr(UTF8Length(PText, OffSet + http)-1 -NumbCR) + ' and Len = ' + inttostr(Len));
             end;
             if len > 0 then
         end;
@@ -1516,7 +1516,7 @@ begin
           //      MakeAllLinks(PText, lowercase(SearchTerm), StartScan, EndScan);
     //Tock := gettickcount64();
     KMemo1.Blocks.UnLockUpdate;
-    //debugln('MakeAllLinks ' + inttostr(Tock - Tick) + 'mS');
+    //TRlog('MakeAllLinks ' + inttostr(Tock - Tick) + 'mS');
     Ready := True;
 end;
 
@@ -1696,7 +1696,7 @@ begin
     end;
     KMemo1.SelStart := CurserPos;
     KMemo1.SelLength := SelLen;
-    //Debugln('Housekeeper called');
+    //TRlog('Housekeeper called');
 
   // Memo1.append('Clear ' + inttostr(TS2.Time-TS1.Time) + 'ms  Check ' + inttostr(TS3.Time-TS2.Time));
 
@@ -1772,13 +1772,13 @@ begin
     if AnsStr = '' then
         showmessage(rsUnabletoEvaluate)
     else begin
-        //debugln('KMemo1.SelStart=' + inttostr(KMemo1.SelStart) + 'KMemo1.RealSelStart=' + inttostr(KMemo1.RealSelStart));
+        //TRlog('KMemo1.SelStart=' + inttostr(KMemo1.SelStart) + 'KMemo1.RealSelStart=' + inttostr(KMemo1.RealSelStart));
         KMemo1.SelStart := KMemo1.Blocks.RealSelEnd;
         KMemo1.SelLength := 0;
         KMemo1.Blocks.InsertPlainText(KMemo1.SelStart, AnsStr);
         KMemo1.SelStart := KMemo1.SelStart + length(AnsStr);
         KMemo1.SelLength := 0;
-        //debugln('KMemo1.SelStart=' + inttostr(KMemo1.SelStart) + 'KMemo1.RealSelStart=' + inttostr(KMemo1.RealSelStart));
+        //TRlog('KMemo1.SelStart=' + inttostr(KMemo1.SelStart) + 'KMemo1.RealSelStart=' + inttostr(KMemo1.RealSelStart));
     end;
 end;
 
@@ -1794,10 +1794,10 @@ begin
     while Index > 0 do begin
         dec(BlockNo);
         dec(Index);
-        if BlockNo < 1 then begin debugln('underrun1'); exit; end;  // its all empty up there ....
+        if BlockNo < 1 then begin TRlog('underrun1'); exit; end;  // its all empty up there ....
         while not Kmemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph') do begin
             dec(BlockNo);
-            if BlockNo < 1 then begin debugln('Underrun 2'); exit; end;
+            if BlockNo < 1 then begin TRlog('Underrun 2'); exit; end;
         end;
         if Index = 1 then StopBlockNo := BlockNo;       // almost there yet ?
     end;
@@ -1806,7 +1806,7 @@ begin
         Result := Result + Kmemo1.Blocks.Items[BlockNo].Text;
         inc(BlockNo);
     end;
-    //debugln('PREVIOUS BlockNo=' + inttostr(BlockNo) + '  StopBlockNo=' + inttostr(StopBlockNo));
+    //TRlog('PREVIOUS BlockNo=' + inttostr(BlockNo) + '  StopBlockNo=' + inttostr(StopBlockNo));
 end;
 
 
@@ -1821,7 +1821,7 @@ begin
     BlockNo := StopBlockNo-1;
     while (BlockNo > 0) and (not Kmemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph')) do
         dec(BlockNo);
-    // debugln('BlockNo=' + inttostr(BlockNo) + ' StopBlock=' + inttostr(StopBlockNo) + '  PosInBlock=' + inttostr(PosInBlock));
+    // TRlog('BlockNo=' + inttostr(BlockNo) + ' StopBlock=' + inttostr(StopBlockNo) + '  PosInBlock=' + inttostr(PosInBlock));
     if BlockNo > 0 then inc(BlockNo);
     if BlockNo < 0 then BlockNo := 0;
     if (BlockNo > StopBlockNo) then exit;
@@ -1871,7 +1871,7 @@ begin
     repeat
         TheLine := PreviousParagraphText(Index);
         FindNumbersInString(TheLine, AtStart, AtEnd);
-        //debugln('Scanned string [' + TheLine + '] and found [' + AtStart + '] and [' + atEnd + ']');
+        //TRlog('Scanned string [' + TheLine + '] and found [' + AtStart + '] and [' + atEnd + ']');
         if AtStart = '' then
             if EndDone then break
             else StartDone := True;
@@ -1899,13 +1899,13 @@ var
 begin
     BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelEnd-1, Temp);
     if kmemo1.blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph') then begin
-        // debugln('Para cleanup in progress');
+        // TRlog('Para cleanup in progress');
         Temp := KMemo1.SelLength;
         Kmemo1.SelStart := KMemo1.Blocks.RealSelStart;
         KMemo1.SelLength := Temp-1;
     end;
     if abs(KMemo1.SelLength) < 1 then exit(false);
-   // debugln('Complex Calc [' + KMemo1.Blocks.SelText + ']');
+   // TRlog('Complex Calc [' + KMemo1.Blocks.SelText + ']');
    AStr := DoCalculate(KMemo1.Blocks.SelText);
    Result := (AStr <> '');
 end;
@@ -1943,7 +1943,7 @@ begin
         if Index < 1 then break;
     end;
     delete(AStr, 1, Index);
-    // debugln('SimpleCalc=[' + AStr + ']');
+    // TRlog('SimpleCalc=[' + AStr + ']');
     AStr := DoCalculate(AStr);
     exit(AStr <> '');
 end;
@@ -1982,7 +1982,7 @@ begin
     end;
     if BlockNo < Index then begin
         Result := False;
-        if Verbose then debugln('Returning False as we appear to be playing in Heading.');
+        if Verbose then TRlog('Returning False as we appear to be playing in Heading.');
         exit();
     end else Leading := (TKMemoParagraph(kmemo1.blocks.Items[BlockNo-Index]).Numbering = pnuBullets);
     IsFirstChar := (CharCount = 0);
@@ -1991,10 +1991,10 @@ begin
     while true do begin
         // must not call Classnameis with blockno = count
         if Verbose then
-            debugln('Doing para seek, C=' + inttostr(KMemo1.Blocks.Count) + ' B=' + inttostr(BlockNo) + ' I=' + inttostr(Index));
+            TRlog('Doing para seek, C=' + inttostr(KMemo1.Blocks.Count) + ' B=' + inttostr(BlockNo) + ' I=' + inttostr(Index));
         inc(Index);
         if (BlockNo + Index) >= (Kmemo1.Blocks.Count) then begin
-            if Verbose then debugln('Overrun looking for a para marker.');
+            if Verbose then TRlog('Overrun looking for a para marker.');
             // means there are no para markers beyond here.  So cannot be TrailingBullet
             Index := 0;
             break;
@@ -2007,16 +2007,16 @@ begin
     else Trailing := False;
     Result := (Leading or Under or Trailing);
     if Verbose then begin
-	    debugln('IsNearBullet -----------------------------------');
-        Debugln('      Result      =' + booltostr(Result, true));
-        Debugln('      Leading     =' + booltostr(Leading, true));
-        Debugln('      Under       =' + booltostr(Under, true));
-        Debugln('      Trailing    =' + booltostr(Trailing, true));
-        Debugln('      IsFirstChar =' + booltostr(IsFirstChar, true));
-        Debugln('      NoBulletPara=' + booltostr(NoBulletPara, true));
-        Debugln('      LeadOffset  =' + inttostr(LeadOffset));
-        Debugln('      TrailOffset =' + inttostr(Trailoffset));
-        Debugln('      BlockNo     =' + inttostr(BlockNo));
+	    TRlog('IsNearBullet -----------------------------------');
+        TRlog('      Result      =' + booltostr(Result, true));
+        TRlog('      Leading     =' + booltostr(Leading, true));
+        TRlog('      Under       =' + booltostr(Under, true));
+        TRlog('      Trailing    =' + booltostr(Trailing, true));
+        TRlog('      IsFirstChar =' + booltostr(IsFirstChar, true));
+        TRlog('      NoBulletPara=' + booltostr(NoBulletPara, true));
+        TRlog('      LeadOffset  =' + inttostr(LeadOffset));
+        TRlog('      TrailOffset =' + inttostr(Trailoffset));
+        TRlog('      BlockNo     =' + inttostr(BlockNo));
 
     end;
 end;
@@ -2024,7 +2024,7 @@ end;
 {
 procedure TNoteEditForm.CancelBullet(const BlockNo : longint; const UnderBullet : boolean);
 begin
-    debugln('Cancel this bullet');
+    TRlog('Cancel this bullet');
     if UnderBullet then begin
             if Kmemo1.Blocks.Items[BlockNo].ClassNameis('TKMemoParagraph') then
                 if TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).Numbering = pnuBullets then
@@ -2175,19 +2175,19 @@ begin
     // KMemo1.Blocks.LockUpdate;  Dont lock because we move the cursor down here.
     	if UnderBullet and (not FirstChar) then begin   // case a
             KMemo1.ExecuteCommand(ecDeleteLastChar);
-            if Verbose then debugln('Case a');
+            if Verbose then TRlog('Case a');
             Ready := True;
             exit();
         end;
         // anything remaining must have FirstChar
         if TrailingBullet and (not NoBulletPara) then begin	// case b
-            if Verbose then debugln('Case b or e');
+            if Verbose then TRlog('Case b or e');
             if UnderBullet then  						// case e
               	TrailOffset := 0;
             if kmemo1.blocks.Items[BlockNo+TrailOffset].ClassNameIs('TKMemoParagraph') then
                 SetBullet(TKMemoParagraph(kmemo1.blocks.Items[BlockNo+TrailOffset]), False)
             	// TKMemoParagraph(kmemo1.blocks.Items[BlockNo+TrailOffset]).Numbering := pnuNone
-            else DebugLn('ERROR - this case b block should be a para');
+            else TRlog('ERROR - this case b block should be a para');
             Ready := True;
             exit();
         end;
@@ -2197,23 +2197,23 @@ begin
             if TrailingBullet then begin
             	KMemo1.ExecuteCommand(ecUp);
             	KMemo1.ExecuteCommand(ecLineEnd);
-                if Verbose then debugln('Case x');
+                if Verbose then TRlog('Case x');
 			end else begin
             	if UnderBullet then begin				// this test is wrong, real test is are we at end of text ?
-                    if Verbose then DebugLn('Case y');
+                    if Verbose then TRlog('Case y');
                     KMemo1.Blocks.AddParagraph();		// Maybe only need add that if at end of text, NearABulletPoint() could tell us ?
                     KMemo1.ExecuteCommand(ecDown);
                 end else
-            		if Verbose then debugln('Case c');
+            		if Verbose then TRlog('Case c');
             end;
         end else begin				// merge the current line into bullet above.
             if kmemo1.blocks.Items[BlockNo+TrailOffset].ClassNameIs('TKMemoParagraph') then
                 SetBullet(TKMemoParagraph(kmemo1.blocks.Items[BlockNo+TrailOffset]), True)
             	// TKMemoParagraph(kmemo1.blocks.Items[BlockNo+TrailOffset]).Numbering := pnuBullets;
-            else DebugLn('ERROR - this case d block should be a para');
+            else TRlog('ERROR - this case d block should be a para');
             if  kmemo1.blocks.Items[BlockNo-Leadoffset].ClassNameIs('TKMemoParagraph') then begin
             	KMemo1.Blocks.Delete(BlockNo-LeadOffset);
-            	if Verbose then debugln('Case d');
+            	if Verbose then TRlog('Case d');
         	end;
     	end;
     Ready := True;
@@ -2240,7 +2240,7 @@ begin
             PB.NumberingListLevel.LeftIndent:=30;
         end else begin
             if PB.Numbering <> pnuBullets then begin
-                debugln('ERROR - changing indent before Bullet set');
+                TRlog('ERROR - changing indent before Bullet set');
                 exit();
             end;
             PB.NumberingListLevel.FirstIndent:=0;
@@ -2298,7 +2298,7 @@ begin
     KMemo1.Clear;
     Loader.LoadFile(FileName, KMemo1);                        // 340mS
     KMemo1.Blocks.UnlockUpdate;                             // 370mS
-    // debugln('Load Note=' + inttostr(gettickcount64() - T1) + 'mS');
+    // TRlog('Load Note=' + inttostr(gettickcount64() - T1) + 'mS');
     Createdate := Loader.CreateDate;
     Ready := true;
     Caption := Loader.Title;
@@ -2311,7 +2311,7 @@ begin
     AdjustFormPosition();
     Loader.Free;
     TimerHouseKeeping.Enabled := False;     // we have changed note but no housekeeping reqired
-    // debugln('Load Note=' + inttostr(gettickcount64() - T1) + 'mS');
+    // TRlog('Load Note=' + inttostr(gettickcount64() - T1) + 'mS');
 end;
 
 procedure TNoteEditForm.MenuItemWriteClick(Sender: TObject);
@@ -2330,7 +2330,7 @@ var
     // TestI : integer;
 begin
     // T1 := gettickcount64();
-    // debugln('Saving this note' + Caption);
+    // TRlog('Saving this note' + Caption);
     Saver := Nil;
     if KMemo1.ReadOnly then exit();
   	if length(NoteFileName) = 0 then
@@ -2350,7 +2350,7 @@ begin
         // T2 := GetTickCount64();                   // 0mS
         KMemo1.Blocks.LockUpdate;                 // to prevent changes during read of kmemo
         try
-           // debugln('about to save');
+           // TRlog('about to save');
             Saver.ReadKMemo(NoteFileName, KMemo1);
             // T3 := GetTickCount64();               // 6mS
         finally
@@ -2387,7 +2387,7 @@ begin
         Caption := CleanCaption();
     end;
     {T7 := GetTickCount64();                       // 0mS
-    debugln('EditBox.SaveTheNote Timing ' + inttostr(T2 - T1) + ' ' + inttostr(T3 - T2) + ' ' + inttostr(T4 - T3) + ' ' +
+    TRlog('EditBox.SaveTheNote Timing ' + inttostr(T2 - T1) + ' ' + inttostr(T3 - T2) + ' ' + inttostr(T4 - T3) + ' ' +
             inttostr(T5 - T4) + ' ' + inttostr(T6 - T5) + ' ' + inttostr(T7 - T6));  }
 end;
 

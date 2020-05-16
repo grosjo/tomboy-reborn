@@ -303,7 +303,7 @@ begin
             Delete(Index);
             break;
 		end;
-    debugln('ERROR, asked to remove a note book that I cannot find.');
+    TRlog('ERROR, asked to remove a note book that I cannot find.');
 end;
 
 // =================== DEBUG PROC ======================================
@@ -313,13 +313,13 @@ var
     P : PNotebook;
     I : integer;
 begin
-    debugln('-----------------------');
+    TRlog('-----------------------');
     for P in NoteBookList do begin
-        debugln('Name=' + P^.Name);
+        TRlog('Name=' + P^.Name);
         for I := 0 to P^.Notes.Count -1 do
-            debugln('     ' + P^.Notes[I]);
+            TRlog('     ' + P^.Notes[I]);
     end;
-    debugln('-----------------------');
+    TRlog('-----------------------');
 end;
 }
 { ====================== NoteLister ============================== }
@@ -351,8 +351,8 @@ begin
    finally
        SL.Free;
    end;
-    //debugln('NoteLister : Tags for ' + NoteID + #10 + Result);
-    //debugln('---------------');
+    //TRlog('NoteLister : Tags for ' + NoteID + #10 + Result);
+    //TRlog('---------------');
 end;
 
 function TNoteLister.GetNotesInNoteBook(var NBIDList : TStringList; const NBName : string) : boolean;
@@ -426,7 +426,7 @@ begin
             exit();
 		end;
 	end;
-    debugln('ERROR - asked for the template for a non existing Notebook');
+    TRlog('ERROR - asked for the template for a non existing Notebook');
     Result := '';
 end;
 
@@ -443,7 +443,7 @@ begin
             exit();
 		end;
 	end;
-    debugln('ERROR - asked to delete a notebook by ID but cannot find it.');
+    TRlog('ERROR - asked to delete a notebook by ID but cannot find it.');
 end;
 
 
@@ -529,10 +529,10 @@ begin
         else begin
             if ID = NotebookList.Items[Index]^.Template then begin
                 // The passed ID is the ID of a Template itself, not a note.
-                // debugln('Looks like we asking about a template ' + ID);
+                // TRlog('Looks like we asking about a template ' + ID);
                 NBList.Add(NotebookList.Items[Index]^.Name);
                 if NBList.Count > 1 then
-                    debugln('Error, seem to have more than one Notebook Name for template ' + ID);
+                    TRlog('Error, seem to have more than one Notebook Name for template ' + ID);
                 Result := True;
                 exit();
 			end;
@@ -543,7 +543,7 @@ begin
 			for I := 0 to NotebookList.Items[Index]^.Notes.Count -1 do
             	if ID = NotebookList.Items[Index]^.Notes[I] then
                 	NBList.Add(NotebookList.Items[Index]^.Name);
-            {if assigned(NBList) then debugln('ERROR, assigned SL passed to GetNotebooks')
+            {if assigned(NBList) then TRlog('ERROR, assigned SL passed to GetNotebooks')
             else  NBList := NotebookList.Items[Index]^.Notes; }
         end;
 	end;
@@ -590,7 +590,7 @@ begin
         end;
     except
         on E: EInOutError do begin
-                debugln('File handling error occurred updating clean note location. Details: ' + E.Message);
+                TRlog('File handling error occurred updating clean note location. Details: ' + E.Message);
                 exit;
             end;
     end;
@@ -613,7 +613,7 @@ var
     TryCount : integer =0;             // only try rewriting bad last-change-date once.
     //LCD_OK : boolean = false;
 begin
-    // debugln('Checking note ', FileName);
+    // TRlog('Checking note ', FileName);
     if not DontTestName then
         if not NoteIDLooksOK(copy(FileName, 1, 36)) then begin      // In syncutils !!!!
             ErrorNotes.Append(FileName + ', ' + 'Invalid ID in note filename');
@@ -633,14 +633,14 @@ begin
 	                ReadXMLFile(Doc, Dir + FileName);
 	  	            Node := Doc.DocumentElement.FindNode('title');
 	      	        NoteP^.Title := Node.FirstChild.NodeValue;          // This restores & etc.
-	                    //if DebugMode then Debugln('Title is [' + Node.FirstChild.NodeValue + ']');
+	                    //if DebugMode then TRlog('Title is [' + Node.FirstChild.NodeValue + ']');
 	                Node := Doc.DocumentElement.FindNode('last-change-date');
 	                NoteP^.LastChange := Node.FirstChild.NodeValue;
 	                if (length(NoteP^.LastChange) <> 33) {and DebugMode} then begin
 	                    RewriteBadChangeDate(Dir, FileName, NoteP^.LastChange);
                         inc(TryCount);
                         if TryCount > 2 then begin
-                            debugln('Failed to fix bad last-change-date in ' +  NoteP^.Title);
+                            TRlog('Failed to fix bad last-change-date in ' +  NoteP^.Title);
                             break;     // sad but life must go on.
 						end;
                         Doc.free;
@@ -661,7 +661,7 @@ begin
                     for J := 0 to Node.ChildNodes.Count-1 do
                         if UTF8pos('system:notebook', Node.ChildNodes.Item[J].TextContent) > 0 then begin
                             NoteBookList.Add(Filename, UTF8Copy(Node.ChildNodes.Item[J].TextContent, 17, 1000), NoteP^.IsTemplate);
-                            // debugln('Notelister #691 ' +  UTF8Copy(Node.ChildNodes.Item[J].TextContent, 17,1000));
+                            // TRlog('Notelister #691 ' +  UTF8Copy(Node.ChildNodes.Item[J].TextContent, 17,1000));
                         end;
                                 // Node.ChildNodes.Item[J].TextContent) may be something like -
                                 // * system:notebook:DavosNotebook - this note belongs to DavosNotebook
@@ -670,13 +670,13 @@ begin
                                 // for the mentioned Notebook.
 		        end;
             except 	on E: EXMLReadError do begin
-                                DebugLn('XML ERROR' + E.Message);
+                                TRlog('XML ERROR' + E.Message);
                                 XMLError := True;
                                 dispose(NoteP);
                                 ErrorNotes.Append(FileName + ', ' + E.Message);
                                 exit();
                             end;
-            		    on EAccessViolation do DebugLn('Access Violation ' + FileName);
+            		    on EAccessViolation do TRlog('Access Violation ' + FileName);
   	        end;
                 if NoteP^.IsTemplate then begin    // Don't show templates in normal note list
                     dispose(NoteP);
@@ -688,7 +688,7 @@ begin
   	    finally
       	        Doc.free;
   	    end;
-    end else DebugLn('Error, found a note and lost it !');
+    end else TRlog('Error, found a note and lost it !');
 end;
 
 
@@ -709,7 +709,7 @@ begin
     for Index := 0 to NoteList.Count -1 do
     if NoteList.Items[Index]^.ID = FileName then begin
         exit(NoteList.Items[Index]^.LastChange);
-		debugln('NoteLister #759 from list '  + NoteList.Items[Index]^.LastChange);
+		TRlog('NoteLister #759 from list '  + NoteList.Items[Index]^.LastChange);
     end;
 end;
 
@@ -905,22 +905,22 @@ begin
     	NoteList := TNoteList.Create;
         NoteBookList.Free;
         NoteBookList := TNoteBookList.Create;
-        debugln('Empty Note and Book Lists created');
+        TRlog('Empty Note and Book Lists created');
     end else begin
-        debugln('Empty Search Lists created');
+        TRlog('Empty Search Lists created');
         SearchNoteList.Free;
     	SearchNoteList := TNoteList.Create;
     end;
     FreeandNil(ErrorNotes);
     ErrorNotes := TStringList.Create;
-    debugln('Looking for notes in [' + NotesDir + ']');
+    TRlog('Looking for notes in [' + NotesDir + ']');
   if FindFirst(GetLocalNoteFile('*'), faAnyFile and faDirectory, Info)=0 then begin
   		repeat
   			GetNoteDetails(NotesDir, Info.Name, SL, DontTestName);        // Note: SL may, or may not have been created
   		until FindNext(Info) <> 0;
   	end;
   	FindClose(Info);
-    debugLn('Finished indexing notes');
+    TRlog('Finished indexing notes');
     if Term = '' then begin
         NotebookList.CleanList();
         Result := NoteList.Count;
@@ -1026,7 +1026,7 @@ begin
     if NoteList = NIl then
         exit;
     if NoteList.Count < 1 then begin
-        //DebugLn('Called ThisNoteIsOpen() with empty but not NIL list. Count is '
+        //TRlog('Called ThisNoteIsOpen() with empty but not NIL list. Count is '
         //		+ inttostr(NoteList.Count) + ' ' + ID);
         // Occasionally I think we see a non reproducable error here.
         // I believe is legal to start the for loop below with an empty list but ....
@@ -1040,7 +1040,7 @@ begin
             break;
 		end;
 	end;
-    // if Index = (NoteList.Count -1) then DebugLn('Failed to find ID in List ', ID);
+    // if Index = (NoteList.Count -1) then TRlog('Failed to find ID in List ', ID);
 end;
 
 function TNoteLister.FileNameForTitle(const Title: ANSIString; out FileName : ANSIstring): boolean;
@@ -1092,7 +1092,7 @@ begin
 		end;
 	end;
     if Result = false then
-        DebugLn('Failed to remove ref to note in NoteLister ', ID);
+        TRlog('Failed to remove ref to note in NoteLister ' + ID);
 end;
 
 constructor TNoteLister.Create;
@@ -1124,7 +1124,7 @@ destructor TNoteList.Destroy;
 var
   I : integer;
 begin
-    // DebugLn('NoteList - disposing of items x ' + inttostr(Count));
+    // TRlog('NoteList - disposing of items x ' + inttostr(Count));
 	for I := 0 to Count-1 do begin
     	dispose(Items[I]);
 	end;

@@ -139,7 +139,7 @@ RESOURCESTRING
 
   rsHelpDelay = 'Delay startup 2 sec to allow OS to settle';
     rsHelpLang = 'Force Language, supported es, nl';
-    rsHelpDebug = 'Direct debug output to SOME.LOG.';
+    rsHelpDebug = 'Show debug on stdout';
     rsHelpHelp = 'Show this help message and exit.';
     rsHelpVersion = 'Print version and exit';
     rsHelpRedHat = 'Run in RedHatGnome mode, no TrayIcon';

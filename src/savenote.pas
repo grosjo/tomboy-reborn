@@ -95,7 +95,7 @@ end;
 destructor TSaveNote.Destroy;
 begin
     if OutStream <> Nil then begin
-        debugln('ERROR - ID=' + ID + '  outstream was not routinly freed .....');
+        TRlog('ERROR - ID=' + ID + '  outstream was not routinly freed .....');
         OutStream.Free;
         OutStream := Nil;
     end;
@@ -122,7 +122,7 @@ begin
 	// Processing Order is the reverese -
     // ListOff BoldOff ItalicsOff HiLiteOff FontSize HiLite Ital Bold List
 
-    //debugln(BlockAttributes(FT));
+    //TRlog(BlockAttributes(FT));
 
   // When Bold Turns OFF
     if (Bold and (not (fsBold in FT.TextStyle.Font.Style))) then begin
@@ -491,7 +491,7 @@ var
                 CopyLastFontAttr();
                 repeat
                     Block := KM1.Blocks.Items[BlockNo];
-                    // debugln('Block=' + inttostr(BlockNo) + ' ' +BlockAttributes(Block));
+                    // TRlog('Block=' + inttostr(BlockNo) + ' ' +BlockAttributes(Block));
 
                     if Block.ClassNameIs('TKMemoParagraph') then break;	// discard end prev para
                     if Block.ClassNameIs('TKMemoTextBlock') then begin
@@ -504,11 +504,11 @@ var
                         AddTag(TKMemoHyperlink(Block), Buff);
                         Buff := Buff + RemoveBadXMLCharacters(Block.Text);
                     end;
-                    //debugln('Block=' + inttostr(BlockNo) + ' ' +BlockAttributes(Block));
+                    //TRlog('Block=' + inttostr(BlockNo) + ' ' +BlockAttributes(Block));
                     inc(BlockNo);
                     if BlockNo >= KM1.Blocks.Count then break;
 
-                    // debugln('Inner Buff=[' + Buff + ']');
+                    // TRlog('Inner Buff=[' + Buff + ']');
 
 				until KM1.Blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph');
                 if BlockNo >= KM1.Blocks.Count then break;
@@ -519,7 +519,7 @@ var
                 // However does not work for font size changes !
 
                 // Note - para blocks CAN have font attributs (eg, underline etc).
-                // debugln('Outer 1 Buff=[' + Buff + ']');
+                // TRlog('Outer 1 Buff=[' + Buff + ']');
                 // Now, look ahead and see if we need close things ....
                 // This makes bad decision for font size changes, we end up with empty tags but does no real harm.
                 NextBlock := BlockNo + 1;
@@ -530,10 +530,10 @@ var
                     end else inc(NextBlock);
                 end;
                 Buff := Buff + LineEnding;
-                // debugln('Outer Buff=[' + Buff + ']');
+                // TRlog('Outer Buff=[' + Buff + ']');
                 OutStream.Write(Buff[1], length(Buff));
                 Buff := '';
-                // debugln('Block=' + inttostr(BlockNo) + ' ' +BlockAttributes(KM1.Blocks.Items[BlockNo]));
+                // TRlog('Block=' + inttostr(BlockNo) + ' ' +BlockAttributes(KM1.Blocks.Items[BlockNo]));
                 inc(BlockNo);
                 if BlockNo >= KM1.Blocks.Count then break;
 			until false;
@@ -563,7 +563,7 @@ var
          				list of blocks. Probably makes sense to not save anything
                         that does not have at least one TKMemotextBlock  }
             on EListError do begin
-                debugln('ERROR - EListError while writing note to stream.');
+                TRlog('ERROR - EListError while writing note to stream.');
                 { we now do footer in the WriteToDisk()
             	Buff := Footer();
             	OutStream.Write(Buff[1], length(Buff)); }

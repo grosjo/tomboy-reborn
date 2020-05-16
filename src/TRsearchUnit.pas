@@ -172,7 +172,7 @@ procedure TSearchForm.BuildTrayMenu(Sender : TObject);
 var
     m1,m2 : TMenuItem;
 begin
-   debugln('BuildTrayMenu');
+   TRlog('BuildTrayMenu');
 
    LocalTimer.Enabled := False;
    FreeAndNil(LocalTimer);
@@ -247,14 +247,14 @@ var
     FormSync : TFormSync;
 begin
 
-   debugln('TrayMenuClicked');
+   TRlog('TrayMenuClicked');
 
    case TTrayTags(TMenuItem(Sender).Tag) of
         ttNewNote : if (NotesDir = '')
                   then ShowMessage(rsSetupNotesDirFirst)
                   else OpenNote();
         ttSettings: begin
-            debugln('TrayMenuClicked Settings');
+            TRlog('TrayMenuClicked Settings');
             FormSettings := TSettings.Create(self);
             FormSettings.ShowModal;
             FreeAndNil(FormSettings);
@@ -264,15 +264,15 @@ begin
             LocalTimer.Enabled := True;
             end;
         ttSync : begin
-            debugln('TrayMenuClicked Sync');
+            TRlog('TrayMenuClicked Sync');
             try
                FormSync := TFormSync.Create(Self);
                FormSync.SyncVisible();
-               debugln('menu click ttSync done');
+               TRlog('menu click ttSync done');
                FreeAndNil(FormSync);
             except on E:Exception do
                begin
-                  debugln(E.message);
+                  TRlog(E.message);
                end;
             end;
             end;
@@ -300,17 +300,17 @@ begin
         for Index := 0 to DeletedList.Count -1 do
         begin
             MarkNoteReadOnly(DeletedList.Strings[Index], True);
-            //debugln('We have tried to mark read only on ' + DeletedList.Strings[Index]);
+            //TRlog('We have tried to mark read only on ' + DeletedList.Strings[Index]);
         end;
         for Index := 0 to DownList.Count -1 do
         begin
             MarkNoteReadOnly(DownList.Strings[Index], False);
             if NoteLister.IsIDPresent(DownList.Strings[Index]) then begin
                 NoteLister.DeleteNote(DownList.Strings[Index]);
-                //debugln('We have tried to delete ' + DownList.Strings[Index]);
+                //TRlog('We have tried to delete ' + DownList.Strings[Index]);
             end;
             NoteLister.IndexThisNote(DownList.Strings[Index]);
-            //debugln('We have tried to reindex ' + DownList.Strings[Index]);
+            //TRlog('We have tried to reindex ' + DownList.Strings[Index]);
         end;
         UseList();
     end;
@@ -356,7 +356,7 @@ begin
      	NewName := GetLocalNoteFile(ShortFileName,GetLocalBackupPath());
 
         if not RenameFileUTF8(FullFileName, NewName)
-    		then DebugLn('Failed to move ' + FullFileName + ' to ' + NewName);
+    		then TRlog('Failed to move ' + FullFileName + ' to ' + NewName);
     end;
     UseList();
 end;
@@ -387,7 +387,7 @@ begin
     //T2 := gettickcount64();
     NoteLister.LoadStGridNotebooks(StringGridNotebooks, ButtonClearFilters.Enabled); // 0mS on Dell
     //T3 := gettickcount64();
-    //debugln('SearchUnit - UseList Timing ' + inttostr(T2 - T1) + ' ' + inttostr(T3 - T2));
+    //TRlog('SearchUnit - UseList Timing ' + inttostr(T2 - T1) + ' ' + inttostr(T3 - T2));
 end;
 
 { Sorts List and updates the recently used list under trayicon }
@@ -420,7 +420,7 @@ begin
   	// Can we find line with passed file name ? If so, apply new data.
     // T1 := gettickcount64();
 	if not NoteLister.AlterNote(ExtractFileNameOnly(FullFileName), LastChange, Title) then begin
-        // DebugLn('Assuming a new note ', FullFileName, ' [', Title, ']');
+        // TRlog('Assuming a new note ', FullFileName, ' [', Title, ']');
         NoteLister.AddNote(ExtractFileNameOnly(FullFileName)+'.note', Title, LastChange);
 	end;
     // T2 := gettickcount64();
@@ -428,7 +428,7 @@ begin
     // T3 := gettickcount64();
     UseList();          // 13mS ?
     // T4 := gettickcount64();
-    // debugln('SearchUnit.UpdateList ' + inttostr(T2 - T1) + ' ' + inttostr(T3 - T2) + ' ' + inttostr(T4 - T3));
+    // TRlog('SearchUnit.UpdateList ' + inttostr(T2 - T1) + ' ' + inttostr(T3 - T2) + ' ' + inttostr(T4 - T3));
 end;
 
 
@@ -693,7 +693,7 @@ begin
         NoteLister.LoadStGridNotebooks(StringGridNotebooks, True);
         // TS3:=gettickcount64();
         // showmessage('Search Speed from SearchUnit ' + inttostr(TS2 - TS1) + 'mS ' + inttostr(TS3-TS2) + 'mS');
-        // debugln('Search Speed from SearchUnit ' + inttostr(TS2 - TS1) + 'mS ' + inttostr(TS3-TS2) + 'mS');
+        // TRlog('Search Speed from SearchUnit ' + inttostr(TS2 - TS1) + 'mS ' + inttostr(TS3-TS2) + 'mS');
         // releasemode, 50mS-70mS, 4-40mS on my linux laptop, longer on common search terms eg "and"
         // windows box, i5 with SSD, 1800 notes, 330mS + 30mS, 'blar'
     end;
@@ -739,7 +739,7 @@ begin
     Result := NoteLister.GetNotes();
     UseList();
     // TS2 := DateTimeToTimeStamp(Now);
-	// debugln('That took (mS) ' + inttostr(TS2.Time - TS1.Time));
+	// TRlog('That took (mS) ' + inttostr(TS2.Time - TS1.Time));
     //MainForm.UpdateNotesFound(Result);      // Says how many notes found and runs over checklist.
     //Sett.CheckAutoSync();
 end;
@@ -881,7 +881,7 @@ begin
        	    TNoteEditForm(TheForm).SetReadOnly();
             exit();
         except on  EAccessViolation do
-       	    DebugLn('Tried to mark a closed note as readOnly, thats OK');
+       	    TRlog('Tried to mark a closed note as readOnly, thats OK');
    	    end;
     end;
     if WasDeleted then
@@ -895,7 +895,7 @@ var
 begin
     Result := False;
     {$IFDEF LINUX}      // ToDo : Apparently, Windows now has something like Workspaces, implement .....
-    //debugln('In MoveWindowHere with ', WTitle);
+    //TRlog('In MoveWindowHere with ', WTitle);
     AProcess := TProcess.Create(nil);
     AProcess.Executable:= 'wmctrl';
     AProcess.Parameters.Add('-R' + WTitle);
@@ -904,13 +904,13 @@ begin
         AProcess.Execute;
         Result := (AProcess.ExitStatus = 0);        // says at least one packet got back
     except on
-        E: EProcess do debugln('Is wmctrl available ? Cannot move ' + WTitle);
+        E: EProcess do TRlog('Is wmctrl available ? Cannot move ' + WTitle);
     end;
     {if not Result then
-        debugln('wmctrl exit error trying to move ' + WTitle); }  // wmctrl always appears to return something !
+        TRlog('wmctrl exit error trying to move ' + WTitle); }  // wmctrl always appears to return something !
     List := TStringList.Create;
     List.LoadFromStream(AProcess.Output);       // just to clear it away.
-    //debugln('Process List ' + List.Text);
+    //TRlog('Process List ' + List.Text);
     List.Free;
     AProcess.Free;
     {$endif}
@@ -940,7 +940,7 @@ begin
                 TheForm.EnsureVisible(true);
                 exit();
 			except on  EAccessViolation do
-            	DebugLn('Tried to re show a closed note, thats OK');
+            	TRlog('Tried to re show a closed note, thats OK');
 			end;
             // We catch the exception and proceed .... but it should never happen.
         end;
@@ -970,7 +970,7 @@ var
     FullFileName : string;
 begin
     { TODO : If user double clicks title bar, we dont detect that and open some other note.  }
-    // debugln('Clicked on row ' + inttostr(StringGrid1.Row));
+    // TRlog('Clicked on row ' + inttostr(StringGrid1.Row));
     NoteTitle := StringGrid1.Cells[0, StringGrid1.Row];
     if NoteLister.FileNameForTitle(NoteTitle, FullFileName) then begin
         FullFileName := NotesDir + FullFileName;

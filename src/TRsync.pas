@@ -142,7 +142,7 @@ uses laz2_DOM, laz2_XMLRead, TRtransportFile, TRtransportNC;
 
 procedure TFormSync.FormCreate(Sender: TObject);
 begin
-  debugln('FormSync Create');
+  TRlog('FormSync Create');
 
   NoteMetaData := TNoteInfoList.Create;
   NoteMetaData.LName := 'Remote list';
@@ -156,7 +156,7 @@ end;
 
 procedure TFormSync.FormDestroy(Sender: TObject);
 begin
-   debugln('FormSync Destroy');
+   TRlog('FormSync Destroy');
 
    FreeandNil(LocalMetaData);
    FreeandNil(NoteMetaData);
@@ -166,7 +166,7 @@ end;
 
 function TFormSync.getManifestName() : String;
 begin
-    debugln('GetManifestName');
+    TRlog('GetManifestName');
 
     Result := Format('%s%s-%s-manifest.xml',[NotesDir, Transport.getPrefix() , Transport.ServerID ]);
 end;
@@ -176,7 +176,7 @@ function TFormSync.GetNoteTitle(const ID : ANSIString) : ANSIString;
 var
     note : PNoteInfo;
 begin
-   debugln('GetNoteTitle');
+   TRlog('GetNoteTitle');
 
     Result := '--Error--';
 
@@ -195,7 +195,7 @@ var
     Margin : TDateTime = 0.00001;      // a second
 
 begin
-    debugln('DatesCompare S1='+DateToStr(DS1)+' vs S2='+DateToStr(DS2));
+    TRlog('DatesCompare S1='+DateToStr(DS1)+' vs S2='+DateToStr(DS2));
 
     if (DS1 > DS2 + Margin) then exit(DS1-DS2);
     if (DS2 > DS1 + Margin) then exit(DS1-DS2);
@@ -210,7 +210,7 @@ var
     ID : String;
     i,c : integer;
 begin
-   debugln('FindDeletedServerNotes');
+   TRlog('FindDeletedServerNotes');
 
    c := 0;
     for i := 0 to LocalMetaData.Count -1 do
@@ -236,7 +236,7 @@ begin
         LNote^.Action:=PNote^.Action;
         NoteMetaData.Add(PNote);
     end;
-    debugln('Found '+IntToStr(c)+' deleted server notes');
+    TRlog('Found '+IntToStr(c)+' deleted server notes');
 end;
 
 procedure TFormSync.FindDeletedLocalNotes();
@@ -244,7 +244,7 @@ var
     LNote,PNote : PNoteInfo;
     c,i : integer;
 begin
-   debugln('FindDeletedLocalNotes');
+   TRlog('FindDeletedLocalNotes');
 
     c:=0;
     for i := 0 to LocalMetaData.Count -1 do
@@ -265,7 +265,7 @@ begin
         end;
         LNote^.Action:=PNote^.Action;
     end;
-    debugln('Found '+IntToStr(c)+' deleted local notes');
+    TRlog('Found '+IntToStr(c)+' deleted local notes');
 end;
 
 procedure TFormSync.FindNewLocalNotes();
@@ -274,7 +274,7 @@ var
     c,i : integer;
     PNote, LNote : PNoteInfo;
 begin
-   debugln('FindNewLocalNotes');
+   TRlog('FindNewLocalNotes');
 
    c :=0;
    for i := 0 to LocalMetaData.Count -1 do
@@ -287,7 +287,7 @@ begin
       PNote := NoteMetaData.FindID(ID);
       if(PNote <> Nil) then continue;
 
-      debugln('Found one ! '+ID);
+      TRlog('Found one ! '+ID);
 
       new(PNote);
       CopyNote(LNote, PNote);
@@ -297,7 +297,7 @@ begin
       NoteMetaData.Add(PNote);
       inc(c);
    end;
-   debugln('Found '+IntToStr(c)+' new local notes');
+   TRlog('Found '+IntToStr(c)+' new local notes');
 end;
 
 procedure TFormSync.FindNewRemoteNotes();
@@ -306,7 +306,7 @@ var
     c,i : integer;
     PNote,LNote : PNoteInfo;
 begin
-    debugln('FindNewRemoteNotes');
+    TRlog('FindNewRemoteNotes');
 
     c := 0;
     for i := 0 to NoteMetaData.Count -1 do
@@ -321,7 +321,7 @@ begin
         PNote^.Action := SynDownLoadNew;
         inc(c);
     end;
-    debugln('Found '+IntToStr(c)+' new remote notes');
+    TRlog('Found '+IntToStr(c)+' new remote notes');
 end;
 
 procedure TFormSync.SetSystemicActions();
@@ -330,14 +330,14 @@ var
     i : integer;
     LNote, SNote : PNoteInfo;
 begin
-    debugln('SetSystemicActions');
+    TRlog('SetSystemicActions');
 
     for i := 0 to NoteMetaData.Count -1 do
     begin
         SNote := NoteMetaData.Items[i];
 
         if(SNote^.Action <> SynUnset) then continue; // Don't look at notes already scrutinized
-        debugln('SYSTEMIC '+ SNote^.ID + ' APPLYING RULES' );
+        TRlog('SYSTEMIC '+ SNote^.ID + ' APPLYING RULES' );
 
         ID := SNote^.ID;
         LNote := LocalMetaData.FindID(ID); // Must be not null , otherwise, we have a bug in previous scan
@@ -375,7 +375,7 @@ end;
 
 function TFormSync.ResolveAction(const SNote, LNote : PNoteInfo) : TSyncAction;
 begin
-    debugln('ResolveAction');
+    TRlog('ResolveAction');
 
     Result := ClashAction;
 
@@ -404,7 +404,7 @@ var
     i,c : integer;
     remote,local : PNoteInfo;
 begin
-    debugln('ProcessClashes');
+    TRlog('ProcessClashes');
 
     ClashAction := SynUnset;
 
@@ -442,7 +442,7 @@ begin
            inc(c);
         end;
     end;
-    debugln('Managed '+IntToStr(c)+' clashes');
+    TRlog('Managed '+IntToStr(c)+' clashes');
 
     // Process needs for copy
     c:=0;
@@ -463,7 +463,7 @@ begin
         remote^.Action := SynUploadEdit;
         inc(c);
     end;
-    debugln('Managed '+IntToStr(c)+' copies');
+    TRlog('Managed '+IntToStr(c)+' copies');
 
     Result:= true;
 end;
@@ -478,7 +478,7 @@ var
     f : TextFile;
     note : PNoteInfo;
 begin
-    debugln('DoDownloads');
+    TRlog('DoDownloads');
 
     backupdir := NotesDir + 'Backup' + PathDelim;
 
@@ -503,7 +503,7 @@ begin
            if not CopyFile(dest, GetLocalNoteFile(ID, backup)) then
                 begin
                     ErrorString := 'Failed to copy file '+ dest + ' to Backup ' + backup;
-                    debugln(ErrorString);
+                    TRlog(ErrorString);
                     exit(False);
                 end;
         end;
@@ -519,7 +519,7 @@ var
     I : integer;
     s,d,ID : String;
 begin
-    debugln('DoDeleteLocal');
+    TRlog('DoDeleteLocal');
 
     for I := 0 to NoteMetaData.Count -1 do
     begin
@@ -537,7 +537,7 @@ begin
             then DeleteFile(s)
             else begin
                ErrorString := 'Failed to backup file '+ s + ' to Backup ' + d;
-               debugln(ErrorString);
+               TRlog(ErrorString);
                exit(False);
             end;
         end;
@@ -553,7 +553,7 @@ var
     i : integer;
     n,l : PNoteInfo;
 begin
-    debugln('PushChanges . ServerRev = ' + inttostr(Transport.ServerRev));
+    TRlog('PushChanges . ServerRev = ' + inttostr(Transport.ServerRev));
 
     notes := TNoteInfoList.Create;
     notes.LName := 'Push changes';
@@ -599,7 +599,7 @@ var
     n,l : PNoteInfo;
     ok : boolean;
 begin
-    debugln('DoManifest');
+    TRlog('DoManifest');
 
     ok := true;
 
@@ -613,7 +613,7 @@ begin
 
         if not (n^.Action in [SynUploadNew, SynUpLoadEdit, SynDownLoadNew, SynDownLoadEdit, SynNothing]) then
            begin
-               debugln('Skipping '+n^.ID + ' because Action=' + SyncActionName(n^.Action));
+               TRlog('Skipping '+n^.ID + ' because Action=' + SyncActionName(n^.Action));
                continue;
            end;
 
@@ -638,7 +638,7 @@ begin
          OutFile.SaveToFile(getManifestName());
 
 
-    except on E:Exception do begin debugln(E.message); ok := false; end;
+    except on E:Exception do begin TRlog(E.message); ok := false; end;
     end;
 
     OutFile.Free;
@@ -654,7 +654,7 @@ function TFormSync.TestConnection(): TSyncStatus;
 var
     res : TSyncStatus;
 begin
-    debugln('TestConnection');
+    TRlog('TestConnection');
 
     Transport.ServerRev:=-1;
 
@@ -679,7 +679,7 @@ var
    NodeList : TDOMNodeList;
    Node : TDOMNode;
 begin
-    debugln('LoadLocalNotes ' + GetLocalNoteFile('*'));
+    TRlog('LoadLocalNotes ' + GetLocalNoteFile('*'));
 
     LocalMetaData.Clear;
     c :=0;
@@ -701,18 +701,18 @@ begin
 
     until FindNext(Info) <> 0;
     FindClose(Info);
-    debugln('Found '+IntToStr(c)+' local notes');
+    TRlog('Found '+IntToStr(c)+' local notes');
 
     manifest:= getManifestName();
-    debugln('Reading manifest '+manifest);
+    TRlog('Reading manifest '+manifest);
     if not FileExists(manifest) then exit();
 
     try
          ReadXMLFile(Doc, manifest);
     except on E:Exception do
        begin
-          debugln('We failed to read XML file '+manifest);
-          debugln(E.message);
+          TRlog('We failed to read XML file '+manifest);
+          TRlog(E.message);
           exit(false);
        end;
     end;
@@ -721,7 +721,7 @@ begin
 
     if not assigned(NodeList) then
     begin
-         debugln('We failed to read XML children in the remote manifest file '+manifest);
+         TRlog('We failed to read XML children in the remote manifest file '+manifest);
          Doc.Free;
          exit();
     end;
@@ -729,7 +729,7 @@ begin
     c :=0;
     for j := 0 to NodeList.Count-1 do
     begin
-        debugln('XML '+IntToStr(j));
+        TRlog('XML '+IntToStr(j));
         Node := NodeList.Item[j].Attributes.GetNamedItem('guid');
         ID := Node.TextContent;
 
@@ -744,27 +744,27 @@ begin
             LocalMetaData.Add(PNote);
         end;
 
-        debugln('searching last-revision');
+        TRlog('searching last-revision');
         Node := NodeList.Item[j].Attributes.GetNamedItem('last-revision');
         if(assigned(Node)) then
         begin
-             debugln('last-revision found : '+ Node.TextContent);
+             TRlog('last-revision found : '+ Node.TextContent);
              PNote^.Rev := StrToint(Node.TextContent);
         end else
         begin
-             debugln('last-revision not found');
+             TRlog('last-revision not found');
              PNote^.Rev := -1;
         end;
 
-        debugln('searching last-sync-date');
+        TRlog('searching last-sync-date');
         Node := NodeList.Item[j].Attributes.GetNamedItem('last-sync-date');
         if(assigned(Node)) then
         begin
-             debugln('last-sync-date found : '+ Node.TextContent);
+             TRlog('last-sync-date found : '+ Node.TextContent);
              PNote^.LastSync := Node.TextContent;
         end else
         begin
-             debugln('last-sync-date not found');
+             TRlog('last-sync-date not found');
              PNote^.LastSync := '';
         end;
 
@@ -772,20 +772,20 @@ begin
         then PNote^.LastSyncGMT := GetGMTFromStr(PNote^.LastSync)
         else PNote^.LastSyncGMT := 0;
         inc(c);
-        debugln('c = '+IntToStr(c));
+        TRlog('c = '+IntToStr(c));
     end;
-    debugln('Found '+IntToStr(c)+' manifest notes');
+    TRlog('Found '+IntToStr(c)+' manifest notes');
 end;
 
 function TFormSync.LoadRemoteNotes(): boolean;
 begin
-    debugln('LoadRemoteNotes');
+    TRlog('LoadRemoteNotes');
 
     NoteMetaData.Clear;
 
     Result := Transport.GetNotes(NoteMetaData);
 
-    debugln('LoadRemoteNotes found ' + inttostr(NoteMetaData.Count) + ' remote notes');
+    TRlog('LoadRemoteNotes found ' + inttostr(NoteMetaData.Count) + ' remote notes');
 end;
 
 
@@ -800,7 +800,7 @@ begin
         FreeAndNil(LocalTimer);
     end;
 
-    debugln(#10 + '******* StartSync');
+    TRlog(#10 + '******* StartSync');
 
     LabelTitle.Caption:= rsTestingRepo;
     LabelStats.Caption := '';
@@ -808,7 +808,7 @@ begin
 
     Application.ProcessMessages;
 
-    debugln(#10 + '******* SetTransport');
+    TRlog(#10 + '******* SetTransport');
 
     ErrorString := '';
     FreeAndNil(Transport);
@@ -834,7 +834,7 @@ begin
         end;
     end;
 
-    debugln(#10 + '******* TestTransport');
+    TRlog(#10 + '******* TestTransport');
 
     LabelTitle.Caption:=rsTestingSync;
 
@@ -846,7 +846,7 @@ begin
        LabelTitle.Caption:= rsUnableToProceed;
        LabelStats.Caption := Transport.ErrorString;
        ErrorString := rsUnableToProceed + ' ' + ErrorString;
-       debugln(ErrorString);
+       TRlog(ErrorString);
 
        SettingsOK.Enabled:=false;
        SettingsOK.Visible:=false;
@@ -856,7 +856,7 @@ begin
     LabelTitle.Caption:=rsLookingatLocalNotes;
     Application.ProcessMessages;
 
-    Debugln(#10 + '******* Step 0.1 : LoadRemoteNotes');
+    TRlog(#10 + '******* Step 0.1 : LoadRemoteNotes');
     if not LoadRemoteNotes() then
     begin
        LabelTitle.Caption:= rsErrorLoadingRemote;
@@ -864,7 +864,7 @@ begin
        LabelStats.Caption := ErrorString;
 
        ErrorString := rsUnableToProceed + ' ' + ErrorString;
-       debugln(ErrorString);
+       TRlog(ErrorString);
 
        SettingsOK.Enabled:=false;
        SettingsOK.Visible:=false;
@@ -874,7 +874,7 @@ begin
     LabelTitle.Caption:=rsLookingatRemoteNotes;
     Application.ProcessMessages;
 
-    Debugln(#10 + '******* Step 0.2 : LoadLocalNotes');
+    TRlog(#10 + '******* Step 0.2 : LoadLocalNotes');
     if not LoadLocalNotes() then
     begin
        LabelTitle.Caption:= rsErrorLoadingLocal;
@@ -882,39 +882,39 @@ begin
        LabelStats.Caption := ErrorString;
 
        ErrorString := rsUnableToProceed + ' ' + ErrorString;
-       debugln(ErrorString);
+       TRlog(ErrorString);
 
        SettingsOK.Enabled:=false;
        SettingsOK.Visible:=false;
        exit();
     end;
 
-    Debugln(#10 + '******* Step 1 : FindDeletedServerNotes');
+    TRlog(#10 + '******* Step 1 : FindDeletedServerNotes');
     LabelTitle.Caption:= rsFindDeletedServerNotes;
     Application.ProcessMessages;
     FindDeletedServerNotes(); // Step 1 : compare local manifest and server status for locally existing notes
 
-    Debugln(#10 + '******* Step 2 : FindDeletedLocalNotes');
+    TRlog(#10 + '******* Step 2 : FindDeletedLocalNotes');
     LabelTitle.Caption:= rsFindDeletedLocalNotes;
     Application.ProcessMessages;
     FindDeletedLocalNotes();  // Step 2 : compare local manifest and server status for none locally existing notes
 
-    Debugln(#10 + '******* Step 3 : FindNewLocalNotes');
+    TRlog(#10 + '******* Step 3 : FindNewLocalNotes');
     LabelTitle.Caption:= rsFindNewLocalNotes;
     Application.ProcessMessages;
     FindNewLocalNotes();      // Step 3 : Add newly created local notes
 
-    Debugln(#10 + '******* Step 4 : FindNewRemoteNotes');
+    TRlog(#10 + '******* Step 4 : FindNewRemoteNotes');
     LabelTitle.Caption:= rsFindNewRemoteNotes;
     Application.ProcessMessages;
     FindNewRemoteNotes();     // Step 4 : Add newly created remote notes
 
-    Debugln(#10 + '******* Step 5 : SetSystemicActions');
+    TRlog(#10 + '******* Step 5 : SetSystemicActions');
     LabelTitle.Caption:= rsSetSystemicActions;
     Application.ProcessMessages;
     SetSystemicActions();     // Step 5 : Set systemic actions
 
-    Debugln(#10 + '******* Step 6 : ProcessClashes');
+    TRlog(#10 + '******* Step 6 : ProcessClashes');
     LabelTitle.Caption:= rsProcessClashes;
     Application.ProcessMessages;
     if(not ProcessClashes())         // Step 6 : Process unresolved cases
@@ -923,7 +923,7 @@ begin
        LabelStats.Caption := ErrorString;
        SettingsOK.Visible := false;
     end else begin
-       Debugln(#10 + '******* Step 7 : Statistics');
+       TRlog(#10 + '******* Step 7 : Statistics');
        LabelTitle.Caption := rsStatistics;
        Application.ProcessMessages;
        SyncSummary();
@@ -933,21 +933,21 @@ end;
 function TFormSync.DoSync() : boolean;
 // ========= Proceed with real actions
 begin
-    Debugln(#10 + '******* Step 8 : DoDownLoads');
+    TRlog(#10 + '******* Step 8 : DoDownLoads');
     if not DoDownLoads() then
     begin
         ShowMessage(ErrorString);
         exit(false);
     end;
 
-    Debugln(#10 + '******* Step 9 : DoDeleteLocal');
+    TRlog(#10 + '******* Step 9 : DoDeleteLocal');
     if not DoDeleteLocal() then
     begin
         ShowMessage(ErrorString);
         exit(false);
     end;
 
-    Debugln(#10 + '******* Step 10 : PushChanges');
+    TRlog(#10 + '******* Step 10 : PushChanges');
     // Write remote manifest (only applicable for SyncFile)
     if not PushChanges() then
     begin
@@ -955,7 +955,7 @@ begin
         exit(false);
     end;
 
-    DebugLn(#10 + '******* Sync done .. reporting (manifest)');
+    TRlog(#10 + '******* Sync done .. reporting (manifest)');
     if not DoManifest() then
     begin
         ShowMessage(ErrorString);
@@ -971,7 +971,7 @@ function TFormSync.ResolveClashUI(const ClashRec : TClashRecord) : TSyncAction;
 var
     clash : TFormClash;
 begin
-    debugln('ResolveClashUI');
+    TRlog('ResolveClashUI');
 
     clash := TFormClash.Create(self);
 
@@ -998,7 +998,7 @@ begin
     else
             Result := SynUnSet;   // Should not get there
     end;
-    debugln('Clash resolved as '+SyncActionName(Result));
+    TRlog('Clash resolved as '+SyncActionName(Result));
 
     clash.Free;
     Application.ProcessMessages;
@@ -1031,7 +1031,7 @@ begin
 
     StringGridReport.Clean;
 
-    debugln('Dump status');
+    TRlog('Dump status');
 
     j:=0;
     for I := 0 to NoteMetaData.Count -1 do
@@ -1045,7 +1045,7 @@ begin
         St := ' Rev=' + inttostr(n^.Rev);
         while length(St) < 9 do St := St + ' ';
 
-        debugln(n^.ID + St + SyncActionName(act)
+        TRlog(n^.ID + St + SyncActionName(act)
           + ' LastChange='+n^.LastChange + ' Title=' + n^.Title);
 
         if n^.Action = SynNothing then continue;
@@ -1072,7 +1072,7 @@ end;
 
 procedure TFormSync.FormHide(Sender: TObject);
 begin
-    debugln('FormHide');
+    TRlog('FormHide');
 end;
 
 procedure TFormSync.SettingsCancelClick(Sender: TObject);
@@ -1099,7 +1099,7 @@ begin
 
     if(self.ShowModal = mrCancel) then
     begin
-        debugln('User canceled operation');
+        TRlog('User canceled operation');
         exit();
     end;
 
@@ -1117,13 +1117,13 @@ begin
 
     if((Undecided>0) or (DelLoc>0) or (DelRem>0)) then
     begin
-        debugln('Hidden raise errors');
+        TRlog('Hidden raise errors');
 
         if(self.ShowModal = mrCancel) then
         begin
-             debugln('User did not confirm');
+             TRlog('User did not confirm');
              ErrorString := rsSyncCanceledByUser;
-             debugln(ErrorString);
+             TRlog(ErrorString);
              exit();
         end;
     end;

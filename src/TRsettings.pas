@@ -145,9 +145,9 @@ uses LazLogger,
 
 procedure TSettings.ButtDefaultNoteDirClick(Sender: TObject);
 begin
-   debugln('ButtDefaultNoteDirClick');
+   TRlog('ButtDefaultNoteDirClick');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    NotesDir := GetDefaultNotesDir();
    LabelNotespath.Caption := NotesDir;
@@ -155,9 +155,9 @@ end;
 
 procedure TSettings.ButtonSetColoursClick(Sender: TObject);
 begin
-   debugln('ButtonSetColoursClick');
+   TRlog('ButtonSetColoursClick');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    FormColours.CBack   := BackGndColour;
    FormColours.CHiBack := HiColour;
@@ -178,9 +178,9 @@ procedure TSettings.ButtonNCSetupClick(Sender: TObject);
 var
   FormNCSetup: TFormNCSetup;
 begin
-   debugln('ButtonNCSetupClick');
+   TRlog('ButtonNCSetupClick');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    Application.CreateForm(TFormNCSetup, FormNCSetup);
 
@@ -214,9 +214,9 @@ procedure TSettings.ButtonFixedFontClick(Sender: TObject);
 var
   fd : TFontDialog;
 begin
-   debugln('ButtonFixedFontClick');
+   TRlog('ButtonFixedFontClick');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    fd := TFontDialog.Create(Self);
    fd.Font.Name := FixedFont;
@@ -236,9 +236,9 @@ procedure TSettings.ButtonFontClick(Sender: TObject);
 var
   fd : TFontDialog;
 begin
-   debugln('ButtonFontClick');
+   TRlog('ButtonFontClick');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    fd := TFontDialog.Create(Self);
    fd.Font.Name := UsualFont;
@@ -258,9 +258,9 @@ procedure TSettings.ButtonSetNotePathClick(Sender: TObject);
 var
     dd : TSelectDirectoryDialog;
 begin
-   debugln('ButtonSetNotePathClick');
+   TRlog('ButtonSetNotePathClick');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    dd := TSelectDirectoryDialog.Create(Self);
    if dd.Execute then
@@ -274,9 +274,9 @@ end;
 
 procedure TSettings.CheckAutostartChange(Sender: TObject);
 begin
-   debugln('CheckAutostartChange');
+   TRlog('CheckAutostartChange');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    Autostart := CheckAutostart.Checked;
 end;
@@ -284,7 +284,7 @@ end;
 procedure TSettings.CheckBoxAutoSyncChange(Sender: TObject);
 begin
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    EditTimerSync.Enabled := CheckBoxAutoSync.checked;
    Label16.Enabled := CheckBoxAutoSync.checked;
@@ -292,41 +292,41 @@ begin
 
    if(not CheckBoxAutoSync.checked) then SyncRepeat:=0;
 
-   debugln('CheckBoxAutoSyncChange');
+   TRlog('CheckBoxAutoSyncChange');
 end;
 
 procedure TSettings.CheckManyNotebooksChange(Sender: TObject);
 begin
-   debugln('CheckManyNotebooksChange');
+   TRlog('CheckManyNotebooksChange');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    ManyNoteBooks := CheckManyNotebooks.Checked;
 end;
 
 procedure TSettings.CheckShowExtLinksChange(Sender: TObject);
 begin
-   debugln('CheckShowExtLinksChange');
+   TRlog('CheckShowExtLinksChange');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    ShowExtLinks := CheckShowExtLinks.Checked;
 end;
 
 procedure TSettings.CheckShowIntLinksChange(Sender: TObject);
 begin
-   debugln('CheckShowIntLinksChange');
+   TRlog('CheckShowIntLinksChange');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    ShowIntLinks := CheckShowIntLinks.Checked;
 end;
 
 procedure TSettings.CheckShowSearchAtStartChange(Sender: TObject);
 begin
-   debugln('CheckShowSearchAtStartChange');
+   TRlog('CheckShowSearchAtStartChange');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    if((not UseTrayIcon) and (not CheckShowSearchAtStart.Checked)) then
    begin
@@ -337,15 +337,15 @@ end;
 
 procedure TSettings.EditTimerSyncChange(Sender: TObject);
 begin
-   debugln('EditTimerSyncChange');
+   TRlog('EditTimerSyncChange');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    try
       SyncRepeat := StrToInt(EditTimerSync.Caption);
    except on E:Exception do
       begin
-         debugln(E.message);
+         TRlog(E.message);
          SyncRepeat := 0;
          EditTimerSync.Caption := '0';
       end;
@@ -354,46 +354,46 @@ end;
 
 procedure TSettings.onCheckCaseSensitive(Sender: TObject);
 begin
-   debugln('onCheckCaseSensitive');
+   TRlog('onCheckCaseSensitive');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    SearchCaseSensitive := CheckCaseSensitive.Checked;
 end;
 
 procedure TSettings.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
-  debugln('FormClose');
+  TRlog('FormClose');
   ConfigRead('FormClose');
 end;
 
 procedure TSettings.FormCreate(Sender: TObject);
 begin
-  debugln('FormCreate');
+  TRlog('FormCreate');
   settingsloading := true;
 end;
 
 procedure TSettings.FormDestroy(Sender: TObject);
 begin
-  debugln('FormSettingsDestroy');
+  TRlog('FormSettingsDestroy');
 end;
 
 procedure TSettings.FormHide(Sender: TObject);
 begin
-  debugln('FormSettingsHide');
+  TRlog('FormSettingsHide');
 end;
 
 procedure TSettings.FormShow(Sender: TObject);
 begin
-     debugln('FormSettingsShow');
+     TRlog('FormSettingsShow');
      LoadSettings();
 end;
 
 procedure TSettings.RadioConflictChange(Sender: TObject);
 begin
-   debugln('RadioConflictChange');
+   TRlog('RadioConflictChange');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    if RadioAlwaysAsk.Checked then SyncClashOption := TSyncClashOption.AlwaysAsk
      else if RadioUseLocal.Checked then SyncClashOption := TSyncClashOption.UseLocal
@@ -403,45 +403,45 @@ end;
 
 procedure TSettings.RadioFontBigChange(Sender: TObject);
 begin
-   debugln('RadioFontBigChange');
+   TRlog('RadioFontBigChange');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    if RadioFontBig.checked then FontRange := FontBig;
 end;
 
 procedure TSettings.RadioFontHugeChange(Sender: TObject);
 begin
-   debugln('RadioFontHugeChange');
+   TRlog('RadioFontHugeChange');
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    if RadioFontHuge.checked then FontRange := FontHuge;
 end;
 
 procedure TSettings.RadioFontMediumChange(Sender: TObject);
 begin
-  debugln('RadioFontMediumChange');
+  TRlog('RadioFontMediumChange');
 
-  if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+  if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
   if RadioFontMedium.checked then FontRange := FontMedium;
 end;
 
 procedure TSettings.RadioFontSmallChange(Sender: TObject);
 begin
-  debugln('RadioFontSmallChange');
+  TRlog('RadioFontSmallChange');
 
-  if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+  if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
   if RadioFontSmall.Checked then FontRange := FontSmall;
 end;
 
 procedure TSettings.SettingsOKClick(Sender: TObject);
 begin
-  debugln('SettingsOKClick');
+  TRlog('SettingsOKClick');
 
-  if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+  if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
   ConfigWrite('SettingsOKClick');
   Self.Close;
@@ -449,9 +449,9 @@ end;
 
 procedure TSettings.SettingsCancelClick(Sender: TObject);
 begin
-  debugln('SettingsCancelClick');
+  TRlog('SettingsCancelClick');
 
-  if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+  if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
   Self.Close;
 end;
@@ -461,9 +461,9 @@ procedure TSettings.ButtonFileSetupClick(Sender: TObject);
 var
     dd : TSelectDirectoryDialog;
 begin
-  debugln('ButtonFileSetupClick');
+  TRlog('ButtonFileSetupClick');
 
-  if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+  if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    dd := TSelectDirectoryDialog.Create(Self);
    dd.FileName := SyncFileRepo;
@@ -471,7 +471,7 @@ begin
    begin
       LabelFileSync.Caption := AppendPathDelim(ChompPathDelim(dd.FileName));
       SyncFileRepo := LabelFileSync.Caption;
-      debugln('ButtonFileSetupClick SyncFileRepo='+SyncFileRepo);
+      TRlog('ButtonFileSetupClick SyncFileRepo='+SyncFileRepo);
    end;
    FreeAndNil(dd);
 end;
@@ -480,9 +480,9 @@ procedure TSettings.RadioSyncChange(Sender: TObject);
 var
    s : TSyncTransport;
 begin
-   debugln('RadioSyncChange '+Sender.ToString);
+   TRlog('RadioSyncChange '+Sender.ToString);
 
-   if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    CheckBoxAutoSync.Enabled := not RadioSyncNone.checked;
    EditTimerSync.Enabled := CheckBoxAutoSync.Checked and not RadioSyncNone.checked;
@@ -505,7 +505,7 @@ var
    i : integer;
 begin
 
-  debugln('LoadSettings');
+  TRlog('LoadSettings');
 
   settingsloading :=true;
 
@@ -575,7 +575,7 @@ begin
   end;
 
   settingsloading := false;
-  debugln('Done loading settings');
+  TRlog('Done loading settings');
 
 end;
 
@@ -586,9 +586,9 @@ procedure TSettings.ButtonSetSpellLibraryClick(Sender: TObject);
 var
     odd: TOpenDialog;
 begin
-  debugln('ButtonSetSpellLibraryClick');
+  TRlog('ButtonSetSpellLibraryClick');
 
-  if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+  if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
   odd := TOpenDialog.Create(Self);
 
@@ -606,9 +606,9 @@ procedure TSettings.ButtonSetDictionaryClick(Sender: TObject);
 var
     odd: TOpenDialog;
 begin
-  debugln('ButtonSetDictionaryClick');
+  TRlog('ButtonSetDictionaryClick');
 
-  if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+  if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
   odd := TOpenDialog.Create(Self);
 
@@ -618,7 +618,7 @@ begin
   if odd.Execute then
   begin
       DictPath := AppendPathDelim(ChompPathDelim(ExtractFilePath(odd.FileName)));
-      DebugLn('New DictPath = '+DictPath+ ' from '+odd.FileName);
+      TRlog('New DictPath = '+DictPath+ ' from '+odd.FileName);
       LabelPath.Caption := DictPath;
       DictFilesSearch();
   end;
@@ -638,7 +638,7 @@ begin
         until FindNext(Info) <> 0;
     end;
     FindClose(Info);
-    debugln('CheckForDic searched ' + DictPath + ' and found ' + inttostr(ListBoxDic.Items.Count));
+    TRlog('CheckForDic searched ' + DictPath + ' and found ' + inttostr(ListBoxDic.Items.Count));
     if ListBoxDic.Items.Count > 0 then
     begin
          ListBoxDic.Enabled := True;
@@ -656,7 +656,7 @@ begin
 
    if not FileExists(FullDicName) then
    begin
-      debugln('VerifyDictFile: ' + FullDicName + 'does not exist');
+      TRlog('VerifyDictFile: ' + FullDicName + 'does not exist');
       LabelDicStatus.Caption := rsCannotFindNote + FullDicName;
       exit(false);
    end;
@@ -670,19 +670,19 @@ begin
         DictFile := FullDicName;
         Result := True;
    end else begin
-      debugln(rsDictionaryNotFound);
+      TRlog(rsDictionaryNotFound);
        LabelDicStatus.Caption := rsDictionaryNotFound;
    end;
 
    FreeAndNil(Spell);
-   debugln('CheckDictionary ' + FullDicName + ' return ' + booltostr(Result, True));
+   TRlog('CheckDictionary ' + FullDicName + ' return ' + booltostr(Result, True));
 end;
 
 procedure TSettings.ListBoxDicClick(Sender: TObject);
 begin
-  debugln('ListBoxDicClick');
+  TRlog('ListBoxDicClick');
 
-  if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+  if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
     if ListBoxDic.ItemIndex > -1 then
         VerifyDictFile(DictPath + ListBoxDic.Items.Strings[ListBoxDic.ItemIndex]);
@@ -707,7 +707,7 @@ begin
     end;
 
     DictLibrary := Spell.LibraryFullName;
-    debugln('Library OK, lets look for dictionary');
+    TRlog('Library OK, lets look for dictionary');
     LabelLibraryStatus.caption := rsDictionaryLoaded;
     LabelLibrary.Caption := DictLibrary;
     FreeAndNil(Spell);
@@ -715,9 +715,9 @@ end;
 
 procedure TSettings.TimerAutoSyncTimer(Sender: TObject);
 begin
-  debugln('TimerAutoSyncTimer');
+  TRlog('TimerAutoSyncTimer');
 
-  if(settingsloading) then begin debugln('Event while loading'); exit(); end;
+  if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
   SyncRepeat := StrToInt(EditTimerSync.Text);
 

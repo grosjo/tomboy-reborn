@@ -149,7 +149,7 @@ begin
     {$endif}
     //BlockNo := TheKmemo.Blocks.IndexToBlockIndex(TempIndex+1, LocalIndex);
     BlockNo := TheKmemo.Blocks.IndexToBlockIndex(TempIndex, LocalIndex);
-	//debugln('Operating on BK=' + inttostr(BlockNo) + ' Loc=' + inttostr(LocalIndex) + ' TempIndex=' + inttostr(TempIndex) + ' Index=' + inttostr(Index));
+	//TRlog('Operating on BK=' + inttostr(BlockNo) + ' Loc=' + inttostr(LocalIndex) + ' TempIndex=' + inttostr(TempIndex) + ' Index=' + inttostr(Index));
 
 
     TextSize := TKMemoTextBlock(TheKmemo.Blocks.Items[BlockNo]).TextStyle.Font.Size;         // and Style ????
@@ -177,17 +177,17 @@ function TFormSpell.CleanContext() : AnsiString;   // Ah, what about bloody wind
 var
     LineEndPos : integer;
 begin
-    // DebugLn('[[' + LeadContext + ' & ' + TrailContext + ']]');
+    // TRlog('[[' + LeadContext + ' & ' + TrailContext + ']]');
     LineEndPos := UTF8Pos(LineEnding, LeadContext, 1);
     While LineEndPos > 0 do begin
         UTF8Delete(LeadContext, 1, LineEndPos);
         LineEndPos := UTF8Pos(LineEnding, LeadContext, 1);
     end;
-    // DebugLn('[' + LeadContext + ']');
+    // TRlog('[' + LeadContext + ']');
     LineEndPos := UTF8Pos(LineEnding, TrailContext);
     if LineEndPos > 0 then
         UTF8Delete(TrailContext, LineEndPos, ContextSize);
-    // DebugLn('[' + TrailContext + ']');
+    // TRlog('[' + TrailContext + ']');
     Result := LeadContext + ' ' + TrailContext;
 end;
 
@@ -279,13 +279,13 @@ procedure TFormSpell.ShowContents;      // this method for debug only
 var
     Cnt : integer = 0;
 begin
-    debugln('------------');
+    TRlog('------------');
     while Cnt < TheKMemo.Blocks.Count do begin
-        debugln(TheKMemo.Blocks.Items[Cnt].ClassName + '=' + inttostr(Cnt) + ' [' + TheKMemo.Blocks.Items[Cnt].Text
+        TRlog(TheKMemo.Blocks.Items[Cnt].ClassName + '=' + inttostr(Cnt) + ' [' + TheKMemo.Blocks.Items[Cnt].Text
         	+ '] starts at ' + inttostr(TheKMemo.Blocks.BlockToIndex(TheKMemo.Blocks.Items[Cnt])) );
         inc(Cnt);
     end;
-    debugln('------------');
+    TRlog('------------');
 end;
 
 end.

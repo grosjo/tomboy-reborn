@@ -93,7 +93,7 @@ end;
 
 procedure TFormNCSetup.FormCreate(Sender: TObject);
 begin
-  debugln('NC FormCreate');
+  TRlog('NC FormCreate');
   success :=false;
   listening := false;
 end;
@@ -101,7 +101,7 @@ end;
 
 function TFormNCSetup.isSuccess() : boolean;
 begin
-  debugln('NC isSuccess '+BoolToStr(success,true));
+  TRlog('NC isSuccess '+BoolToStr(success,true));
   Result := success;
 end;
 
@@ -164,7 +164,7 @@ begin
         ok := true; s1 :=''; s2:=''; s3:='';
         try
            jData := GetJSON(res);
-           debugln('JSON1 OAUTH = ' + jData.FormatJSON());
+           TRlog('JSON1 OAUTH = ' + jData.FormatJSON());
            jObject := TJSONObject(jData);
            s1 := jObject.Get('oauth_request_token_url');
            s2 := jObject.Get('oauth_authorize_url');
@@ -195,7 +195,7 @@ begin
         res := WebPost(requestTokenUrl,p);
         FreeAndNil(p);
 
-        debugln('Request token reply : '+res);
+        TRlog('Request token reply : '+res);
         //Example : oauth_token=r36747eda81d3a14c&oauth_token_secret=s05507586554bb6bf&oauth_callback_confirmed=true
 
         ts:=['&'];

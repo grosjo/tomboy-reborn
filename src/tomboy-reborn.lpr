@@ -26,22 +26,26 @@ begin
     ConfigFile := ConfigDir + 'tomboy-reborn.cfg';
     NotesDir := GetDefaultNotesDir();
 
-    CmdLineErrorMsg := Application.CheckOptions('hgdc:v', 'help gnome3 delay-start config-dir: version');
+    CmdLineErrorMsg := Application.CheckOptions('hgdc:v', 'help gnome3 delay-start config-dir: version debug');
     if Application.HasOption('h', 'help') then
     begin
        debugln('   --delay-start                ' + rsHelpDelay);
        debugln('   -h --help                    ' + rsHelpHelp);
-       debugln('   --version                    ' + rsHelpVersion);
+       debugln('   -v --version                    ' + rsHelpVersion);
        debugln('   -g --gnome3                  ' + rsHelpRedHat);
-       debugln('   --config-dir=PATH_to_DIR     ' + rsHelpConfig);
+       debugln('   -c --config-dir=PATH_to_DIR     ' + rsHelpConfig);
+       debugln('   -d --debug		' + rsHelpDebug);
        exit();
     end;
 
     if Application.HasOption('c', 'config-dir') then
        ConfigDir := Application.GetOptionValue('c', 'config-dir');
 
-    if Application.HasOption('d', 'delay-start') then
+    if Application.HasOption('delay-start') then
        Sleep(2000);
+
+    if Application.HasOption('d', 'debug') then
+       Debug :=true;
 
     if Application.HasOption('v', 'version') then
     begin

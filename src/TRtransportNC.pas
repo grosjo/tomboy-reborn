@@ -65,7 +65,7 @@ begin
     OauthParamsSort(p);
     OauthSign(resturl, 'GET', p,Key,TokenSecret);
     res := WebGet(resturl,p);
-    debugln(res);
+    TRlog(res);
     FreeAndNil(p);
 
     if (res = '') then begin ErrorString :=  'Next-TestTransport: Unable to et initial data'; exit(SyncBadError); end;
@@ -75,7 +75,7 @@ begin
 
     try
        json := GetJSON(res);
-       debugln('JSON= '+json.AsJSON);
+       TRlog('JSON= '+json.AsJSON);
 
        json := json.Items[4];
        jObject := TJSONObject(json);
@@ -96,13 +96,13 @@ begin
     OauthParamsSort(p);
     OauthSign(res, 'GET', p,Key,TokenSecret);
     res := WebGet(res,p);
-    debugln(res);
+    TRlog(res);
     FreeAndNil(p);
     ok := true;
     ErrorString := '';
     try
        json := GetJSON(res);
-       debugln('JSON OAUTH = ' + json.FormatJSON());
+       TRlog('JSON OAUTH = ' + json.FormatJSON());
 
        jObject := TJSONObject(json);
        sid := jObject.Get('current-sync-guid');
@@ -158,7 +158,7 @@ begin
 
     // HTTP REQUEST
     res := getParam('URLNOTES');
-    debugln(res);
+    TRlog(res);
     p := TstringList.Create();
     OauthBaseParams(p,Key,Token);
     p.Add('include_notes');
@@ -168,7 +168,7 @@ begin
     res := WebGet(res,p);
     FreeAndNil(p);
 
-    debugln('RESPONSE=') ; debugln(res);
+    TRlog('RESPONSE=') ; TRlog(res);
     if (res = '') then begin ErrorString :=  'Next-GetNotes: Unable to get initial data'; exit(false); end;
 
     ok := true;
@@ -182,15 +182,15 @@ begin
        jnotes :=  jObject.Get('notes',jnotes);
     except on E:Exception do begin
        ErrorString := E.message;
-       debugln(ErrorString);
+       TRlog(ErrorString);
        ok:= false;
        end;
     end;
 
-    if (not ok) then begin ErrorString :=  'Next-GetNotes: '+ErrorString; debugln(ErrorString); exit(false); end;
+    if (not ok) then begin ErrorString :=  'Next-GetNotes: '+ErrorString; TRlog(ErrorString); exit(false); end;
 
     nbnotes := jnotes.Count;
-    debugln('Nb notes '+IntToStr(nbnotes));
+    TRlog('Nb notes '+IntToStr(nbnotes));
 
     ok :=true;
 
@@ -200,12 +200,12 @@ begin
        new(NoteInfo);
 
        try
-          debugln('Note '+IntToStr(i) + ' / ' + IntToStr(nbnotes));
+          TRlog('Note '+IntToStr(i) + ' / ' + IntToStr(nbnotes));
 
           json := jnotes.Items[i];
           jObject := TJSONObject(json);
 
-          debugln(json.FormatJSON());
+          TRlog(json.FormatJSON());
 
           NoteInfo^.Action:=SynUnset;
           NoteInfo^.ID := jObject.Get('guid');
@@ -228,7 +228,7 @@ begin
           j := round(d*10);
           d := j * 0.1;
           NoteInfo^.Version := Format('%0.1f',[d]);
-          debugln('Version = '+ NoteInfo^.Version);
+          TRlog('Version = '+ NoteInfo^.Version);
 
           NoteInfo^.Deleted := false;
           NoteInfo^.Title := jObject.Get('title','');
@@ -248,19 +248,19 @@ begin
           NoteInfo^.Y := jObject.Get('y',-1);
 
           jtags := jObject.Get('tags',jtags);
-          debugln('Found '+IntToStr(jtags.Count) + ' tags');
+          TRlog('Found '+IntToStr(jtags.Count) + ' tags');
 
           NoteInfo^.Tags := TStringList.Create;
           j:=0;
           while(j< jtags.Count) do
           begin
              res:= jtags.Items[j].AsString;
-             debugln('New Tag = '+res);
+             TRlog('New Tag = '+res);
              NoteInfo^.Tags.Add(res);
              inc(j);
           end;
 
-       except on E:Exception do begin ok := false; debugln(E.message); end;
+       except on E:Exception do begin ok := false; TRlog(E.message); end;
        end;
 
        if(ok) then NoteMeta.Add(NoteInfo)
@@ -288,8 +288,8 @@ begin
     Double quote is replaced with \"
     Backslash is replaced with \\
 }
-    debugln('OLD');
-    debugln(s);
+    TRlog('OLD');
+    TRlog(s);
     r:='';
 
     j := 0;
@@ -303,42 +303,8 @@ begin
        else r:=r + S[i];
     end;
 
-    debugln('NEW');
-    debugln(r);
-    Result := r;
-end;
-
-function TNextSync.JsonUnEscape(s : String) : String;
-var
-   r : String;
-   i,j : integer;
-begin
-{
-    Backspace is replaced with \b
-    Form feed is replaced with \f
-    Newline is replaced with \n
-    Carriage return is replaced with \r
-    Tab is replaced with \t
-    Double quote is replaced with \"
-    Backslash is replaced with \\
-}
-    debugln('OLD');
-    debugln(s);
-    r:='';
-
-    j := 0;
-    for i := 1 to Length (s) do
-    begin
-       if(s[i] = #13) then r:= r + '\n'
-       else if(s[i] = #9) then r:= r + '\t'
-       else if(s[i] = #10) then r:= r + '\r'
-       else if(s[i] = '\') then r:= r + '\\'
-       else if(s[i] = '"') then r:= r + '\"'
-       else r:=r + S[i];
-    end;
-
-    debugln('NEW');
-    debugln(r);
+    TRlog('NEW');
+    TRlog(r);
     Result := r;
 end;
 
@@ -388,18 +354,18 @@ begin
     end;
     res := res + ' ] } ';
 
-    debugln('Checking format');
+    TRlog('Checking format');
     try
        json := GetJSON(res);
-       debugln(json.FormatJSON());
-    except on E:Exception do begin ErrorString := E.message; debugln(E.message); exit(false); end;
+       TRlog(json.FormatJSON());
+    except on E:Exception do begin ErrorString := E.message; TRlog(E.message); exit(false); end;
     end;
 
-    debugln('Posting');
+    TRlog('Posting');
 
     // HTTP REQUEST
     res := getParam('URLNOTES');
-    debugln(res);
+    TRlog(res);
     p := TstringList.Create();
     OauthBaseParams(p,Key,Token);
     OauthParamsSort(p);
@@ -408,18 +374,18 @@ begin
     res := WebPut(res,p,json.AsJSON);
     FreeAndNil(p);
 
-    debugln('RES PUSH = '+res);
+    TRlog('RES PUSH = '+res);
 
     if (res = '') then begin ErrorString :=  'Push CHanges: Unable to push data'; exit(false); end;
 
-    debugln('Checking result');
+    TRlog('Checking result');
     try
        json := GetJSON(res);
-       debugln(json.FormatJSON());
+       TRlog(json.FormatJSON());
        jObject := TJSONObject(json);
        ServerRev := jObject.Get('latest-sync-revision',ServerRev+1);
        FreeAndNil(jObject);
-    except on E:Exception do begin ErrorString := E.message; debugln(E.message); exit(false); end;
+    except on E:Exception do begin ErrorString := E.message; TRlog(E.message); exit(false); end;
     end;
 
     result := True;
