@@ -156,7 +156,7 @@ begin
       if FirstTime then begin                 // Title
   	    FT.Style := [fsUnderline];
         Title := ReplaceAngles(InStr);
-        FT.Size := FontSizeTitle;
+        //FT.Size := FontSizeTitle;
         FT.Color := TitleColour;
       end else begin
         FT.Style := [];
@@ -253,12 +253,12 @@ begin
             '/strikeout' : Strikeout := false;
             'monospace' : FixedWidth := true;
             '/monospace' : FixedWidth := false;
-            'size:small' : FontSize := FontSizeSmall;
-            '/size:small' : FontSize := FontSizeNormal;
-            'size:large' : FontSize := FontSizeLarge;
-            '/size:large' : FontSize := FontSizeNormal;
-            'size:huge' : FontSize := FontSizeHuge;
-            '/size:huge' : FontSize := FontSizeNormal;
+            //'size:small' : FontSize := FontSizeSmall;
+            //'/size:small' : FontSize := FontSizeNormal;
+            //'size:large' : FontSize := FontSizeLarge;
+            //'/size:large' : FontSize := FontSizeNormal;
+            //'size:huge' : FontSize := FontSizeHuge;
+            //'/size:huge' : FontSize := FontSizeNormal;
             'list-item dir="ltr"' : begin InBullet := true; BulletOwing := True; end;
             '/list-item' : InBullet := false;
             '/create-date' : CreateDate := InStr;

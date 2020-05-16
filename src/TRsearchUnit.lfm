@@ -1,11 +1,11 @@
-object SearchForm: TSearchForm
+object FormSearch: TFormSearch
   Left = 941
-  Height = 401
-  Top = 611
+  Height = 439
+  Top = 520
   Width = 824
-  ActiveControl = Edit1
+  ActiveControl = SearchBox
   Caption = 'Tomboy Reborn Search'
-  ClientHeight = 401
+  ClientHeight = 439
   ClientWidth = 824
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
@@ -13,6 +13,175 @@ object SearchForm: TSearchForm
   OnKeyDown = FormKeyDown
   OnShow = FormShow
   LCLVersion = '2.0.8.0'
+  object SearchBox: TEdit
+    AnchorSideLeft.Control = Label1
+    AnchorSideLeft.Side = asrBottom
+    AnchorSideTop.Control = ButtonRefresh
+    AnchorSideRight.Control = CheckCaseSensitive
+    AnchorSideBottom.Control = ButtonRefresh
+    AnchorSideBottom.Side = asrBottom
+    Left = 78
+    Height = 32
+    Top = 3
+    Width = 561
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BorderSpacing.Left = 8
+    BorderSpacing.Right = 7
+    OnEnter = SearchBoxEnter
+    OnExit = SearchBoxExit
+    OnKeyDown = FormKeyDown
+    OnKeyUp = SearchBoxKeyUp
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 0
+  end
+  object ButtonRefresh: TButton
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 760
+    Height = 32
+    Hint = 'Update Search Results'
+    Top = 3
+    Width = 61
+    Anchors = [akTop, akRight]
+    BorderSpacing.Top = 3
+    BorderSpacing.Right = 3
+    Caption = 'Refresh'
+    OnClick = ButtonRefreshClick
+    OnKeyDown = FormKeyDown
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 1
+  end
+  object Panel1: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = ButtonRefresh
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = StatusBar1
+    Left = 0
+    Height = 385
+    Top = 36
+    Width = 824
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BorderSpacing.Top = 1
+    Caption = 'Panel1'
+    ClientHeight = 385
+    ClientWidth = 824
+    TabOrder = 2
+    object Splitter1: TSplitter
+      AnchorSideTop.Control = Panel1
+      AnchorSideBottom.Control = SGNotebooks
+      AnchorSideBottom.Side = asrBottom
+      Left = 184
+      Height = 373
+      Top = 1
+      Width = 5
+      Align = alNone
+      Anchors = [akTop, akBottom]
+    end
+    object SGNotebooks: TStringGrid
+      AnchorSideLeft.Control = Panel1
+      AnchorSideTop.Control = SGNotesList
+      AnchorSideRight.Control = Splitter1
+      AnchorSideBottom.Control = Panel1
+      AnchorSideBottom.Side = asrBottom
+      Left = 11
+      Height = 362
+      Top = 12
+      Width = 173
+      Anchors = [akLeft, akRight, akBottom]
+      BorderSpacing.Left = 10
+      BorderSpacing.Bottom = 10
+      Color = clDefault
+      ColCount = 0
+      FixedCols = 0
+      FixedRows = 0
+      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goAutoAddRows, goSmoothScroll, goRowHighlight]
+      ParentShowHint = False
+      RowCount = 0
+      ShowHint = True
+      TabOrder = 1
+      OnClick = SGNotebooksClick
+      OnKeyDown = FormKeyDown
+      OnPrepareCanvas = SGNotebooksPrepareCanvas
+      OnResize = SGNotebooksResize
+    end
+    object SGNotesList: TStringGrid
+      AnchorSideLeft.Control = Splitter1
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = Panel1
+      AnchorSideRight.Control = Panel1
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = SGNotebooks
+      AnchorSideBottom.Side = asrBottom
+      Left = 192
+      Height = 363
+      Top = 11
+      Width = 628
+      Anchors = [akLeft, akRight, akBottom]
+      BorderSpacing.Left = 3
+      BorderSpacing.Top = 10
+      BorderSpacing.Right = 3
+      Color = clDefault
+      ColCount = 0
+      ColumnClickSorts = True
+      FixedCols = 0
+      FixedRows = 0
+      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goAutoAddRows, goThumbTracking, goSmoothScroll]
+      RowCount = 0
+      ScrollBars = ssAutoVertical
+      TabOrder = 2
+      OnDblClick = SGNotesListDblClick
+      OnKeyDown = FormKeyDown
+      OnResize = SGNotesListResize
+    end
+  end
+  object CheckCaseSensitive: TCheckBox
+    AnchorSideTop.Control = ButtonRefresh
+    AnchorSideRight.Control = ButtonRefresh
+    AnchorSideBottom.Control = ButtonRefresh
+    AnchorSideBottom.Side = asrBottom
+    Left = 646
+    Height = 32
+    Top = 3
+    Width = 107
+    Anchors = [akTop, akRight, akBottom]
+    BorderSpacing.Right = 7
+    Caption = 'Case Sensitive'
+    OnChange = CheckCaseSensitiveChange
+    ParentShowHint = False
+    TabOrder = 3
+  end
+  object StatusBar1: TStatusBar
+    AnchorSideLeft.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 0
+    Height = 18
+    Top = 421
+    Width = 824
+    Panels = <>
+  end
+  object Label1: TLabel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    Left = 10
+    Height = 15
+    Top = 9
+    Width = 60
+    BorderSpacing.Left = 10
+    BorderSpacing.Top = 9
+    Caption = 'Search :'
+    Font.Height = -13
+    Font.Name = 'Sans'
+    Font.Style = [fsBold]
+    ParentColor = False
+    ParentFont = False
+  end
   object TrayIcon: TTrayIcon
     Icon.Data = {
       9E09000000000100010018180000010020008809000016000000280000001800
@@ -65,7 +234,7 @@ object SearchForm: TSearchForm
       F576CAFFFF0558FDFF572DBFF2F73AC4EBFF34B9DBFF1CA6D0FF44B2EEFF59B7
       EAFF42A4ECFF3A8CD3FF7AB3CAFF7ADAF5FF68D9FDFF5DD3F5FF59D3F9FF3AC6
       F2FF40BBE0FFBFECFBFFADE9FEFF8CDEF9FF7FDCF8FF70D6F5FB51FCFF704DFC
-FF050000000000000000B4FFFF1926BADFB828A5E1FF60BCF5FF5DB1E7FF4799
+      FF050000000000000000B4FFFF1926BADFB828A5E1FF60BCF5FF5DB1E7FF4799
       E6FF56ACE9FFB0F3F7FF76D6EFFF59D6FCFF5ED5F7FF56D3FBFF2FBAE2FF88D5
       EDFFB8EEFFFF8FDFFAFF7FDBF8FF70D7F7FF43CBF5C478FFFF1D000000000000
       0000000000000000000097877F596DB6EDEF66BBF5FF508EC4FF447BBAFF85D7
@@ -97,278 +266,6 @@ FF050000000000000000B4FFFF1926BADFB828A5E1FF60BCF5FF5DB1E7FF4799
     OnClick = TrayIconClick
     left = 344
     top = 224
-  end
-  object Edit1: TEdit
-    AnchorSideLeft.Control = ButtonMenu
-    AnchorSideLeft.Side = asrBottom
-    AnchorSideTop.Control = ButtonRefresh
-    AnchorSideRight.Control = CheckCaseSensitive
-    AnchorSideBottom.Control = ButtonRefresh
-    AnchorSideBottom.Side = asrBottom
-    Left = 106
-    Height = 32
-    Top = 3
-    Width = 445
-    Anchors = [akTop, akLeft, akRight, akBottom]
-    BorderSpacing.Left = 2
-    BorderSpacing.Right = 7
-    OnEnter = Edit1Enter
-    OnExit = Edit1Exit
-    OnKeyDown = FormKeyDown
-    OnKeyUp = Edit1KeyUp
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 0
-  end
-  object ButtonRefresh: TButton
-    AnchorSideTop.Control = Owner
-    AnchorSideRight.Control = Owner
-    AnchorSideRight.Side = asrBottom
-    Left = 672
-    Height = 32
-    Hint = 'Update Search Results'
-    Top = 3
-    Width = 149
-    Anchors = [akTop, akRight]
-    BorderSpacing.Top = 3
-    BorderSpacing.Right = 3
-    Caption = 'Refresh'
-    OnClick = ButtonRefreshClick
-    OnKeyDown = FormKeyDown
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 1
-  end
-  object Panel1: TPanel
-    AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = ButtonRefresh
-    AnchorSideTop.Side = asrBottom
-    AnchorSideRight.Control = Owner
-    AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = StatusBar1
-    Left = 0
-    Height = 347
-    Top = 36
-    Width = 824
-    Anchors = [akTop, akLeft, akRight, akBottom]
-    BorderSpacing.Top = 1
-    Caption = 'Panel1'
-    ClientHeight = 347
-    ClientWidth = 824
-    TabOrder = 2
-    object Splitter1: TSplitter
-      AnchorSideTop.Control = Panel1
-      AnchorSideBottom.Control = Panel1
-      AnchorSideBottom.Side = asrBottom
-      Left = 233
-      Height = 345
-      Top = 1
-      Width = 5
-      Align = alNone
-      Anchors = [akTop, akBottom]
-    end
-    object StringGridNotebooks: TStringGrid
-      AnchorSideLeft.Control = Panel1
-      AnchorSideTop.Control = ButtonClearFilters
-      AnchorSideTop.Side = asrBottom
-      AnchorSideRight.Control = Splitter1
-      AnchorSideBottom.Control = ButtonNotebookOptions
-      Left = 1
-      Height = 281
-      Top = 33
-      Width = 232
-      Anchors = [akTop, akLeft, akRight, akBottom]
-      Color = clDefault
-      ColCount = 0
-      FixedCols = 0
-      FixedRows = 0
-      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goAutoAddRows, goSmoothScroll, goRowHighlight]
-      ParentShowHint = False
-      RowCount = 0
-      ShowHint = True
-      TabOrder = 1
-      OnClick = StringGridNotebooksClick
-      OnKeyDown = FormKeyDown
-      OnPrepareCanvas = StringGridNotebooksPrepareCanvas
-      OnResize = StringGridNotebooksResize
-    end
-    object ButtonClearFilters: TButton
-      AnchorSideLeft.Control = Panel1
-      AnchorSideTop.Control = Panel1
-      AnchorSideRight.Control = Splitter1
-      Left = 1
-      Height = 32
-      Top = 1
-      Width = 232
-      Anchors = [akTop, akLeft, akRight]
-      Caption = 'Clear Filters'
-      Enabled = False
-      OnClick = ButtonClearFiltersClick
-      OnKeyDown = FormKeyDown
-      TabOrder = 2
-    end
-    object ButtonNotebookOptions: TButton
-      AnchorSideLeft.Control = Panel1
-      AnchorSideTop.Control = ButtonClearFilters
-      AnchorSideTop.Side = asrBottom
-      AnchorSideRight.Control = Splitter1
-      AnchorSideBottom.Control = Panel1
-      AnchorSideBottom.Side = asrBottom
-      Left = 1
-      Height = 32
-      Hint = 'Manage the Notebooks'
-      Top = 314
-      Width = 232
-      Anchors = [akLeft, akRight, akBottom]
-      Caption = 'Notebook Options'
-      Enabled = False
-      OnClick = ButtonNotebookOptionsClick
-      OnKeyDown = FormKeyDown
-      ParentShowHint = False
-      ShowHint = True
-      TabOrder = 3
-    end
-    object StringGrid1: TStringGrid
-      AnchorSideLeft.Control = Splitter1
-      AnchorSideLeft.Side = asrBottom
-      AnchorSideTop.Control = Panel1
-      AnchorSideRight.Control = Panel1
-      AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = Panel1
-      AnchorSideBottom.Side = asrBottom
-      Left = 241
-      Height = 342
-      Top = 1
-      Width = 579
-      Anchors = [akTop, akLeft, akRight, akBottom]
-      BorderSpacing.Left = 3
-      BorderSpacing.Right = 3
-      BorderSpacing.Bottom = 3
-      Color = clDefault
-      ColCount = 0
-      ColumnClickSorts = True
-      FixedCols = 0
-      FixedRows = 0
-      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goAutoAddRows, goThumbTracking, goSmoothScroll]
-      RowCount = 0
-      ScrollBars = ssAutoVertical
-      TabOrder = 4
-      OnDblClick = StringGrid1DblClick
-      OnKeyDown = FormKeyDown
-      OnResize = StringGrid1Resize
-    end
-  end
-  object ButtonMenu: TSpeedButton
-    AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = Edit1
-    AnchorSideBottom.Control = Edit1
-    AnchorSideBottom.Side = asrBottom
-    Left = 0
-    Height = 32
-    Top = 3
-    Width = 104
-    Anchors = [akTop, akLeft, akBottom]
-    Caption = 'Menu'
-    Glyph.Data = {
-      36090000424D3609000000000000360000002800000018000000180000000100
-      2000000000000009000064000000640000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000003232
-      3238333333050000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000000000000000000000000000002E2E2E163636
-      36F93C3C3CF0393939863737371C000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000000000000000000000000000003737377D8080
-      80F6DEDEDEFF727272FA3A3A3ADC000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000003434348D34343440555555033D3D3DEBD9D9
-      D9FFFFFFFFFF777777F536363672000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000003E3E3EEB464646F53B3B3BEB595959F2FFFF
-      FFFFEEEEEEFF3A3A3AF630303010000000000000000000000000000000000000
-      000000000000000000004D4D4DFF4D4D4DFF4D4D4DFF4D4D4DFF4D4D4DFF4D4D
-      4DFF4D4D4DFF4D4D4DFF4D4D4DFF3E3E3EFFE8E8E8FFCDCDCDFFCECECEFFFFFF
-      FFFF9E9E9EFC3E3E3EB100000000000000000000000000000000000000000000
-      000000000000000000004D4D4DFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-      FFFFFFFFFFFFFFFFFFFFFFFFFFFF474747FFEAEAEAFFFFFFFFFFFFFFFFFFFFFF
-      FFFFACACACFC434343F5404040D0323232510000000000000000000000000000
-      000000000000000000004D4D4DFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-      FFFFFFFFFFFFFFFFFFFFFFFFFFFF454545FFEDEDEDFFFFFFFFFFFFFFFFFFFFFF
-      FFFFFFFFFFFFCFCFCFFF383838F9323232420000000000000000000000000000
-      000000000000000000004D4D4DFFFFFFFFFF000000FF000000FF000000FF0000
-      00FF000000FFFFFFFFFFFFFFFFFF414141FFF0F0F0FFFFFFFFFFFFFFFFFFFFFF
-      FFFFD8D8D8FF3E3E3EF43333334B000000000000000000000000000000000000
-      000000000000000000004D4D4DFFFAFAFAFFFAFAFAFFFAFAFAFFFAFAFAFFFAFA
-      FAFFFAFAFAFFFAFAFAFFFAFAFAFF3F3F3FFFF2F2F2FFFFFFFFFFFFFFFFFFD9D9
-      D9FF3E3E3EF53434344E00000000000000000000000000000000000000000000
-      000000000000000000004D4D4DFF4D4D4DFF4D4D4DFF4D4D4DFF4D4D4DFF4D4D
-      4DFF4D4D4DFF4D4D4DFF4D4D4DFF383838FFF5F5F5FFFFFFFFFFDBDBDBFF3E3E
-      3EF6353535570000000000000000000000000000000000000000000000000000
-      000000000000000000004D4D4DFFFAFAFAFFFAFAFAFFFAFAFAFFFAFAFAFFFAFA
-      FAFFFAFAFAFFFAFAFAFFFAFAFAFF3A3A3AFFF8F8F8FFE0E0E0FF424242F53636
-      365A000000000000000000000000000000000000000000000000000000000000
-      000000000000000000004D4D4DFFFFFFFFFF000000FF000000FF000000FF0000
-      00FF000000FFFFFFFFFFFFFFFFFF383838FFDDDDDDFF424242FF3636365E0000
-      0000000000000000000000000000000000000000000000000000000000000000
-      000000000000000000004D4D4DFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-      FFFFFFFFFFFFFFFFFFFFFFFFFFFF363636FF494949FF454545FF000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      000000000000000000004D4D4DFFFFFFFFFF000000FF000000FF000000FF0000
-      00FFFFFFFFFFFFFFFFFFFFFFFFFF353535FFAEAEAEFF4D4D4DFF000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      000000000000000000004D4D4DFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-      FFFFFFFFFFFFFFFFFFFFFDFDFDFFA9A9A9FFFFFFFFFF4D4D4DFF000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      000000000000000000004D4D4DFFFFFFFFFF000000FF000000FF000000FF0000
-      00FF000000FF000000FFFFFFFFFFFFFFFFFFFFFFFFFF4D4D4DFF000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      000000000000000000004D4D4DFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-      FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF4D4D4DFF000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      000000000000000000004D4D4DFFFFFFFFFF000000FF000000FF000000FF0000
-      00FF000000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF4D4D4DFF000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      000000000000000000004D4D4DFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-      FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF4D4D4DFF000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      000000000000000000004D4D4DFF4D4D4DFF4D4D4DFF4D4D4DFF4D4D4DFF4D4D
-      4DFF4D4D4DFF4D4D4DFF4D4D4DFF4D4D4DFF4D4D4DFF4D4D4DFF000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000
-    }
-    OnClick = ButtonMenuClick
-  end
-  object CheckCaseSensitive: TCheckBox
-    AnchorSideTop.Control = ButtonRefresh
-    AnchorSideRight.Control = ButtonRefresh
-    AnchorSideBottom.Control = ButtonRefresh
-    AnchorSideBottom.Side = asrBottom
-    Left = 558
-    Height = 32
-    Top = 3
-    Width = 107
-    Anchors = [akTop, akRight, akBottom]
-    BorderSpacing.Right = 7
-    Caption = 'Case Sensitive'
-    OnChange = CheckCaseSensitiveChange
-    ParentShowHint = False
-    TabOrder = 3
-  end
-  object StatusBar1: TStatusBar
-    Left = 0
-    Height = 18
-    Top = 383
-    Width = 824
-    Panels = <>
   end
   object SelectDirectoryDialog1: TSelectDirectoryDialog
     left = 472

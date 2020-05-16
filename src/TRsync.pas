@@ -483,7 +483,7 @@ begin
     backupdir := NotesDir + 'Backup' + PathDelim;
 
     if not DirectoryExists(backupdir) then
-        if not ForceDirectory(backupdir) then
+        if not ForceDirectoryUTF8(backupdir) then
         begin
             ErrorString := 'Failed to create Backup directory.';
             exit(False);
@@ -499,7 +499,7 @@ begin
         backup := GetLocalBackupPath();
         if FileExists(dest) then
         begin
-           ForceDirectories(backup);
+           ForceDirectoriesUTF8(backup);
            if not CopyFile(dest, GetLocalNoteFile(ID, backup)) then
                 begin
                     ErrorString := 'Failed to copy file '+ dest + ' to Backup ' + backup;
@@ -531,7 +531,7 @@ begin
 
         if FileExists(s) then
         begin
-            ForceDirectories(GetLocalBackupPath());
+            ForceDirectoriesUTF8(GetLocalBackupPath());
 
             if CopyFile(s,d)
             then DeleteFile(s)
@@ -683,7 +683,7 @@ begin
 
     LocalMetaData.Clear;
     c :=0;
-    if FindFirst(GetLocalNoteFile('*'), faAnyFile, Info)=0 then
+    if FindFirstUTF8(GetLocalNoteFile('*'), faAnyFile, Info)=0 then
     repeat
         ID := copy(Info.Name, 1, 36);
         new(PNote);

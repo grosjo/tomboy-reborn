@@ -212,14 +212,13 @@ begin
     {$ifdef DARWIN}
     Mask := 'libhunspell*';
     FullName := '/usr/local/Cellar/hunspell/1.6.2/lib/';
-    //     /usr/local/Cellar/hunspell/1.6.2/lib/libhunspell-1.6.0.dylib
-    if FindFirst(FullName + Mask, faAnyFile and faDirectory, Info)=0 then begin
+    if FindFirstUTF8(FullName + Mask, faAnyFile and faDirectory, Info)=0 then begin
         FullName := FullName + Info.name;
         Result := True;
     end;
     if not result then begin
         FullName := '/usr/lib/';
-        if FindFirst(FullName + Mask, faAnyFile and faDirectory, Info)=0 then begin
+        if FindFirstUTF8(FullName + Mask, faAnyFile and faDirectory, Info)=0 then begin
             FullName := FullName + Info.name;
             Result := True;
         end;
@@ -230,7 +229,7 @@ begin
     // Now, only Windows left. Look for a dll in application home dir.
     Mask := '*hunspell*.dll';
     FullName := ExtractFilePath(Application.ExeName);
-    if FindFirst(FullName + Mask, faAnyFile and faDirectory, Info)=0 then begin
+    if FindFirstUTF8(FullName + Mask, faAnyFile and faDirectory, Info)=0 then begin
         FullName := FullName + Info.name;
         Result := True;
     end;

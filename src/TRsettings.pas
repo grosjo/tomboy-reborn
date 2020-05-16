@@ -632,7 +632,7 @@ var
 begin
     ListBoxDic.Clear;
     ListBoxDic.Enabled := False;
-    if FindFirst(DictPath + '*.dic', faAnyFile, Info)=0 then
+    if FindFirstUTF8(DictPath + '*.dic', faAnyFile, Info)=0 then
     begin
         repeat ListBoxDic.Items.Add(Info.Name);
         until FindNext(Info) <> 0;

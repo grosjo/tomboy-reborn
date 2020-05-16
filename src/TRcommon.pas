@@ -124,7 +124,8 @@ procedure CopyNote(A : PNoteInfo; c : PNoteInfo);
 // Font
 function GetDefaultFixedFont() : string;
 function GetDefaultUsualFont() : string;
-procedure setFontSizes();
+procedure setFontSizes(out FontSizeSmall  : Integer; out FontSizeLarge  : Integer; out FontSizeHuge   : Integer; out FontSizeTitle  : Integer; out FontSizeNormal : Integer);
+
 
 // Datetime
 function GetGMTFromStr(const DateStr: ANSIString): TDateTime;
@@ -164,11 +165,6 @@ var
 
     UsualFont, FixedFont : string;
     FontRange : TFontRange;
-    FontSizeSmall  : Integer;
-    FontSizeLarge  : Integer;
-    FontSizeHuge   : Integer;
-    FontSizeTitle  : Integer;	// Dont set this to one of the other sizes !
-    FontSizeNormal : Integer;
 
     SyncType : TSyncTransport;
     SyncClashOption : TSyncClashOption;
@@ -475,9 +471,6 @@ begin
     end;
 
     TRlog('ConfigRead(' + source + ') DONE');
-
-    SetFontSizes();
-
 end;
 
 
@@ -905,7 +898,7 @@ begin
     FreeAndNil(f);
 end;
 
-procedure setFontSizes();
+procedure setFontSizes(out FontSizeSmall  : Integer; out FontSizeLarge  : Integer; out FontSizeHuge   : Integer; out FontSizeTitle  : Integer; out FontSizeNormal : Integer);
 begin
    if(FontRange = FontBig) then begin
     	FontSizeSmall  := 9;

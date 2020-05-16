@@ -886,7 +886,8 @@
       <Unit26>
         <Filename Value="TRsearchUnit.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="SearchForm"/>
+        <ComponentName Value="FormSearch"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit26>
     </Units>

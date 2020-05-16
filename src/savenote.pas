@@ -194,7 +194,7 @@ begin
     end;
 
     // When Font size changes
-    if (FSize <> FT.TextStyle.Font.Size) and (FT.TextStyle.Font.Size <> FontSizeTitle) then begin
+    if (FSize <> FT.TextStyle.Font.Size) then begin //and (FT.TextStyle.Font.Size <> FontSizeTitle) then begin
 		if Bold then Buff := Buff + '</bold>';
         if Italics then Buff := Buff + '</italic>';
         if HiLight then Buff := Buff + '</highlight>';
@@ -468,7 +468,7 @@ var
    // BlankFont : TFont;
  begin
     KM := KM1;
-    FSize := FontSizeNormal;
+    //FSize := FontSizeNormal;
     Bold := false;
      Italics := False;
      HiLight := False;

@@ -72,7 +72,7 @@ begin
         SearchAtStart := true;
     end;
 
-    Application.CreateForm(TSearchForm, mainWindow);
+    Application.CreateForm(TFormSearch, mainWindow);
 
     Application.Run;
 end.

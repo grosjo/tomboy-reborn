@@ -290,13 +290,14 @@ begin
                 and TheKMemo.Blocks.Items[BlkNo+1].ClassNameIs('TKMemoParagraph')
     then begin
         // OK, its a single block line. But is it a heading ?
-
+    {
         if TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.Size = FontSizeTitle then
               Result := '# ' + TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).Text;
         if TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.Size = FontSizeHuge then
               Result := '## ' + TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).Text;
         if TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.Size = FontSizeLarge then
               Result := '### ' + TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).Text;
+        }
     end;
 end;
 
@@ -347,10 +348,10 @@ begin
 
     // Normal mode.
     // When smallfont turns off
-    if (SmallFont and (FT.TextStyle.Font.Size <> FontSizeSmall)) then begin
-        Buff := Buff + '</sub>';
-        SmallFont := False;
-    end;
+    //if (SmallFont and (FT.TextStyle.Font.Size <> FontSizeSmall)) then begin
+    //    Buff := Buff + '</sub>';
+    //    SmallFont := False;
+    //end;
     if (Bold and (not (fsBold in FT.TextStyle.Font.Style))) then begin
         Buff := Buff + '**';
         Bold := false;
@@ -429,10 +430,10 @@ begin
     end;
 
     // SmallFont turns on
-    if ((not SmallFont) and (FT.TextStyle.Font.Size = FontSizeSmall)) then begin
-        Buff := Buff + '<sub>';
-        SmallFont := True;
-    end;
+    //if ((not SmallFont) and (FT.TextStyle.Font.Size = FontSizeSmall)) then begin
+    //    Buff := Buff + '<sub>';
+    //    SmallFont := True;
+    //end;
     Result := Buff;
 end;
 

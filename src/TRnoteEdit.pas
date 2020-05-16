@@ -627,10 +627,10 @@ var
 begin
     FirstBlock := TKMemoTextBlock(KMemo1.Blocks.Items[FirstBlockNo]);
 	Block := TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]);
-    if (Command = ChangeSize) and (NewFontSize = FontSizeNormal) then begin  // Don't toggle, just set to FontNormal
-         Block.TextStyle.Font.Size := FontSizeNormal;
-         exit();
-    end;
+    //if (Command = ChangeSize) and (NewFontSize = FontSizeNormal) then begin  // Don't toggle, just set to FontNormal
+    //     Block.TextStyle.Font.Size := FontSizeNormal;
+    //     exit();
+    //end;
     case Command of
 		{ChangeSize :	if Block.TextStyle.Font.Size = NewFontSize then begin
 						Block.TextStyle.Font.Size := Sett.FontNormal;
@@ -686,22 +686,22 @@ end;
 
 procedure TNoteEditForm.MenuLargeClick(Sender: TObject);
 begin
-   AlterFont(ChangeSize, FontSizeLarge);
+   //AlterFont(ChangeSize, FontSizeLarge);
 end;
 
 procedure TNoteEditForm.MenuNormalClick(Sender: TObject);
 begin
-   AlterFont(ChangeSize, FontSizeNormal);	// Note, this won't toggle !
+   //AlterFont(ChangeSize, FontSizeNormal);	// Note, this won't toggle !
 end;
 
 procedure TNoteEditForm.MenuSmallClick(Sender: TObject);
 begin
-    AlterFont(ChangeSize, FontSizeSmall);
+    //AlterFont(ChangeSize, FontSizeSmall);
 end;
 
 procedure TNoteEditForm.MenuHugeClick(Sender: TObject);
 begin
-   AlterFont(ChangeSize, FontSizeHuge);
+   //AlterFont(ChangeSize, FontSizeHuge);
 end;
 
 procedure TNoteEditForm.MenuBoldClick(Sender: TObject);
@@ -1115,7 +1115,7 @@ begin
     if Ready then exit();				// its a "re-show" event. Already have a note loaded.
     PanelReadOnly.Height := 1;
     TimerSave.Enabled := False;
-    KMemo1.Font.Size := FontSizeNormal;
+    //KMemo1.Font.Size := FontSizeNormal;
     {$ifdef LINUX}
     //{$DEFINE DEBUG_CLIPBOARD}
     KMemo1.ExecuteCommand(ecPaste);         // this to deal with a "first copy" issue.
@@ -1311,7 +1311,7 @@ begin
 	try
         while Kmemo1.Blocks.Items[BlockNo].ClassName <> 'TKMemoParagraph' do begin
             if Kmemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock') then begin    // just possible its an image, ignore ....
-                TKMemoTextBlock(Kmemo1.Blocks.Items[BlockNo]).TextStyle.Font.Size := FontSizeTitle;
+                //TKMemoTextBlock(Kmemo1.Blocks.Items[BlockNo]).TextStyle.Font.Size := FontSizeTitle;
                 TKMemoTextBlock(Kmemo1.Blocks.Items[BlockNo]).TextStyle.Font.Color := TitleColour;
                 TKMemoTextBlock(Kmemo1.Blocks.Items[BlockNo]).TextStyle.Font.Style := [fsUnderline];
             end;
@@ -1326,12 +1326,12 @@ begin
           Scan back from cursor to end of title, if Title font, reset. }
         EndBlock := KMemo1.Blocks.IndexToBlockIndex(KMemo1.Selstart, Blar);
         while EndBlock > BlocksInTitle do begin
-            if KMemo1.Blocks.Items[EndBlock].ClassNameIs('TKMemoTextBlock') and
-                (TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Size = FontSizeTitle) then begin
-                    TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Size := FontSizeNormal;
-                    TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Color := TextColour;
-                    TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Style := [];
-                end;
+            //if KMemo1.Blocks.Items[EndBlock].ClassNameIs('TKMemoTextBlock') and
+            //    (TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Size = FontSizeTitle) then begin
+            //        TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Size := FontSizeNormal;
+            //        TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Color := TextColour;
+            //        TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Style := [];
+            //    end;
             dec(EndBlock);
         end;
 	finally
@@ -1496,7 +1496,7 @@ begin
 	if not Ready then exit();
     if SingleNoteMode then exit();
     // There is a thing called KMemo1.Blocks.SelectableLength but it returns the number of characters, not bytes, much faster though
-    // Note, we don't need Len if only doing http and its not whole note being checked (at startup). So, could save a bit ....
+    // Note, we dont need Len if only doing http and its not whole note being checked (at startup). So, could save a bit ....
     Len := length(KMemo1.Blocks.text);              // saves 7mS by calling length() only once ! But still 8mS
     if StartScan >= Len then exit;                  // prevent crash when memo almost empty
     if EndScan > Len then EndScan := Len;
@@ -1557,10 +1557,10 @@ begin
     KMemo1.Blocks.LockUpdate;
     try
     while StartBlock < EndBlock do begin
-        if TKMemoTextBlock(KMemo1.Blocks.Items[StartBlock]).TextStyle.Font.Size = FontSizeTitle then begin
-            inc(StartBlock);
-            continue;
-        end;
+        //if TKMemoTextBlock(KMemo1.Blocks.Items[StartBlock]).TextStyle.Font.Size = FontSizeTitle then begin
+        //    inc(StartBlock);
+        //    continue;
+        //end;
         if KMemo1.Blocks.Items[StartBlock].ClassNameIs('TKMemoHyperlink') then begin
             LinkText := Kmemo1.Blocks.Items[StartBlock].Text;
         //	if not (SearchForm.IsThisaTitle(LinkText) or ValidWebLink()) then begin
@@ -2291,9 +2291,9 @@ begin
     // Timing numbers below using MyRecipes on my Acer linux laptop. For local comparison only !
     //T1 := gettickcount64();
     Loader := TBLoadNote.Create();
-    Loader.FontNormal:= FontSizeNormal;
+    //Loader.FontNormal:= FontSizeNormal;
     // Loader.FontName := FontName;
-    Loader.FontSize:= FontSizeNormal;
+    //Loader.FontSize:= FontSizeNormal;
     KMemo1.Blocks.LockUpdate;
     KMemo1.Clear;
     Loader.LoadFile(FileName, KMemo1);                        // 340mS

@@ -61,7 +61,7 @@ begin
     {$ifdef LINUX}
         // Just copy the desktop file, too easy.
         if not DirPathExists(LinkDestination) then
-            ForceDirectory(LinkDestination);
+            ForceDirectoryUTF8(LinkDestination);
         if  FileExistsUTF8(TargetName) then
             CopyFile(TargetName, LinkDestination + LinkName)
         else ErrorMessage := 'Cannot find ' + TargetName;

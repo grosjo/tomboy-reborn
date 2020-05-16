@@ -73,21 +73,21 @@ begin
     end;
     // writeln('[PARA=' + inttostr(Result)+']');
     // Result is now pointing to first Para beyond BlkNo OR beyond kmemo content
-    while Index < Result do begin
+    //while Index < Result do begin
         // writeln('[' + inttostr(Index) + '] ' + TKmemoTextBlock(TheKMemo.Blocks.Items[Index]).Text);
-        if (TheKMemo.Blocks.Items[Index].ClassNameIs('TKMemoTextBlock')
-                    and (TKmemoTextBlock(TheKMemo.Blocks.Items[Index]).TextStyle.Font.Size
-                        in [FontSizeTitle, FontSizeLarge, FontSizeHuge]))
-        then {begin writeln('================ Examined ' + TKmemoTextBlock(TheKMemo.Blocks.Items[Index]).Text);} inc(Index){; end }
-        else                    // its not a heading
-            exit(Result)        // Remember we may be beyond the content ....
-    end;
+//        if (TheKMemo.Blocks.Items[Index].ClassNameIs('TKMemoTextBlock')
+//                    and (TKmemoTextBlock(TheKMemo.Blocks.Items[Index]).TextStyle.Font.Size
+//                        in [FontSizeTitle, FontSizeLarge, FontSizeHuge]))
+//        then {begin writeln('================ Examined ' + TKmemoTextBlock(TheKMemo.Blocks.Items[Index]).Text);} inc(Index){; end }
+//       else                    // its not a heading
+//exit(Result)        // Remember we may be beyond the content ....
+    //end;
     // OK, its a heading, all blocks are Large or Huge. Huge=NoSpaces; LargeBold=2 spaces; Large=4 spaces
-    if TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.Size = FontSizeLarge then begin
-        St := '.  ';
-        if not (fsBold in TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.style) then
-            St := St + '   ';
-    end;
+    //if TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.Size = FontSizeLarge then begin
+    //    St := '.  ';
+    //    if not (fsBold in TKmemoTextBlock(TheKMemo.Blocks.Items[BlkNo]).TextStyle.Font.style) then
+    //        St := St + '   ';
+    //end;
     Index := BlkNo;
     while Index < Result do begin
         St := St + TKmemoTextBlock(TheKMemo.Blocks.Items[Index]).Text;
