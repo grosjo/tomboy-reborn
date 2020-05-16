@@ -164,8 +164,11 @@ uses
 { ====== TRAY WORK ====== }
 
 procedure TSearchForm.TrayIconClick(Sender: TObject);
+var
+    p : TPoint;
 begin
-    TrayMenu.PopUp();
+    p := TrayIcon.GetPosition;
+    TrayMenu.PopUp(p.x,p.y+24);
 end;
 
 procedure TSearchForm.BuildTrayMenu(Sender : TObject);
@@ -772,6 +775,7 @@ begin
     begin
         TrayMenu := TPopupMenu.Create(Self);
         TrayIcon.PopUpMenu := TrayMenu;
+
         TrayIcon.Show;
         LocalTimer := TTimer.Create(Nil);
         LocalTimer.OnTimer:= @BuildTrayMenu;
