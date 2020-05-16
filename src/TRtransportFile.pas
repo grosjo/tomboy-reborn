@@ -6,7 +6,7 @@ interface
 
 uses
     Classes, SysUtils, LazLogger,
-    TRcommon, TRtransport;
+    TRcommon, TRtransport, TRtexts;
 
 type TFileSync = Class(TTomboyTrans)
     private
@@ -16,7 +16,7 @@ type TFileSync = Class(TTomboyTrans)
         function TestTransport() : TSyncStatus; override;
         function GetNotes(const NoteMeta : TNoteInfoList) : boolean; override;
         function PushChanges(notes : TNoteInfoList): boolean; override;
-        function DoRemoteManifest(const RemoteManifest : string) : boolean; override;
+        function DoRemoteManifest(const RemoteManifest : TStringList) : boolean; override;
         function IDLooksOK() : boolean; Override;
         function getPrefix(): string; Override;
     end;
@@ -119,7 +119,7 @@ var
     NoteInfo : PNoteInfo;
     manifest,note : String;
 begin
-    debugln('TransportFile : Get Notes');
+    debugln(#10 + '******* TransportFile : Get Notes');
 
     if NoteMeta = Nil then begin
         ErrorString := 'Passed an uncreated list to GetNotes()';
@@ -176,19 +176,20 @@ begin
               continue;
          end;
 
-         Node := NodeList.Item[j].Attributes.GetNamedItem('latest-revision');
+         Node := NodeList.Item[j].Attributes.GetNamedItem('last-revision');
          if(not assigned(Node)) then
          begin
-              debugln('Wrong XML syntax -> "latest-revision" not found');
+              debugln('Wrong XML syntax -> "last-revision" not found');
               NoteInfo^.Rev := ServerRev;
          end
          else NoteInfo^.Rev := strtoint(Node.NodeValue);
 
          note := GetRemoteNotePath(NoteInfo^.Rev, NoteInfo^.ID);
-         debugln('File to note from '+note);
-         if(FileToNote(note, NoteInfo ))
-              then NoteMeta.Add(NoteInfo)
-              else dispose(NoteInfo);
+
+         debugln('TRANSPORT File to note from '+note);
+         FileToNote(note, NoteInfo );
+
+         NoteMeta.Add(NoteInfo)
     end;
 
     Doc.Free;
@@ -204,11 +205,14 @@ function TFileSync.PushChanges(notes : TNoteInfoList): boolean;
 var
     i : integer;
     d,n : string;
-    f : TStringList;
     note : PNoteInfo;
     ok : boolean;
 begin
-   d := GetRemoteNotePath(ServerRev + 1);
+   Debugln('SyncFile Push Changes Rev=' + IntToStr(ServerRev));
+
+   inc(ServerRev);
+   d := GetRemoteNotePath(ServerRev);
+   Debugln('SyncFile Push folder = '+d);
 
    ok := true;
    for i := 0 to notes.Count -1 do
@@ -216,59 +220,23 @@ begin
        note := notes.Items[i];
        if(not (note^.Action in [SynUploadEdit, SynUploadNew])) then continue;
 
-       n := GetRemoteNotePath(ServerRev + 1,note^.ID);
+       n := GetRemoteNotePath(ServerRev,note^.ID);
 
-       f := TStringList.Create;
-       f.Add('<?xml version="1.0" encoding="utf-8"?>');
-       f.Add('<note version="' + note^.Version + '" xmlns:link="http://beatniksoftware.com/tomboy/link" xmlns:size="http://beatniksoftware.com/tomboy/size" xmlns="http://beatniksoftware.com/tomboy">');
-       f.Add('<title>' + note^.Title + '</title>');
-       f.Add('<create-date>' + note^.CreateDate + '</create-date>');
-       f.Add('<last-change-date>' + note^.LastChange + '</last-change-date>');
-       f.Add('<last-metadata-change-date>' + note^.LastMetaChange + '</last-metadata-change-date>');
-       f.Add('<width>' + IntToStr(note^.Width) + '</width>');
-       f.Add('<height>' + IntToStr(note^.Height) + '</height>');
-       f.Add('<x>' + IntToStr(note^.X) + '</x>');
-       f.Add('<y>' + IntToStr(note^.Y) + '</y>');
-       f.Add('<selection-bound-position>' + IntToStr(note^.SelectBoundPosition) + '</selection-bound-position>');
-       f.Add('<cursor-position>' + IntToStr(note^.CursorPosition) + '</cursor-position>');
-       f.Add('<pinned>' + BoolToStr(note^.Pinned) + '</pinned>');
-       f.Add('<open-on-startup>' + BoolToStr(note^.OpenOnStartup) + '</open-on-startup>');
-       f.Add('<text xml:space="preserve"><note-content version="' + note^.Version + '">' + note^.Content + '</note-content></text> ');
-
-       debugln('Uploading ' + note^.ID + ' into '+n );
-       try
-          f.SaveToFile(n);
-       except on E:Exception do
-           begin
-              ErrorString := E.message;
-              debugln(ErrorString);
-              ok := false;
-           end;
-       end;
-       f.Free;
+       if(not NoteToFile(note, n)) then begin ErrorString := rsErrorCannotWrite + n; ok := false; end;
    end;
    result := ok;
 end;
 
-function TFileSync.DoRemoteManifest(const RemoteManifest: string): boolean;
+function TFileSync.DoRemoteManifest(const RemoteManifest: TStringList): boolean;
 var
     d : String;
-    f : TextFile;
 begin
-    debugln('DoRemote Manifest ' + RemoteManifest);
+   d := getParam('RemoteAddress') + 'manifest.xml';
+
+   debugln('DoRemote Manifest ' + d);
 
     try
-       AssignFile(f,getParam('RemoteAddress') + 'manifest.xml');
-       Rewrite(f);
-       Write(f,RemoteManifest);
-       Close(f);
-
-       d := GetRemoteNotePath(ServerRev + 1);
-
-       AssignFile(f,d + 'manifest.xml');
-       Rewrite(f);
-       Write(f,RemoteManifest);
-       Close(f)
+       RemoteManifest.SaveToFile(d);
     except on E:Exception do begin
        ErrorString := E.message;
        debugln(ErrorString);
@@ -290,18 +258,18 @@ end;
 function TFileSync.GetRemoteNotePath(Rev: integer; NoteID : string = ''): string;
 var
    s,path : String;
-   SearchResult : TSearchRec;
 begin
+    debugln('GetRemoteNotePath ( '+IntToStr(Rev)+' , '+ NoteID+' ) ');
 
     path := getParam('RemoteAddress');
 
-    //if ((Rev<0) or (FindFirst(path + '*.note',faAnyFile,SearchResult) = 0))
     if (Rev<0)
     then s := path
     else s := appendpathDelim(path
         + inttostr(Rev div 100) + pathDelim + inttostr(rev));
 
-    ForceDirectoriesUTF8(path);
+    debugln('Creating path '+s);
+    ForceDirectoriesUTF8(s);
 
     if NoteID <> '' then
         s := s + NoteID + '.note';

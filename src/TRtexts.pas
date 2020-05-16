@@ -81,6 +81,9 @@ RESOURCESTRING
   rsLastSync = 'Last Sync';     // Followed by a date and simplified sync report
   rsSyncNCDefault = 'https://YOURSERVER/index.php/apps/grauphel';
 
+  rsSyncClashCanceled = 'User canceled clash resolution';
+  rsSyncCoreError = 'Synchonization process core error';
+
   rsSyncRevisionError = 'Revision error : Old sync ?';
   rsSyncNeverSynced = 'Synced data error';
   rsSyncChangeError = 'Changes on both sides';
@@ -104,7 +107,7 @@ RESOURCESTRING
 
 // Settings
   rsErrorCreateDir = 'Unable to Create Directory';
-  rsErrorCannotWrite = 'Cannot write into';
+  rsErrorCannotWrite = 'Cannot write file';
   rsSyncNotConfig = 'Not configured';               // means that the file of net sync is not configured yet.
   rsSetUp = 'Setup';                               // means configure something, eg, one of the Sync modules.
   rsDoubleclickNote = 'double click a note ...';
@@ -148,6 +151,9 @@ RESOURCESTRING
     rsHelpSingleNote = 'Open indicated note, switch is optional';
     rsHelpSaveExit = 'After import single note, save & exit';
 
+
+sLineBreak = {$IFDEF LINUX} AnsiChar(#10) {$ENDIF}
+               {$IFDEF MSWINDOWS} AnsiString(#13#10) {$ENDIF};
 implementation
 
 end.

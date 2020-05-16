@@ -43,7 +43,7 @@ type TTomboyTrans = class
               for a new revision on the server, the server must now do whatever
               it needs to accomodate the new new revision, some new or update
               notes will be sent to it a bit later. New RevNo will be RemoteServerRev plus 1 }
-        function DoRemoteManifest(const RemoteManifest : string) : boolean; virtual; abstract;
+        function DoRemoteManifest(const RemoteManifest : TStringList) : boolean; virtual; abstract;
 
         function getPrefix(): string; virtual; abstract;
 

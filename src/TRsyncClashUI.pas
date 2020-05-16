@@ -31,12 +31,20 @@ type
      ChangeRemote: TLabel;
      Label1: TLabel;
      NoteID: TLabel;
+     procedure FormShow(Sender: TObject);
+
 end;
 
 
 implementation
 
 {$R *.lfm}
+
+procedure TFormClash.FormShow(Sender: TObject);
+    begin
+    Left := 25 + random(25);
+    Top := 25 + random(25);
+end;
 
 end.
 

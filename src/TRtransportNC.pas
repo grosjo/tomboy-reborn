@@ -15,11 +15,12 @@ type TNextSync = Class(TTomboyTrans)
         function TestTransport(): TSyncStatus; override;
         function GetNotes(const NoteMeta : TNoteInfoList) : boolean; override;
         function PushChanges(notes : TNoteInfoList) : boolean; override;
-        function DoRemoteManifest(const RemoteManifest : string) : boolean; override;
+        function DoRemoteManifest(const RemoteManifest : TStringList) : boolean; override;
         function IDLooksOK() : boolean; Override;
         function getPrefix(): string; Override;
     private
         Token, TokenSecret, Key : String;
+        function JsonEscape(s : String) : String;
 
  end;
 
@@ -141,7 +142,7 @@ var
   res : String;
   json: TJSONData;
   jObject : TJSONObject;
-  jnotes : TJSONArray;
+  jnotes,jtags : TJSONArray;
   p : TStrings;
   ok : boolean;
   nbnotes,i,j : integer;
@@ -167,6 +168,7 @@ begin
     res := WebGet(res,p);
     FreeAndNil(p);
 
+    debugln('RESPONSE=') ; debugln(res);
     if (res = '') then begin ErrorString :=  'Next-GetNotes: Unable to get initial data'; exit(false); end;
 
     ok := true;
@@ -174,7 +176,9 @@ begin
     try
        json := GetJSON(res);
        jObject := TJSONObject(json);
-       setParam('REVISION',jObject.Get('latest-sync-revision'));
+       i:= jObject.Get('latest-sync-revision',0);
+       if(i>ServerRev) then ServerRev :=i;
+
        jnotes :=  jObject.Get('notes',jnotes);
     except on E:Exception do begin
        ErrorString := E.message;
@@ -186,24 +190,27 @@ begin
     if (not ok) then begin ErrorString :=  'Next-GetNotes: '+ErrorString; debugln(ErrorString); exit(false); end;
 
     nbnotes := jnotes.Count;
-    debugln(Format('Nb notes %d',[nbnotes]));
+    debugln('Nb notes '+IntToStr(nbnotes));
+
+    ok :=true;
 
     i:=0;
-    while(i<nbnotes) do
+    while(ok and (i<nbnotes)) do
     begin
        new(NoteInfo);
-       ok :=true;
 
        try
+          debugln('Note '+IntToStr(i) + ' / ' + IntToStr(nbnotes));
+
           json := jnotes.Items[i];
           jObject := TJSONObject(json);
-          debugln(Format('Note %d',[i]));
-          debugln(jObject.AsJSON);
+
           debugln(json.FormatJSON());
 
           NoteInfo^.Action:=SynUnset;
           NoteInfo^.ID := jObject.Get('guid');
-          NoteInfo^.Rev := jObject.Get('last-sync-revision');
+          NoteInfo^.Rev := jObject.Get('last-sync-revision',-1);
+          if(NoteInfo^.Rev>ServerRev) then ServerRev :=NoteInfo^.Rev;
 
           NoteInfo^.CreateDate:=jObject.Get('create-date','');
           if NoteInfo^.CreateDate <> '' then
@@ -215,26 +222,43 @@ begin
           if NoteInfo^.LastMetaChange <> '' then
              NoteInfo^.LastMetaChangeGMT := GetGMTFromStr(NoteInfo^.LastMetaChange);
 
-          d := StrToFloat(jObject.Get('note-content-version'));
+
+          res := jObject.Get('note-content-version');
+          d := StrToFloat(res);
           j := round(d*10);
           d := j * 0.1;
-          NoteInfo^.Version := Format('%d',[d]);
+          NoteInfo^.Version := Format('%0.1f',[d]);
+          debugln('Version = '+ NoteInfo^.Version);
 
           NoteInfo^.Deleted := false;
-          NoteInfo^.Title := jObject.Get('title');
-          NoteInfo^.Content := jObject.Get('note-content');
+          NoteInfo^.Title := jObject.Get('title','');
+          NoteInfo^.Content := jObject.Get('note-content','');
 
-          NoteInfo^.OpenOnStartup := (jObject.Get('open-on-startup').ToLower = 'true');
-          NoteInfo^.Pinned := (jObject.Get('pinned').ToLower = 'true');
+          NoteInfo^.OpenOnStartup := jObject.Get('open-on-startup',false);
 
-          NoteInfo^.CursorPosition := StrToInt(jObject.Get('cursor-position'));
-          NoteInfo^.SelectBoundPosition := StrToInt(jObject.Get('selection-bound-position'));
-          NoteInfo^.Width := StrToInt(jObject.Get('width'));
-          NoteInfo^.Height := StrToInt(jObject.Get('height'));
-          NoteInfo^.X := StrToInt(jObject.Get('x'));
-          NoteInfo^.Y := StrToInt(jObject.Get('y'));
+          NoteInfo^.Pinned := jObject.Get('pinned',false);
 
-          //NoteInfo^.Source := json.AsJSON;
+          NoteInfo^.CursorPosition := jObject.Get('cursor-position',1);
+
+          NoteInfo^.SelectBoundPosition := jObject.Get('selection-bound-position',0);
+
+          NoteInfo^.Width := jObject.Get('width',0);
+          NoteInfo^.Height := jObject.Get('height',0);
+          NoteInfo^.X := jObject.Get('x',-1);
+          NoteInfo^.Y := jObject.Get('y',-1);
+
+          jtags := jObject.Get('tags',jtags);
+          debugln('Found '+IntToStr(jtags.Count) + ' tags');
+
+          NoteInfo^.Tags := TStringList.Create;
+          j:=0;
+          while(j< jtags.Count) do
+          begin
+             res:= jtags.Items[j].AsString;
+             debugln('New Tag = '+res);
+             NoteInfo^.Tags.Add(res);
+             inc(j);
+          end;
 
        except on E:Exception do begin ok := false; debugln(E.message); end;
        end;
@@ -245,68 +269,164 @@ begin
        i := i+1;
     end;
 
-    debugln('done');
     FreeAndNil(jnotes);
 
-    result := False;
+    result := ok;
+end;
+
+function TNextSync.JsonEscape(s : String) : String;
+var
+   r : String;
+   i,j : integer;
+begin
+{
+    Backspace is replaced with \b
+    Form feed is replaced with \f
+    Newline is replaced with \n
+    Carriage return is replaced with \r
+    Tab is replaced with \t
+    Double quote is replaced with \"
+    Backslash is replaced with \\
+}
+    debugln('OLD');
+    debugln(s);
+    r:='';
+
+    j := 0;
+    for i := 1 to Length (s) do
+    begin
+       if(s[i] = #13) then r:= r + '\n'
+       else if(s[i] = #9) then r:= r + '\t'
+       else if(s[i] = #10) then r:= r + '\r'
+       else if(s[i] = '\') then r:= r + '\\'
+       else if(s[i] = '"') then r:= r + '\"'
+       else r:=r + S[i];
+    end;
+
+    debugln('NEW');
+    debugln(r);
+    Result := r;
+end;
+
+function TNextSync.JsonUnEscape(s : String) : String;
+var
+   r : String;
+   i,j : integer;
+begin
+{
+    Backspace is replaced with \b
+    Form feed is replaced with \f
+    Newline is replaced with \n
+    Carriage return is replaced with \r
+    Tab is replaced with \t
+    Double quote is replaced with \"
+    Backslash is replaced with \\
+}
+    debugln('OLD');
+    debugln(s);
+    r:='';
+
+    j := 0;
+    for i := 1 to Length (s) do
+    begin
+       if(s[i] = #13) then r:= r + '\n'
+       else if(s[i] = #9) then r:= r + '\t'
+       else if(s[i] = #10) then r:= r + '\r'
+       else if(s[i] = '\') then r:= r + '\\'
+       else if(s[i] = '"') then r:= r + '\"'
+       else r:=r + S[i];
+    end;
+
+    debugln('NEW');
+    debugln(r);
+    Result := r;
 end;
 
 function TNextSync.PushChanges(notes : TNoteInfoList) : boolean;
 var
-    i : integer;
+    i,j : integer;
     note : PNoteInfo;
-    json, res : String;
+    res : String;
+    json: TJSONData;
     p : TStrings;
+    jObject : TJSONObject;
 begin
-    json := '( "latest-sync-revision": '+IntToStr(ServerRev+1)+', "note-changes": [';
+    res := '{ "latest-sync-revision": "'+IntToStr(ServerRev+1)+'", "note-changes": [';
 
     for i := 0 to notes.Count -1 do
     begin
        note := notes.Items[i];
        if note^.Action = SynDeleteRemote
-       then json := json + '( "guid": "' + note^.ID + '", "command": "delete" }'
+       then res := res + '{ "guid": "' + note^.ID + '", "command": "delete" }'
        else begin
-           json := json + '( "guid": "' + note^.ID + '",';
-           json := json + ' "title": "' + StringReplace(note^.Title,'"','\"',[rfReplaceAll]) + '",';
-           json := json + ' "note-content": "' + StringReplace(note^.Content,'"','\"',[rfReplaceAll]) + '",';
-           json := json + ' "note-content-version": "' + note^.Version + '",';
-           json := json + ' "last-change-date": "' + note^.LastChange + '",';
-           json := json + ' "last-metadata-change-date": "' + note^.LastMetaChange + '",';
-           json := json + ' "create-date": "' + note^.CreateDate + '",';
-           json := json + ' "open-on-startup": "' + BoolToStr(note^.OpenOnStartup) + '",';
-           json := json + ' "pinned": "' + BoolToStr(note^.Pinned) + '",';
-           json := json + ' "x": "' + IntToStr(note^.X) + '",';
-           json := json + ' "y": "' + IntToStr(note^.Y) + '",';
-           json := json + ' "height": "' + IntToStr(note^.Height) + '",';
-           json := json + ' "width": "' + IntToStr(note^.Width) + '",';
-           json := json + ' "width": "' + IntToStr(note^.Width) + '",';
-           json := json + ' "selection-bound-position": "' + IntToStr(note^.SelectBoundPosition) + '",';
-           json := json + ' "cursor-position": "' + IntToStr(note^.CursorPosition) + '" }';
+           res := res + '{ "guid": "' + note^.ID + '",';
+           res := res + ' "title": "' + JsonEscape(note^.Title) + '",';
+           res := res + ' "note-content": "' + JsonEscape(note^.Content) + '",';
+           res := res + ' "note-content-version": "' + note^.Version + '",';
+           res := res + ' "last-change-date": "' + note^.LastChange + '",';
+           res := res + ' "last-metadata-change-date": "' + note^.LastMetaChange + '",';
+           res := res + ' "create-date": "' + note^.CreateDate + '",';
+           res := res + ' "open-on-startup": ' + BoolToStr(note^.OpenOnStartup,true) + ',';
+           res := res + ' "pinned": ' + BoolToStr(note^.Pinned,true) + ',';
+           res := res + ' "x": "' + IntToStr(note^.X) + '",';
+           res := res + ' "y": "' + IntToStr(note^.Y) + '",';
+           res := res + ' "height": "' + IntToStr(note^.Height) + '",';
+           res := res + ' "width": "' + IntToStr(note^.Width) + '",';
+           res := res + ' "selection-bound-position": "' + IntToStr(note^.SelectBoundPosition) + '",';
+           res := res + ' "cursor-position": "' + IntToStr(note^.CursorPosition) + '",';
+           res := res + ' "tags": [ ';
+           j:=0;
+           while(j<note^.Tags.Count) do
+           begin
+              res := res + '"' + JsonEscape(note^.Tags.Strings[j]) + '"' ;
+              inc(j);
+              if(j<note^.Tags.Count) then res := res + ', ';
+           end;
+           res := res + ' ] }';
        end;
-       if(i<notes.Count -1 ) then json := json + ', ';
+       if(i<notes.Count -1 ) then res := res + ', ';
     end;
-    json := json + ' ] } ';
+    res := res + ' ] } ';
+
+    debugln('Checking format');
+    try
+       json := GetJSON(res);
+       debugln(json.FormatJSON());
+    except on E:Exception do begin ErrorString := E.message; debugln(E.message); exit(false); end;
+    end;
+
+    debugln('Posting');
 
     // HTTP REQUEST
     res := getParam('URLNOTES');
     debugln(res);
     p := TstringList.Create();
     OauthBaseParams(p,Key,Token);
-
     OauthParamsSort(p);
     OauthSign(res, 'PUT', p, Key, TokenSecret);
-    res := WebPut(res,p,json);
+    OauthParamsSort(p);
+    res := WebPut(res,p,json.AsJSON);
     FreeAndNil(p);
 
     debugln('RES PUSH = '+res);
 
-    if (res = '') then begin ErrorString :=  'Next-GetNotes: Unable to get initial data'; exit(false); end;
+    if (res = '') then begin ErrorString :=  'Push CHanges: Unable to push data'; exit(false); end;
+
+    debugln('Checking result');
+    try
+       json := GetJSON(res);
+       debugln(json.FormatJSON());
+       jObject := TJSONObject(json);
+       ServerRev := jObject.Get('latest-sync-revision',ServerRev+1);
+       FreeAndNil(jObject);
+    except on E:Exception do begin ErrorString := E.message; debugln(E.message); exit(false); end;
+    end;
 
     result := True;
 end;
 
 
-function TNextSync.DoRemoteManifest(const RemoteManifest: string): boolean;
+function TNextSync.DoRemoteManifest(const RemoteManifest: TStringList): boolean;
 begin
 	WriteLn('Next-DoRemoteManifest');
     result := True;

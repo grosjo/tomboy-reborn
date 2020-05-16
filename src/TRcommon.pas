@@ -21,6 +21,7 @@ type TSyncTransport=(
 
 type TSyncAction = (
         SynUnset,      // initial state, should not be like this at end.
+        SynClash,      // Cant decide
         SynNothing,      // This note, previously synced has not changed.
         SynUploadNew,    // This a new local note, upload it.
         SynUploadEdit,   // A previously synced note, edited locally, upload.
@@ -89,7 +90,6 @@ type TNoteInfoList =
         destructor Destroy; override;
         function Add(ANote : PNoteInfo) : integer;
         function FindID(const ID : ANSIString) : PNoteInfo;
-        function ActionName(Act : TSyncAction) : string;
         property Items[Index: integer]: PNoteInfo read Get; default;
   end;
 
@@ -114,10 +114,11 @@ function ConfigRead(source : String) : integer;
 // Note generic function
 function GetNewID() : String;
 function NoteIDLooksOK(const ID : string) : boolean;
-function FileToNote(xml : String; NoteInfo : PNoteInfo) : boolean;
+procedure FileToNote(filename : String; NoteInfo : PNoteInfo);
+function NoteToFile(note : PNoteInfo; filename : String) : boolean;
 function RemoveBadXMLCharacters(const InStr : String; DoQuotes : boolean = false) : String;
 function RemoveXml(const St : String) : String;
-function CopyNote(A : PNoteInfo) : PNoteInfo;
+procedure CopyNote(A : PNoteInfo; c : PNoteInfo);
 
 // Font
 function GetDefaultFixedFont() : string;
@@ -149,6 +150,7 @@ procedure OauthParamsSort(const params : TStrings) ;
 procedure OauthSign(u : String; mode : String; params : TStrings; Key,Secret : String);
 
 // Sync
+function SyncActionName(Act : TSyncAction) : string;
 function isSyncConfigured() : boolean;
 
 var
@@ -259,6 +261,8 @@ begin
       ForceDirectoriesUTF8(altrep);
       Result := altrep + PathDelim + NoteID + '.note';
     end else Result := NotesDir + NoteID + '.note';
+    debugln('GetLocalNoteFile -> '+Result);
+
 end;
 
 function GetLocalBackupPath(): string;
@@ -491,17 +495,64 @@ begin
     result := True;
 end;
 
-function FileToNote(xml : String; NoteInfo : PNoteInfo) : boolean;
+function NoteToFile(note : PNoteInfo; filename : String) : boolean;
+var
+   f : TStringList;
+   ok : boolean;
+begin
+   debugln('Note to file ' + note^.ID + ' into ' + filename );
+
+   ok:=false;
+
+   f := TStringList.Create;
+
+   f.Add('<?xml version="1.0" encoding="utf-8"?>');
+   f.Add('<note version="' + note^.Version + '">');
+   f.Add('<title>' + note^.Title + '</title>');
+   f.Add('<create-date>' + note^.CreateDate + '</create-date>');
+   f.Add('<last-change-date>' + note^.LastChange + '</last-change-date>');
+   f.Add('<last-metadata-change-date>' + note^.LastMetaChange + '</last-metadata-change-date>');
+   f.Add('<width>' + IntToStr(note^.Width) + '</width>');
+   f.Add('<height>' + IntToStr(note^.Height) + '</height>');
+   f.Add('<x>' + IntToStr(note^.X) + '</x>');
+   f.Add('<y>' + IntToStr(note^.Y) + '</y>');
+   f.Add('<selection-bound-position>' + IntToStr(note^.SelectBoundPosition) + '</selection-bound-position>');
+   f.Add('<cursor-position>' + IntToStr(note^.CursorPosition) + '</cursor-position>');
+   f.Add('<pinned>' + BoolToStr(note^.Pinned) + '</pinned>');
+   f.Add('<open-on-startup>' + BoolToStr(note^.OpenOnStartup) + '</open-on-startup>');
+   f.Add('<text xml:space="preserve"><note-content version="' + note^.Version + '">' + note^.Content + '</note-content></text> ');
+   f.Add('</note>');
+
+   f.LineBreak := sLineBreak;
+
+   try
+      f.SaveToFile(filename);
+      ok :=true;
+   except on E:Exception do debugln(E.message);
+   end;
+
+   f.Free;
+
+   result := ok;
+end;
+
+procedure FileToNote(filename : String; NoteInfo : PNoteInfo);
 var
     Doc : TXMLDocument;
     Node : TDOMNode;
     NodeList : TDOMNodeList;
     j : integer;
 begin
-   debugln('File to note '+xml);
+   debugln('File to note '+filename);
      try
-        ReadXMLFile(Doc, xml);
-     except on E:Exception do begin debugln(E.message); exit(false); end;
+        ReadXMLFile(Doc, filename);
+     except on E:Exception do
+        begin
+          debugln(E.message);
+          NoteInfo^.Error := E.message;
+          NoteInfo^.Action:= SynClash;
+          exit();
+        end;
      end;
 
      NoteInfo^.Tags := TStringList.Create;
@@ -595,7 +646,7 @@ begin
              Node := Node.FindNode('note-content').Attributes.GetNamedItem('version');
              if(Assigned(Node)) then NoteInfo^.Version := Node.NodeValue;
         end
-        else debugln('empty note');
+        else debugln('No text');
 
         debugln('Looking for tags');
         Node := Doc.DocumentElement.FindNode('tags');
@@ -608,16 +659,19 @@ begin
                 NoteInfo^.Tags.Add(NodeList.Item[j].TextContent);
                end;
         end
-        else debugln('empty note');
+        else debugln('No tags');
 
-        //NoteInfo^.Source := Doc.ToString;
         NoteInfo^.Deleted := false;
 
-     except on E:Exception do begin Doc.Free; debugln(E.message); exit(false); end;
+     except on E:Exception do
+        begin
+          NoteInfo^.Error := E.Message;
+          NoteInfo^.Action:= SynClash;
+          debugln(E.message);
+        end;
      end;
 
      Doc.Free;
-     Result := true;
 end;
 
 
@@ -942,6 +996,7 @@ var
   res : TStringStream;
   i : integer;
   handler : TRSockecktHandler;
+  auth : String;
 begin
 
   Client := TFPHttpClient.Create(nil);
@@ -952,14 +1007,21 @@ begin
   res := TStringStream.Create('');
 
   i:=0;
+  auth :='';
   while(i<params.Count) do begin
-    if(i=0) then u := u + '?' else u := u + '&';
-    u := u + URLEncode(params[i]) + '=' + URLEncode(params[i+1]);
+    auth := auth + ',' + params[i] + '="' + URLEncode(params[i+1]) + '"';
     i := i +2;
   end;
 
+  auth := 'OAuth realm="Snowy"'+auth;
+  debugln('Adding headers : '+auth);
+
+  Client.AddHeader('Authorization',auth);
+  Client.AddHeader('content-type', 'application/json');
+  Client.RequestBody := TStringStream.Create(data);
+
   try
-    Client.FormPost(u,data,res);
+    Client.HTTPMethod('PUT',u,res,[]);
     Result := res.DataString;
   except on E:Exception do begin
     ShowMessage(E.message);
@@ -1055,9 +1117,6 @@ begin
   // Key
   p.Add('oauth_consumer_key');
   p.Add(Key);
-  // callbackUrl
-  p.Add('oauth_callback');
-  p.Add(OAuthCallbackUrl);
   // Token
   if(length(Token)>0) then begin
 	p.Add('oauth_token');
@@ -1220,15 +1279,38 @@ begin
   exit(false);
 end;
 
+function SyncActionName(Act: TSyncAction): string;
+begin
+    Result := ' Unknown ';
+    case Act of
+        SynUnset : Result := rsUndecided;
+        SynNothing : Result := rsDoNothing;
+        SynUploadNew  : Result := rsNewUploads;   // we differentiate in case of a write to remote fail.
+        SynUpLoadEdit : Result := rsEditUploads;
+        SynDownloadNew: Result := rsNewDownloads;
+        SynDownloadEdit: Result := rsEditDownloads;
+        SynCopy: Result := rsSynCopies;
+        SynDeleteLocal  : Result := rsLocalDeletes;
+        SynDeleteRemote : Result := rsRemoteDeletes;
+        SynError : Result := ' ** ERROR **';
+        SynAllLocal : Result := ' AllLocal ';
+        SynAllCopy : Result := ' AllCopy ';
+        SynAllRemote : Result := ' AllRemote ';
+        SynAllNewest : Result := ' AllNewest ';
+        SynAllOldest : Result := ' AllOldest ';
+    end;
+    while length(result) < 15 do Result := Result + ' ';
+end;
+
 
 { ========= TNoteInfoList ========= }
 
-function CopyNote(A : PNoteInfo) : PNoteInfo;
+procedure CopyNote(A : PNoteInfo; c : PNoteInfo);
 var
-   c : PNoteInfo;
    i : integer;
 begin
-  new(c);
+
+  debugln('Copy note '+A^.ID);
 
   c^.ID := A^.ID;
   c^.CreateDate := A^.CreateDate;
@@ -1253,12 +1335,14 @@ begin
   c^.X := A^.X;
   c^.Y := A^.Y;
   c^.X := A^.X;
-  if(A^.Tags = nil) then A^.Tags := TStringList.Create;
+
+  if(not assigned(A^.Tags)) then A^.Tags := TStringList.Create;
   c^.Tags := TStringList.Create;
   for i:=0 to A^.Tags.Count -1 do c^.Tags.Add(A^.Tags.Strings[i]);
+
   c^.Error := A^.Error;
   c^.Deleted := A^.Deleted;
-  result := c;
+
 end;
 
 function TNoteInfoList.Add(ANote : PNoteInfo) : integer;
@@ -1282,29 +1366,6 @@ begin
     end;
 end;
 
-function TNoteInfoList.ActionName(Act: TSyncAction): string;
-begin
-    Result := ' Unknown ';
-    case Act of
-        SynUnset : Result := rsUndecided;
-        SynNothing : Result := rsDoNothing;
-        SynUploadNew  : Result := rsNewUploads;   // we differentiate in case of a write to remote fail.
-        SynUpLoadEdit : Result := rsEditUploads;
-        SynDownloadNew: Result := rsNewDownloads;
-        SynDownloadEdit: Result := rsEditDownloads;
-        SynCopy: Result := rsSynCopies;
-        SynDeleteLocal  : Result := rsLocalDeletes;
-        SynDeleteRemote : Result := rsRemoteDeletes;
-        SynError : Result := ' ** ERROR **';
-        SynAllLocal : Result := ' AllLocal ';
-        SynAllCopy : Result := ' AllCopy ';
-        SynAllRemote : Result := ' AllRemote ';
-        SynAllNewest : Result := ' AllNewest ';
-        SynAllOldest : Result := ' AllOldest ';
-    end;
-    while length(result) < 15 do Result := Result + ' ';
-end;
-
 destructor TNoteInfoList.Destroy;
 var
 I : integer;
@@ -1314,7 +1375,7 @@ begin
   begin
        //debugln('Destroy NoteInfoList FreeAndNil '+IntToStr(I) + ' ID='+Items[I]^.ID);
        //Items[I]^.tags.Free;
-       //debugln('Destroy NoteInfoList Disposed '+IntToStr(I));
+       debugln('Destroy NoteInfoList Disposing '+IntToStr(I)+' '+Items[I]^.ID);
        dispose(Items[I]);
   end;
   debugln('Destroy NoteInfoList '+LName+' done');

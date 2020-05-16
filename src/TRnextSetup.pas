@@ -187,6 +187,9 @@ begin
         SetupStatus.Caption := 'OAuth: Getting Request Token';
         p := TStringList.Create();
         OauthBaseParams(p,Key);
+        // callbackUrl
+        p.Add('oauth_callback');
+        p.Add(OAuthCallbackUrl);
         OauthParamsSort(p);
         OauthSign(requestTokenUrl, 'POST', p, Key, '');
         res := WebPost(requestTokenUrl,p);

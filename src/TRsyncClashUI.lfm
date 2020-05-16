@@ -7,14 +7,15 @@ object FormClash: TFormClash
   Caption = 'A Note Sync Clash has been Detected'
   ClientHeight = 489
   ClientWidth = 645
+  OnShow = FormShow
   LCLVersion = '2.0.8.0'
   object Label1: TLabel
     AnchorSideLeft.Control = Button1
     AnchorSideLeft.Side = asrBottom
     AnchorSideTop.Control = Button1
-    AnchorSideRight.Control = ButtAllRemote
+    AnchorSideRight.Control = ButtAllLocal
     AnchorSideBottom.Control = ButtAllRemote
-    Left = 346
+    Left = 342
     Height = 30
     Top = 431
     Width = 119
@@ -44,10 +45,10 @@ object FormClash: TFormClash
     AnchorSideRight.Control = ButtAllOldest
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 473
+    Left = 471
     Height = 25
     Top = 454
-    Width = 75
+    Width = 77
     Anchors = [akRight, akBottom]
     BorderSpacing.Right = 10
     BorderSpacing.Bottom = 10
@@ -56,42 +57,41 @@ object FormClash: TFormClash
     TabOrder = 1
   end
   object ButtAllLocal: TButton
-    AnchorSideRight.Control = Owner
-    AnchorSideRight.Side = asrBottom
+    AnchorSideRight.Control = ButtAllRemote
     AnchorSideBottom.Control = ButtAllOldest
-    Left = 560
+    Left = 471
     Height = 25
-    Top = 424
-    Width = 75
+    Top = 419
+    Width = 77
     Anchors = [akRight, akBottom]
     BorderSpacing.Right = 10
-    BorderSpacing.Bottom = 5
+    BorderSpacing.Bottom = 10
     Caption = 'Local'
     ModalResult = 9
     TabOrder = 2
   end
   object ButtAllRemote: TButton
-    AnchorSideRight.Control = ButtAllLocal
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = ButtAllNewest
-    Left = 475
+    Left = 558
     Height = 25
-    Top = 424
-    Width = 75
+    Top = 418
+    Width = 77
     Anchors = [akRight, akBottom]
     BorderSpacing.Right = 10
-    BorderSpacing.Bottom = 5
+    BorderSpacing.Bottom = 11
     Caption = 'Remote'
     ModalResult = 10
     TabOrder = 3
   end
   object BitBtnUseLocal: TBitBtn
-    AnchorSideLeft.Control = BitBtnUseRemote
-    AnchorSideLeft.Side = asrBottom
+    AnchorSideLeft.Control = Owner
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 115
+    Left = 10
     Height = 38
     Top = 431
     Width = 90
@@ -104,11 +104,12 @@ object FormClash: TFormClash
     TabOrder = 4
   end
   object BitBtnUseRemote: TBitBtn
-    AnchorSideLeft.Control = Owner
+    AnchorSideLeft.Control = BitBtnUseLocal
+    AnchorSideLeft.Side = asrBottom
     AnchorSideRight.Control = BitBtnUseLocal
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 15
+    Left = 115
     Height = 38
     Top = 431
     Width = 90
@@ -121,7 +122,7 @@ object FormClash: TFormClash
     TabOrder = 5
   end
   object Button1: TButton
-    AnchorSideLeft.Control = BitBtnUseLocal
+    AnchorSideLeft.Control = BitBtnUseRemote
     AnchorSideLeft.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
