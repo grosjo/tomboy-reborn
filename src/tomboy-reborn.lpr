@@ -3,10 +3,6 @@ program Tomboy_Reborn;
 {$mode objfpc}{$H+}
 
 uses
-    {$DEFINE UseCThreads}
-    {$IFDEF UNIX}{$IFDEF UseCThreads}
-    cthreads,
-    {$ENDIF}{$ENDIF}
     Interfaces, Classes, Forms, SysUtils, StdCtrls, LazFileUtils, LazLogger,
     ExtCtrls,
     TRcommon, TRtexts , TRsearchUnit, TRsettings;

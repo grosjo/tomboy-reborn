@@ -119,7 +119,7 @@ uses
     LazFileUtils,
     TRsettings,		// Manages settings.
     TRsync,
-    TRnoteEdit,
+    TRnoteEdit, TRabout,
     process,        // Linux, we call wmctrl to move note to current workspace
     NoteBook;
 
@@ -249,6 +249,8 @@ begin
     // Help / About
     m2 := TMenuItem.Create(m1);
     m2.Caption := rsMenuAbout;
+    m2.Tag := ord(mtAbout);
+    m2.OnClick := @MainMenuClicked;
     m1.Add(m2);
 
 
@@ -389,6 +391,7 @@ procedure TFormSearch.TrayMenuClicked(Sender : TObject);
 var
     FormSettings : TSettings;
     FormSync : TFormSync;
+    FormAbout : TFormAbout;
 begin
 
    TRlog('TrayMenuClicked');
@@ -424,6 +427,7 @@ begin
             else ShowMessage(rsSetupSyncFirst);
             syncshallrun := true;
           end;
+        ttAbout : Begin FormAbout := TFormAbout.Create(self); FormAbout.ShowModal; FreeAndNil(FormAbout); end;
         ttSearch : begin Show(); end;
         ttQuit : begin ConfigWrite('TrayMenu Quit'); Application.terminate; end;
 
@@ -442,6 +446,7 @@ procedure TFormSearch.MainMenuClicked(Sender : TObject);
 var
     FormSettings : TSettings;
     FormSync : TFormSync;
+    FormAbout : TFormAbout;
 begin
 
    //type TMenuTags = (mtNewNote, mtNewTemplate, mtQuit, mtSync, mtExport, mtSettings, mtAbout);
@@ -469,6 +474,7 @@ begin
             end
             else ShowMessage(rsSetupSyncFirst);
             end;
+        mtAbout : Begin FormAbout := TFormAbout.Create(self); FormAbout.ShowModal; FreeAndNil(FormAbout); end;
         mtQuit : begin ConfigWrite('MainMenu QUit'); Application.terminate; end;
    end;
 end;
