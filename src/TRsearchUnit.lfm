@@ -8,6 +8,7 @@ object FormSearch: TFormSearch
   ClientHeight = 446
   ClientWidth = 824
   Menu = MainMenu
+  OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnKeyDown = FormKeyDown

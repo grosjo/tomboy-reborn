@@ -124,6 +124,7 @@ function RemoveXml(const St : String) : String;
 procedure CopyNote(A : PNoteInfo; c : PNoteInfo);
 function NoteContains(const TermList: TStringList; N : PNoteInfo ; CaseSensitive : boolean = false): boolean;
 function NoteBelongs(const notebook : String ; N : PNoteInfo ): boolean;
+function NoteTimeOrder(Item1: Pointer;Item2: Pointer):Integer;
 
 // Font
 function GetDefaultFixedFont() : string;
@@ -176,11 +177,13 @@ var
     SyncClashOption : TSyncClashOption;
 
     SyncFileRepo, SyncNCurl, SyncNCKey, SyncNCToken, SyncNCSecret : String;
-    SyncRepeat : integer;
+    SyncRepeat,LastUsedNB : integer;
 
     DictLibrary, DictPath, DictFile : String;
 
     BackGndColour, TextColour, HiColour, TitleColour : TColor;
+
+    LastUsed: TStringList; // Latest used notes
 
     mainWindow : TForm;
 
@@ -249,14 +252,14 @@ begin
     {$IFDEF DARWIN}
     // try the correct place first, if not there, lets try the old, wrong place
     // if at neither, we go back to correct place.
-    Result := GetEnvironmentVariable('HOME') + '/Library/Application Support/Tomboy-ng/Notes/';
+    Result := GetEnvironmentVariable('HOME') + '/Library/Application Support/TomboyReborn/Notes/';
     if DirectoryExistsUTF8(Result) then exit;
-    Result := GetEnvironmentVariable('HOME') + '/.local/share/tomboy-reborn/';
+    Result := GetEnvironmentVariable('HOME') + '/.local/share/TomboyReborn/';
     if not DirectoryExistsUTF8(Result) then
-        Result := GetEnvironmentVariable('HOME') + '/Library/Application Support/Tomboy-ng/Notes/';
+        Result := GetEnvironmentVariable('HOME') + '/Library/Application Support/TomboyReborn/Notes/';
     {$ENDIF}
     {$IFDEF WINDOWS}
-    Result := GetEnvironmentVariable('APPDATA') + '\tomboy-reborn\notes\';
+    Result := GetEnvironmentVariable('APPDATA') + '\TomboyReborn\notes\';
     // %APPDATA%\Tomboy\notes\
     {$ENDIF}
     ForceDirectoriesUTF8(Result);
@@ -290,6 +293,7 @@ end;
 function ConfigWrite(source : String) : boolean;
 var
     f : TINIFile;
+    i : integer;
     autos : TAutoStartCtrl;
 begin
     Result := True;
@@ -307,7 +311,6 @@ begin
     f.writestring('Basic', 'NotesDir', NotesDir);
 
     f.writestring('Basic', 'ManyNotebooks', BoolToStr(ManyNoteBooks, true) );
-    //f.writestring('Basic', 'CaseSensitive', BoolToStr(SearchCaseSensitive, true));
     f.writestring('Basic', 'ShowIntLinks', BoolToStr(ShowIntLinks, true));
     f.writestring('Basic', 'ShowExtLinks', BoolToStr(ShowExtLinks, true));
     f.WriteString('Basic', 'Autostart', BoolToStr(Autostart, true));
@@ -352,6 +355,14 @@ begin
     f.writestring('Spelling', 'DictPath', DictPath);
     f.writestring('Spelling', 'DictFile', DictFile);
 
+    f.writestring('UI', 'LastUsed', IntToStr(LastUsedNB));
+    i:=0;
+    while((i<LastUsedNB) and (i<LastUsed.Count)) do
+    begin
+         f.writestring('UI', 'Latest'+IntToStr(i), LastUsed.Strings[i]);
+         inc(i);
+    end;
+
     f.Free;
 
     autos := TAutoStartCtrl.Create('tomboy-reborn', AutoStart);
@@ -365,6 +376,8 @@ end;
 function ConfigRead(source : String) : integer;
 var
     f : TINIFile;
+    i : integer;
+    s : String;
 begin
 
     TRlog('ConfigRead(' + source + ')');
@@ -383,7 +396,6 @@ begin
        NotesDir:= f.readstring('Basic', 'NotesDir', GetDefaultNotesDir());
 
        ManyNoteBooks        := StrToBool(f.readstring('Basic', 'ManyNotebooks', 'false'));
-       //SearchCaseSensitive  := StrToBool(f.readstring('Basic', 'CaseSensitive', 'false'));
        ShowIntLinks         := StrToBool(f.readstring('Basic', 'ShowIntLinks', 'true'));
        ShowExtLinks         := StrToBool(f.readstring('Basic', 'ShowExtLinks', 'true'));
        Autostart            := StrToBool(f.readstring('Basic', 'Autostart', 'false'));
@@ -411,7 +423,7 @@ begin
               'MakeCopy'  : SyncClashOption := TSyncClashOption.MakeCopy;
          end;
 
-         TRlog('READSYNCTYPE = '+f.ReadString('Sync', 'Type','none'));
+         //TRlog('READSYNCTYPE = '+f.ReadString('Sync', 'Type','none'));
 
          SyncType         := TSyncTransport.SyncNone;
          case f.ReadString('Sync', 'Type','none') of
@@ -430,7 +442,16 @@ begin
          DictFile         := f.ReadString('Spelling', 'DictFile', DictFile);
          DictPath         := AppendPathDelim(ChompPathDelim(DictPath));
 
-         f.free;
+         LastUsedNB       := StrToInt(f.ReadString('UI', 'LastUsed', '10'));
+         i:=0; LastUsed.Clear;
+         while(i<LastUsedNB) do
+         begin
+              s := f.ReadString('UI', 'Latest'+IntToStr(i), '');
+              if(length(s)>0) then LastUsed.Add(Trim(s));
+              inc(i);
+         end;
+
+         FreeAndNil(f);
 
          Result:= 1;
 
@@ -442,7 +463,6 @@ begin
         ShowIntLinks := true;
         ShowExtLinks := true;
         ManyNoteBooks := false;
-        //SearchCaseSensitive := false;
         Autostart := true;
         SearchAtStart := false;
 
@@ -470,6 +490,9 @@ begin
         HiColour := clYellow;
         TextColour := clBlack;
         TitleColour := clBlue;
+
+        LastUsedNB :=10;
+        LastUsed.Clear;
 
         ConfigWrite('CheckConfigFile');
 
@@ -603,7 +626,7 @@ begin
 
    f.Add('<?xml version="1.0" encoding="utf-8"?>');
    f.Add('<note version="' + note^.Version + '">');
-   f.Add('<title>' + note^.Title + '</title>');
+   f.Add('<title>' + RemoveBadXMLCharacters(note^.Title) + '</title>');
    f.Add('<create-date>' + note^.CreateDate + '</create-date>');
    f.Add('<last-change-date>' + note^.LastChange + '</last-change-date>');
    f.Add('<last-metadata-change-date>' + note^.LastMetaChange + '</last-metadata-change-date>');
@@ -615,7 +638,7 @@ begin
    f.Add('<cursor-position>' + IntToStr(note^.CursorPosition) + '</cursor-position>');
    f.Add('<pinned>' + BoolToStr(note^.Pinned) + '</pinned>');
    f.Add('<open-on-startup>' + BoolToStr(note^.OpenOnStartup) + '</open-on-startup>');
-   f.Add('<text xml:space="preserve"><note-content version="' + note^.Version + '">' + note^.Content + '</note-content></text>');
+   f.Add('<text xml:space="preserve"><note-content version="' + note^.Version + '">' + RemoveBadXMLCharacters(note^.Content) + '</note-content></text>');
    f.Add('</note>');
 
    f.LineBreak := sLineBreak;
@@ -637,32 +660,33 @@ var
     Node : TDOMNode;
     NodeList : TDOMNodeList;
     j : integer;
+    xmlfile : String ;
 begin
-   TRlog('File to note '+filename);
+  xmlfile := Trim(filename);
+   TRlog('File to note '+xmlfile);
 
    try
-        ReadXMLFile(Doc, filename);
+        ReadXMLFile(Doc, Trim(xmlfile));
    except on E:Exception do
         begin
+          TRlog('File to note ERROR '+filename);
           TRlog(E.message);
           NoteInfo^.Error := E.message;
           NoteInfo^.Action:= SynClash;
+          FreeAndNil(Doc);
           exit();
         end;
    end;
 
-   //FreeAndNil(NoteInfo^.Tags);
-
    NoteInfo^.Tags := TStringList.Create;
 
      try
-        //TRlog('Looking for create date');
         Node := Doc.DocumentElement.FindNode('create-date');
         NoteInfo^.CreateDate := '';
         if(assigned(Node)) then NoteInfo^.CreateDate := Node.FirstChild.NodeValue;
         if NoteInfo^.CreateDate = '' then NoteInfo^.CreateDate := GetCurrentTimeStr();
         NoteInfo^.CreateDateGMT := GetGMTFromStr(NoteInfo^.CreateDate);
-        //TRlog('Found ' + NoteInfo^.CreateDate);
+        if(assigned(Node)) then Node.Free;
 
         //TRlog('Looking for last-change-date');
         Node := Doc.DocumentElement.FindNode('last-change-date');
@@ -671,6 +695,7 @@ begin
         if NoteInfo^.LastChange = '' then NoteInfo^.LastChange := GetCurrentTimeStr();
         NoteInfo^.LastChangeGMT := GetGMTFromStr(NoteInfo^.LastChange);
         //TRlog('Found ' + NoteInfo^.LastChange);
+        if(assigned(Node)) then Node.Free;
 
         //TRlog('Looking for last-metadata-change-date');
         Node := Doc.DocumentElement.FindNode('last-metadata-change-date');
@@ -679,60 +704,70 @@ begin
         if NoteInfo^.LastMetaChange = '' then NoteInfo^.LastMetaChange := GetCurrentTimeStr();
         NoteInfo^.LastMetaChangeGMT := GetGMTFromStr(NoteInfo^.LastMetaChange);
         //TRlog('Found ' + NoteInfo^.LastMetaChange);
+        if(assigned(Node)) then Node.Free;
 
         //TRlog('Looking for title');
         Node := Doc.DocumentElement.FindNode('title');
         if(assigned(Node)) then NoteInfo^.Title := Node.FirstChild.NodeValue
         else NoteInfo^.Title := 'Note ' + NoteInfo^.ID;
         //TRlog('Found ' + NoteInfo^.Title);
+        if(assigned(Node)) then Node.Free;
 
         //TRlog('Looking for cursor-position');
         Node := Doc.DocumentElement.FindNode('cursor-position');
         NoteInfo^.CursorPosition := 0;
         if(assigned(Node)) then NoteInfo^.CursorPosition := StrToInt(Node.FirstChild.NodeValue);
         //TRlog('Found '+ IntToStr(NoteInfo^.CursorPosition));
+        if(assigned(Node)) then Node.Free;
 
         //TRlog('Looking for selection-bound-position');
         Node := Doc.DocumentElement.FindNode('selection-bound-position');
         NoteInfo^.SelectBoundPosition := 0;
         if(assigned(Node)) then NoteInfo^.SelectBoundPosition := StrToInt(Node.FirstChild.NodeValue);
         //TRlog('Found '+ IntToStr(NoteInfo^.SelectBoundPosition));
+        if(assigned(Node)) then Node.Free;
 
         //TRlog('Looking for width');
         Node := Doc.DocumentElement.FindNode('width');
         NoteInfo^.Width := 0;
         if(assigned(Node)) then NoteInfo^.Width := StrToInt(Node.FirstChild.NodeValue);
         //TRlog('Found '+ IntToStr(NoteInfo^.Width));
+        if(assigned(Node)) then Node.Free;
 
         //TRlog('Looking for height');
         Node := Doc.DocumentElement.FindNode('height');
         NoteInfo^.Width := 0;
         if(assigned(Node)) then NoteInfo^.Width := StrToInt(Node.FirstChild.NodeValue);
         //TRlog('Found '+ IntToStr(NoteInfo^.Height));
+        if(assigned(Node)) then Node.Free;
 
         //TRlog('Looking for X');
         Node := Doc.DocumentElement.FindNode('x');
         NoteInfo^.X := 0;
         if(assigned(Node)) then NoteInfo^.X := StrToInt(Node.FirstChild.NodeValue);
         //TRlog('Found '+ IntToStr(NoteInfo^.X));
+        if(assigned(Node)) then Node.Free;
 
         //TRlog('Looking for Y');
         Node := Doc.DocumentElement.FindNode('y');
         NoteInfo^.Y := 0;
         if(assigned(Node)) then NoteInfo^.Y := StrToInt(Node.FirstChild.NodeValue);
         //TRlog('Found '+ IntToStr(NoteInfo^.Y));
+        if(assigned(Node)) then Node.Free;
 
         //TRlog('Looking for open-on-startup');
         Node := Doc.DocumentElement.FindNode('open-on-startup');
         NoteInfo^.OpenOnStartup := false;
         if(assigned(Node)) then NoteInfo^.OpenOnStartup := StrToBool(Node.FirstChild.NodeValue);
         //TRlog('Found '+ BoolToStr(NoteInfo^.OpenOnStartup, true));
+        if(assigned(Node)) then Node.Free;
 
         //TRlog('Looking for pinned');
         Node := Doc.DocumentElement.FindNode('pinned');
         NoteInfo^.Pinned := false;
         if(assigned(Node)) then NoteInfo^.Pinned := StrToBool(Node.FirstChild.NodeValue);
         //TRlog('Found '+ BoolToStr(NoteInfo^.Pinned, true));
+        if(assigned(Node)) then Node.Free;
 
         //TRlog('Looking for text');
         Node := Doc.DocumentElement.FindNode('text');
@@ -745,6 +780,8 @@ begin
              if(Assigned(Node)) then NoteInfo^.Version := Node.NodeValue;
         end
         else TRlog('No text');
+
+        if(assigned(Node)) then Node.Free;
 
         //TRlog('Looking for tags');
         Node := Doc.DocumentElement.FindNode('tags');
@@ -760,19 +797,46 @@ begin
         //else TRlog('No tags')
         ;
 
+        if(assigned(Node)) then Node.Free;
+
+
+
         NoteInfo^.Deleted := false;
 
      except on E:Exception do
         begin
+         TRlog('File to note ERROR2 '+filename);
+
           NoteInfo^.Error := E.Message;
           NoteInfo^.Action:= SynClash;
           TRlog(E.message);
         end;
      end;
 
-     Doc.Free;
+     FreeAndNil(Doc);
+     TRlog('File to note DONE '+filename);
+
 end;
 
+function NoteTimeOrder(Item1: Pointer;Item2: Pointer):Integer;
+var
+    n1,n2 : PNoteInfo;
+    d1,d2 : TDateTime;
+begin
+
+  n1 := PNoteInfo(Item1);
+  n2 := PNoteInfo(Item2);
+
+  d1 := n1^.LastChangeGMT; if (d1 = 0) then d1 := n1^.CreateDateGMT;
+  d2 := n2^.LastChangeGMT; if (d2 = 0) then d2 := n2^.CreateDateGMT;
+
+  if(d1<d2) then exit(-1);
+  if(d1>d2) then exit(1);
+
+  Result := 0;
+end;
+
+{ ===== XML ===== }
 
 function RemoveXml(const St : String) : String;
 var

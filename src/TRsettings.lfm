@@ -270,15 +270,16 @@ object Settings: TSettings
         TabOrder = 5
       end
       object CheckAutostart: TCheckBox
-        AnchorSideBottom.Control = GroupBox5
-        Left = 264
+        AnchorSideBottom.Control = CheckShowSearchAtStart
+        AnchorSideBottom.Side = asrCenter
+        Left = 224
         Height = 23
-        Top = 136
+        Top = 145
         Width = 129
         Anchors = [akBottom]
         BorderSpacing.Left = 15
         BorderSpacing.Top = 15
-        BorderSpacing.Bottom = 25
+        BorderSpacing.Bottom = 15
         Caption = 'Autostart at Logon'
         OnChange = CheckAutostartChange
         TabOrder = 6
@@ -305,15 +306,50 @@ object Settings: TSettings
         AnchorSideBottom.Control = GroupBox5
         Left = 25
         Height = 23
-        Top = 136
+        Top = 146
         Width = 142
         Anchors = [akLeft, akBottom]
         BorderSpacing.Left = 25
         BorderSpacing.Top = 24
-        BorderSpacing.Bottom = 25
+        BorderSpacing.Bottom = 15
         Caption = 'Show Search at Start'
         OnChange = CheckShowSearchAtStartChange
         TabOrder = 8
+      end
+      object Label11: TLabel
+        AnchorSideBottom.Control = CheckAutostart
+        AnchorSideBottom.Side = asrCenter
+        Left = 400
+        Height = 15
+        Top = 148
+        Width = 62
+        Anchors = [akBottom]
+        BorderSpacing.Bottom = 15
+        Caption = 'Last used : '
+        ParentColor = False
+      end
+      object LastUsedMax: TEdit
+        AnchorSideBottom.Control = CheckAutostart
+        AnchorSideBottom.Side = asrCenter
+        Left = 472
+        Height = 28
+        Top = 142
+        Width = 41
+        Anchors = [akBottom]
+        OnChange = LastUsedMaxChange
+        TabOrder = 9
+        Text = 'LastUsedMax'
+      end
+      object Label14: TLabel
+        AnchorSideBottom.Control = CheckAutostart
+        AnchorSideBottom.Side = asrCenter
+        Left = 528
+        Height = 15
+        Top = 148
+        Width = 31
+        Anchors = [akLeft, akBottom]
+        Caption = 'notes'
+        ParentColor = False
       end
     end
     object TabSync: TTabSheet

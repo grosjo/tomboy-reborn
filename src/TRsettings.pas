@@ -23,8 +23,11 @@ type
           ButtonSetColours: TButton;
           ButtonNCSetup: TSpeedButton;
 	  CheckBoxAutoSync: TCheckBox;
+          Label14: TLabel;
+          LastUsedMax: TEdit;
           GroupBox2: TGroupBox;
           Label10: TLabel;
+          Label11: TLabel;
           LabelPath: TLabel;
           Label16: TLabel;
           EditTimerSync: TEdit;
@@ -108,6 +111,7 @@ type
         procedure FormDestroy(Sender: TObject);
         procedure FormHide(Sender: TObject);
         procedure FormShow(Sender: TObject);
+        procedure LastUsedMaxChange(Sender: TObject);
         procedure ListBoxDicClick(Sender: TObject);
 	procedure RadioConflictChange(Sender: TObject);
         procedure RadioFontBigChange(Sender: TObject);
@@ -377,6 +381,23 @@ begin
      LoadSettings();
 end;
 
+procedure TSettings.LastUsedMaxChange(Sender: TObject);
+begin
+  TRlog('LastUsedMaxChange');
+
+   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
+
+   try
+      LastUsedNB := StrToInt(LastUsedMax.Caption);
+   except on E:Exception do
+      begin
+         TRlog(E.message);
+         LastUsedNB := 10;
+         LastUsedMax.Caption := '10';
+      end;
+   end;
+end;
+
 procedure TSettings.RadioConflictChange(Sender: TObject);
 begin
    TRlog('RadioConflictChange');
@@ -521,7 +542,10 @@ begin
      FontSmall   : RadioFontSmall.Checked := true;
   end;
 
+  LastUsedMax.Caption:= IntToStr(LastUsedNB);
+
   CheckBoxAutoSync.Checked := (SyncRepeat>0);
+  if(SyncRepeat>0) then EditTimerSync.Caption:= IntToStr(SyncRepeat);
 
   case SyncClashOption  of
      TSyncClashOption.AlwaysAsk   : RadioAlwaysAsk.Checked  := true;

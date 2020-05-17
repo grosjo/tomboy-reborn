@@ -56,7 +56,6 @@ RESOURCESTRING
   rsTrayNotebooks = 'Notebooks';
   rsTraySearchNote = 'Search all notes';
   rsTraySync = 'Synchronize';
-  rsTrayApplication = 'Application';
   rsTraySettings = 'Settings';
   rsTrayAbout = 'About';
   rsTrayQuit = 'Quit';

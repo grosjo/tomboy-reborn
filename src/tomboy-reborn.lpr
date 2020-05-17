@@ -53,6 +53,8 @@ begin
        exit();
     end;
 
+    LastUsed := TStringList.Create;
+
     case ConfigRead('main') of
         -1 : begin
 	     debugln('Error reading config');
@@ -75,5 +77,9 @@ begin
     Application.CreateForm(TFormSearch, mainWindow);
 
     Application.Run;
+
+    LastUsed.Free;
+
+    TRlog('End of LPR');
 end.
 
