@@ -1,13 +1,13 @@
 object FormSearch: TFormSearch
   Left = 941
-  Height = 439
+  Height = 446
   Top = 520
   Width = 824
   ActiveControl = SearchBox
   Caption = 'Tomboy Reborn Search'
-  ClientHeight = 439
+  ClientHeight = 446
   ClientWidth = 824
-  OnCloseQuery = FormCloseQuery
+  Menu = MainMenu
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnKeyDown = FormKeyDown
@@ -16,67 +16,46 @@ object FormSearch: TFormSearch
   object SearchBox: TEdit
     AnchorSideLeft.Control = Label1
     AnchorSideLeft.Side = asrBottom
-    AnchorSideTop.Control = ButtonRefresh
+    AnchorSideTop.Control = CheckCaseSensitive
+    AnchorSideTop.Side = asrCenter
     AnchorSideRight.Control = CheckCaseSensitive
-    AnchorSideBottom.Control = ButtonRefresh
+    AnchorSideBottom.Control = Panel1
     AnchorSideBottom.Side = asrBottom
-    Left = 78
-    Height = 32
-    Top = 3
-    Width = 561
-    Anchors = [akTop, akLeft, akRight, akBottom]
-    BorderSpacing.Left = 8
-    BorderSpacing.Right = 7
-    OnEnter = SearchBoxEnter
-    OnExit = SearchBoxExit
-    OnKeyDown = FormKeyDown
-    OnKeyUp = SearchBoxKeyUp
+    Left = 80
+    Height = 28
+    Top = 7
+    Width = 617
+    Anchors = [akTop, akLeft, akRight]
+    BorderSpacing.Left = 10
+    BorderSpacing.Right = 10
+    OnChange = SearchBoxChange
     ParentShowHint = False
     ShowHint = True
     TabOrder = 0
   end
-  object ButtonRefresh: TButton
-    AnchorSideTop.Control = Owner
-    AnchorSideRight.Control = Owner
-    AnchorSideRight.Side = asrBottom
-    Left = 760
-    Height = 32
-    Hint = 'Update Search Results'
-    Top = 3
-    Width = 61
-    Anchors = [akTop, akRight]
-    BorderSpacing.Top = 3
-    BorderSpacing.Right = 3
-    Caption = 'Refresh'
-    OnClick = ButtonRefreshClick
-    OnKeyDown = FormKeyDown
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 1
-  end
   object Panel1: TPanel
     AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = ButtonRefresh
+    AnchorSideTop.Control = SearchBox
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = StatusBar1
     Left = 0
-    Height = 385
+    Height = 392
     Top = 36
     Width = 824
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderSpacing.Top = 1
     Caption = 'Panel1'
-    ClientHeight = 385
+    ClientHeight = 392
     ClientWidth = 824
-    TabOrder = 2
+    TabOrder = 1
     object Splitter1: TSplitter
       AnchorSideTop.Control = Panel1
       AnchorSideBottom.Control = SGNotebooks
       AnchorSideBottom.Side = asrBottom
       Left = 184
-      Height = 373
+      Height = 380
       Top = 1
       Width = 5
       Align = alNone
@@ -84,16 +63,17 @@ object FormSearch: TFormSearch
     end
     object SGNotebooks: TStringGrid
       AnchorSideLeft.Control = Panel1
-      AnchorSideTop.Control = SGNotesList
+      AnchorSideTop.Control = Panel1
       AnchorSideRight.Control = Splitter1
       AnchorSideBottom.Control = Panel1
       AnchorSideBottom.Side = asrBottom
       Left = 11
-      Height = 362
-      Top = 12
+      Height = 370
+      Top = 11
       Width = 173
-      Anchors = [akLeft, akRight, akBottom]
+      Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Left = 10
+      BorderSpacing.Top = 10
       BorderSpacing.Bottom = 10
       Color = clDefault
       ColCount = 0
@@ -105,11 +85,12 @@ object FormSearch: TFormSearch
       ShowHint = True
       TabOrder = 1
       OnClick = SGNotebooksClick
+      OnDrawCell = SGNotebooksDrawCell
       OnKeyDown = FormKeyDown
       OnPrepareCanvas = SGNotebooksPrepareCanvas
       OnResize = SGNotebooksResize
     end
-    object SGNotesList: TStringGrid
+    object SGNotes: TStringGrid
       AnchorSideLeft.Control = Splitter1
       AnchorSideLeft.Side = asrBottom
       AnchorSideTop.Control = Panel1
@@ -118,13 +99,13 @@ object FormSearch: TFormSearch
       AnchorSideBottom.Control = SGNotebooks
       AnchorSideBottom.Side = asrBottom
       Left = 192
-      Height = 363
+      Height = 370
       Top = 11
-      Width = 628
-      Anchors = [akLeft, akRight, akBottom]
+      Width = 621
+      Anchors = [akTop, akLeft, akRight, akBottom]
       BorderSpacing.Left = 3
       BorderSpacing.Top = 10
-      BorderSpacing.Right = 3
+      BorderSpacing.Right = 10
       Color = clDefault
       ColCount = 0
       ColumnClickSorts = True
@@ -134,27 +115,30 @@ object FormSearch: TFormSearch
       RowCount = 0
       ScrollBars = ssAutoVertical
       TabOrder = 2
-      OnDblClick = SGNotesListDblClick
+      OnClick = SGNotesClick
+      OnDblClick = SGNotesDblClick
+      OnDrawCell = SGNotesDrawCell
       OnKeyDown = FormKeyDown
-      OnResize = SGNotesListResize
-      OnDrawCell = SGNotesListDraw
+      OnPrepareCanvas = SGNotesPrepareCanvas
+      OnResize = SGNotesResize
     end
   end
   object CheckCaseSensitive: TCheckBox
-    AnchorSideTop.Control = ButtonRefresh
-    AnchorSideRight.Control = ButtonRefresh
-    AnchorSideBottom.Control = ButtonRefresh
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Side = asrBottom
-    Left = 646
-    Height = 32
-    Top = 3
+    Left = 707
+    Height = 23
+    Top = 10
     Width = 107
-    Anchors = [akTop, akRight, akBottom]
-    BorderSpacing.Right = 7
+    Anchors = [akTop, akRight]
+    BorderSpacing.Top = 10
+    BorderSpacing.Right = 10
     Caption = 'Case Sensitive'
     OnChange = CheckCaseSensitiveChange
     ParentShowHint = False
-    TabOrder = 3
+    TabOrder = 2
   end
   object StatusBar1: TStatusBar
     AnchorSideLeft.Control = Owner
@@ -163,16 +147,17 @@ object FormSearch: TFormSearch
     AnchorSideBottom.Side = asrBottom
     Left = 0
     Height = 18
-    Top = 421
+    Top = 428
     Width = 824
     Panels = <>
   end
   object Label1: TLabel
     AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = Owner
+    AnchorSideTop.Control = CheckCaseSensitive
+    AnchorSideTop.Side = asrCenter
     Left = 10
     Height = 15
-    Top = 9
+    Top = 14
     Width = 60
     BorderSpacing.Left = 10
     BorderSpacing.Top = 9
@@ -182,6 +167,49 @@ object FormSearch: TFormSearch
     Font.Style = [fsBold]
     ParentColor = False
     ParentFont = False
+  end
+  object SGImage: TImage
+    Left = 0
+    Height = 0
+    Top = 0
+    Width = 0
+    Picture.Data = {
+      1754506F727461626C654E6574776F726B477261706869633F04000089504E47
+      0D0A1A0A0000000D494844520000012E000000CA080200000094803A34000000
+      097048597300000EC400000EC401952B0E1B0000000774494D4507D90A061314
+      1DC5F6069F0000000774455874417574686F7200A9AECC480000000C74455874
+      4465736372697074696F6E00130921230000000A74455874436F707972696768
+      7400AC0FCC3A0000000E744558744372656174696F6E2074696D650035F70F09
+      0000000974455874536F667477617265005D70FF3A0000000B74455874446973
+      636C61696D657200B7C0B48F00000008744558745761726E696E6700C01BE687
+      0000000774455874536F7572636500F5FF83EB0000000874455874436F6D6D65
+      6E7400F6CC96BF00000006744558745469746C6500A8EED2270000030A494441
+      54789CEDDBC16982411446D151ECC86EC62E2CEA75634FEEE55F85A0573C6769
+      BE45205C9E10E6B4D6DA7B2FBED0CCBC7CE24FF9A566E6B4F7BEDFEF873FBE5E
+      AF879F3F1E0F7B7BFB7FDCDF6EB7F3E10878332942821421418A902045489022
+      244811122EABFDFF167BFB1FD9BB8A90204548902224481112A4080952840429
+      42C265E5FFDF626FFF0B7B571112A408095284042942821421418A90204548F0
+      5ED1DE3EB1771521418A90204548902224481112A40809528404EF15EDED137B
+      571112A408095284042942821421418A90204548F05ED1DE3EB1771521418A90
+      204548902224481112A40809528404EF15EDED137B571112A408095284042942
+      821421418A90204548F05ED1DE3EB1771521418A90204548902224481112A408
+      09528404EF15EDED137B571112A408095284042942821421418A90204548F05E
+      D1DE3EB1771521418A90204548902224481112A40809528404EF15EDED137B57
+      1112A408095284042942821421418A90204548F05ED1DE3EB1771521418A9020
+      4548902224481112A40809528404EF15EDED13FBF3CC1CEE80B799195F502141
+      8A90204548902224481112CE7BEF4FFF0EF0EBF6DEDE2BDADB27F6BEA0428214
+      21418A90204548902224481112A40809DE2BDADB27F6AE2224481112A4080952
+      84042942821421418A90E0BDA2BD7D62EF2A42821421418A9020454890222448
+      1112A40809DE2BDADB27F6AE2224481112A408095284042942821421418A90E0
+      BDA2BD7D62EF2A42821421418A90204548902224481112A40809DE2BDADB27F6
+      AE2224481112A408095284042942821421418A90E0BDA2BD7D62EF2A42821421
+      418A90204548902224481112A40809DE2BDADB27F6AE2224481112A408095284
+      042942821421418A90E0BDA2BD7D62EF2A42821421418A902045489022244811
+      12A40809DE2BDADB27F6AE2224481112A408095284042942821421418A90E0BD
+      A2BD7D62EF2A42821421418A90204548902224481112A40809DE2BDADB27F6AE
+      2224481112A408095284042942821421418A90705A6BEDBD3FFD6BF01733F3F2
+      893FE5979A9927FD30A61B6AC7872A0000000049454E44AE426082
+    }
   end
   object TrayIcon: TTrayIcon
     Icon.Data = {
@@ -268,28 +296,8 @@ object FormSearch: TFormSearch
     left = 344
     top = 224
   end
-  object SelectDirectoryDialog1: TSelectDirectoryDialog
-    left = 472
-    top = 112
-  end
-  object PopupMenuNotebook: TPopupMenu
-    left = 472
-    top = 184
-    object MenuEditNotebookTemplate: TMenuItem
-      Caption = 'Edit Notebook Template'
-      OnClick = MenuEditNotebookTemplateClick
-    end
-    object MenuDeleteNotebook: TMenuItem
-      Caption = 'Delete Notebook'
-      OnClick = MenuDeleteNotebookClick
-    end
-    object MenuRenameNoteBook: TMenuItem
-      Caption = 'Rename Note Book'
-      OnClick = MenuRenameNoteBookClick
-    end
-    object MenuNewNoteFromTemplate: TMenuItem
-      Caption = 'Create New Note from Template'
-      OnClick = MenuNewNoteFromTemplateClick
-    end
+  object MainMenu: TMainMenu
+    left = 32
+    top = 32
   end
 end

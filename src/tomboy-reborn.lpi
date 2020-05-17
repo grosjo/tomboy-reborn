@@ -824,11 +824,6 @@
         <Filename Value="autostart.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit14>
-      <Unit15>
-        <Filename Value="note_lister.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="Note_Lister"/>
-      </Unit15>
       <Unit16>
         <Filename Value="TRhunspell.pas"/>
         <IsPartOfProject Value="True"/>

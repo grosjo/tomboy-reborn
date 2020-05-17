@@ -20,6 +20,7 @@ RESOURCESTRING
   rsAboutBDate = 'Build date';
   rsAboutCPU = 'TargetCPU';
   rsAboutOperatingSystem = 'OS';
+  rsCannotFind = 'Can not find ';
 
 // notebook.pas
 
@@ -33,22 +34,40 @@ RESOURCESTRING
 
 // SearchForm
   // these are main menu items and string grid headings -
+  rsMenuNotes = 'File';
+  rsMenuOptions = 'Options';
+  rsMenuHelp = 'Help';
+
   rsMenuNewNote = 'New Note';
+  rsMenuNewNotebook = 'New notebook';
   rsMenuSearch = 'Search';
   rsMenuAbout = 'About';
   rsMenuSync = 'Synchronise';
+  rsMenuExport = 'Export';
   rsMenuSettings = 'Settings';
-  rsMenuHelp = 'Help';
   rsMenuQuit = 'Quit';
   rsNotebooks = 'Notebooks';
+  rsAnyNotebook = 'Any notebook';
   rsName = 'Name';
   rsLastChange = 'Last Change';
 
+  // Tray Menu
+  rsTrayNewNote = 'New note';
+  rsTrayNotebooks = 'Notebooks';
+  rsTraySearchNote = 'Search all notes';
+  rsTraySync = 'Synchronize';
+  rsTrayApplication = 'Application';
+  rsTraySettings = 'Settings';
+  rsTrayAbout = 'About';
+  rsTrayQuit = 'Quit';
+
+
+
+
   rsSetupNotesDirFirst = 'Please setup a notes directory first';
   rsSetupSyncFirst = 'Please config sync system first';
-  rsCannotFindNote = 'Cannot find ';                    // is followed by a filename
-  rsSearchHint = 'Exact matches for terms between " "';
-
+  rsSearchHint = 'Search all terms (space delimited)';
+  rsNotebookHint = 'Select a notebook to see the Notes attached to it';
 
 // Sync
   rsNoSync = 'You shall setup sync first in "settings"';
@@ -118,16 +137,6 @@ RESOURCESTRING
   rsDictionaryLoaded = 'Dictionary Loaded OK';
   rsDictionaryFailed = 'Library Not Loaded';
   rsDictionaryNotFound = 'No Dictionary Found';
-
-  // Try Menu
-  rsTrayNewNote = 'New note';
-  rsTrayNotebooks = 'Notebooks';
-  rsTraySearchNote = 'Search all notes';
-  rsTraySync = 'Synchronize';
-  rsTrayApplication = 'Application';
-  rsTraySettings = 'Settings';
-  rsTrayAbout = 'About';
-  rsTrayQuit = 'Quit';
 
 
 // Spelling

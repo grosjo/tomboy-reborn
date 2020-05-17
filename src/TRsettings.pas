@@ -28,7 +28,6 @@ type
           LabelPath: TLabel;
           Label16: TLabel;
           EditTimerSync: TEdit;
-          GroupBox1: TGroupBox;
 	  GroupBoxSync: TGroupBox;
           Label17: TLabel;
 	  Label4: TLabel;
@@ -52,7 +51,6 @@ type
 
 	  ButtonSetNotePath: TButton;
           CheckAutoStart : TCheckBox;
-          CheckCaseSensitive: TCheckBox;
           CheckManyNotebooks: TCheckBox;
           CheckShowSearchAtStart: TCheckBox;
 	  CheckShowExtLinks: TCheckBox;
@@ -105,8 +103,7 @@ type
         procedure CheckShowIntLinksChange(Sender: TObject);
         procedure CheckShowSearchAtStartChange(Sender: TObject);
         procedure EditTimerSyncChange(Sender: TObject);
-        procedure onCheckCaseSensitive(Sender: TObject);
-	procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
+        procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
         procedure FormCreate(Sender: TObject);
         procedure FormDestroy(Sender: TObject);
         procedure FormHide(Sender: TObject);
@@ -352,15 +349,6 @@ begin
    end;
 end;
 
-procedure TSettings.onCheckCaseSensitive(Sender: TObject);
-begin
-   TRlog('onCheckCaseSensitive');
-
-   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
-
-   SearchCaseSensitive := CheckCaseSensitive.Checked;
-end;
-
 procedure TSettings.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
   TRlog('FormClose');
@@ -515,7 +503,6 @@ begin
   CheckShowIntLinks.Checked := ShowIntLinks;
   CheckShowExtLinks.Checked := ShowExtLinks;
   CheckManyNoteBooks.checked := ManyNoteBooks;
-  CheckCaseSensitive.Checked := SearchCaseSensitive;
   CheckAutostart.Checked := Autostart;
   CheckShowSearchAtStart.Checked := SearchAtStart;
 
@@ -657,7 +644,7 @@ begin
    if not FileExistsUTF8(FullDicName) then
    begin
       TRlog('VerifyDictFile: ' + FullDicName + 'does not exist');
-      LabelDicStatus.Caption := rsCannotFindNote + FullDicName;
+      LabelDicStatus.Caption := rsCannotFind + FullDicName;
       exit(false);
    end;
 

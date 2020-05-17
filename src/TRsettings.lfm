@@ -65,7 +65,6 @@ object Settings: TSettings
         ParentColor = False
       end
       object ButtonSetNotePath: TButton
-        AnchorSideRight.Control = GroupBox1
         AnchorSideRight.Side = asrBottom
         Left = 503
         Height = 24
@@ -77,11 +76,10 @@ object Settings: TSettings
         OnClick = ButtonSetNotePathClick
         ParentShowHint = False
         ShowHint = True
-        TabOrder = 1
+        TabOrder = 0
       end
       object ButtDefaultNoteDir: TButton
         AnchorSideLeft.Side = asrBottom
-        AnchorSideRight.Control = GroupBox1
         AnchorSideRight.Side = asrBottom
         Left = 503
         Height = 24
@@ -93,81 +91,23 @@ object Settings: TSettings
         OnClick = ButtDefaultNoteDirClick
         ParentShowHint = False
         ShowHint = True
-        TabOrder = 2
-      end
-      object GroupBox1: TGroupBox
-        AnchorSideRight.Control = TabBasic
-        AnchorSideRight.Side = asrBottom
-        AnchorSideBottom.Control = TabBasic
-        AnchorSideBottom.Side = asrBottom
-        Left = 394
-        Height = 187
-        Top = 151
-        Width = 221
-        Anchors = [akRight, akBottom]
-        BorderSpacing.Right = 5
-        BorderSpacing.Bottom = 5
-        Caption = 'Application options'
-        ClientHeight = 169
-        ClientWidth = 219
-        TabOrder = 0
-        object CheckShowSearchAtStart: TCheckBox
-          AnchorSideLeft.Control = GroupBox1
-          AnchorSideTop.Control = CheckAutostart
-          AnchorSideTop.Side = asrBottom
-          Left = 15
-          Height = 23
-          Top = 62
-          Width = 142
-          BorderSpacing.Left = 15
-          BorderSpacing.Top = 24
-          Caption = 'Show Search at Start'
-          OnChange = CheckShowSearchAtStartChange
-          TabOrder = 0
-        end
-        object CheckAutostart: TCheckBox
-          AnchorSideLeft.Control = GroupBox1
-          AnchorSideTop.Control = GroupBox1
-          Left = 15
-          Height = 23
-          Top = 15
-          Width = 129
-          BorderSpacing.Left = 15
-          BorderSpacing.Top = 15
-          Caption = 'Autostart at Logon'
-          OnChange = CheckAutostartChange
-          TabOrder = 1
-        end
-        object CheckCaseSensitive: TCheckBox
-          AnchorSideLeft.Control = GroupBox1
-          AnchorSideTop.Control = CheckShowSearchAtStart
-          AnchorSideTop.Side = asrBottom
-          Left = 15
-          Height = 23
-          Top = 100
-          Width = 159
-          BorderSpacing.Left = 15
-          BorderSpacing.Top = 15
-          Caption = 'Search is case Sensitive'
-          OnChange = onCheckCaseSensitive
-          TabOrder = 2
-        end
+        TabOrder = 1
       end
       object GroupBox5: TGroupBox
         AnchorSideLeft.Control = TabBasic
         AnchorSideBottom.Control = TabBasic
         AnchorSideBottom.Side = asrBottom
         Left = 5
-        Height = 119
-        Top = 153
-        Width = 187
+        Height = 152
+        Top = 184
+        Width = 243
         Anchors = [akLeft]
         BorderSpacing.Left = 5
         BorderSpacing.Bottom = 5
         Caption = 'Font Size'
-        ClientHeight = 101
-        ClientWidth = 185
-        TabOrder = 3
+        ClientHeight = 134
+        ClientWidth = 241
+        TabOrder = 2
         object RadioFontBig: TRadioButton
           AnchorSideLeft.Control = GroupBox5
           AnchorSideTop.Control = RadioFontHuge
@@ -191,7 +131,7 @@ object Settings: TSettings
           AnchorSideTop.Side = asrCenter
           AnchorSideRight.Control = GroupBox5
           AnchorSideRight.Side = asrBottom
-          Left = 98
+          Left = 154
           Height = 23
           Top = 15
           Width = 72
@@ -207,7 +147,7 @@ object Settings: TSettings
           AnchorSideLeft.Control = RadioFontMedium
           AnchorSideTop.Control = RadioFontBig
           AnchorSideTop.Side = asrCenter
-          Left = 113
+          Left = 169
           Height = 23
           Top = 48
           Width = 57
@@ -234,23 +174,23 @@ object Settings: TSettings
       object GroupBox2: TGroupBox
         AnchorSideBottom.Control = TabBasic
         AnchorSideBottom.Side = asrBottom
-        Left = 200
-        Height = 187
-        Top = 151
-        Width = 184
+        Left = 320
+        Height = 154
+        Top = 184
+        Width = 288
         Anchors = [akBottom]
         BorderSpacing.Bottom = 5
         Caption = 'Notes options'
-        ClientHeight = 169
-        ClientWidth = 182
-        TabOrder = 4
+        ClientHeight = 136
+        ClientWidth = 286
+        TabOrder = 3
         object CheckShowIntLinks: TCheckBox
           AnchorSideLeft.Control = GroupBox2
           AnchorSideTop.Control = CheckManyNotebooks
           AnchorSideTop.Side = asrBottom
           Left = 15
           Height = 23
-          Top = 62
+          Top = 48
           Width = 134
           BorderSpacing.Left = 15
           BorderSpacing.Top = 15
@@ -264,7 +204,7 @@ object Settings: TSettings
           AnchorSideTop.Side = asrBottom
           Left = 15
           Height = 23
-          Top = 100
+          Top = 86
           Width = 139
           BorderSpacing.Left = 15
           BorderSpacing.Top = 15
@@ -276,28 +216,15 @@ object Settings: TSettings
           AnchorSideLeft.Control = GroupBox2
           AnchorSideTop.Control = GroupBox2
           Left = 15
-          Height = 38
+          Height = 23
           Hint = 'This may adversly affect tradional Tomboy, take care.'
-          Top = 9
-          Width = 150
+          Top = 10
+          Width = 254
           BorderSpacing.Left = 15
-          BorderSpacing.Top = 9
-          Caption = 'Allow a Note to be '#10'in Multiple Notebooks.'
+          BorderSpacing.Top = 10
+          Caption = 'Allow a Note to be in multiple Notebooks.'
           OnChange = CheckManyNotebooksChange
           TabOrder = 2
-        end
-        object ButtonSetColours: TButton
-          AnchorSideBottom.Control = GroupBox2
-          AnchorSideBottom.Side = asrBottom
-          Left = 32
-          Height = 23
-          Top = 136
-          Width = 99
-          Anchors = [akBottom]
-          BorderSpacing.Bottom = 10
-          Caption = 'Set colours'
-          OnClick = ButtonSetColoursClick
-          TabOrder = 3
         end
       end
       object ButtonFixedFont: TButton
@@ -305,13 +232,13 @@ object Settings: TSettings
         AnchorSideTop.Control = GroupBox5
         AnchorSideRight.Control = GroupBox5
         AnchorSideRight.Side = asrBottom
-        AnchorSideBottom.Control = TabBasic
+        AnchorSideBottom.Control = GroupBox5
         AnchorSideBottom.Side = asrBottom
-        Left = 5
-        Height = 33
-        Top = 300
-        Width = 73
-        Anchors = [akLeft, akBottom]
+        Left = 163
+        Height = 25
+        Top = 301
+        Width = 75
+        Anchors = [akRight, akBottom]
         BorderSpacing.Top = 5
         BorderSpacing.Right = 10
         BorderSpacing.Bottom = 10
@@ -319,28 +246,74 @@ object Settings: TSettings
         OnClick = ButtonFixedFontClick
         ParentShowHint = False
         ShowHint = True
-        TabOrder = 5
+        TabOrder = 4
       end
       object ButtonFont: TButton
         AnchorSideLeft.Control = GroupBox5
         AnchorSideTop.Control = GroupBox5
         AnchorSideRight.Control = GroupBox5
         AnchorSideRight.Side = asrBottom
-        AnchorSideBottom.Control = TabBasic
+        AnchorSideBottom.Control = GroupBox5
         AnchorSideBottom.Side = asrBottom
-        Left = 119
-        Height = 31
-        Top = 302
-        Width = 73
-        Anchors = [akRight, akBottom]
-        BorderSpacing.Left = 5
+        Left = 15
+        Height = 25
+        Top = 301
+        Width = 75
+        Anchors = [akLeft, akBottom]
+        BorderSpacing.Left = 10
         BorderSpacing.Top = 15
         BorderSpacing.Bottom = 10
         Caption = 'Usual Font'
         OnClick = ButtonFontClick
         ParentShowHint = False
         ShowHint = True
+        TabOrder = 5
+      end
+      object CheckAutostart: TCheckBox
+        AnchorSideBottom.Control = GroupBox5
+        Left = 264
+        Height = 23
+        Top = 136
+        Width = 129
+        Anchors = [akBottom]
+        BorderSpacing.Left = 15
+        BorderSpacing.Top = 15
+        BorderSpacing.Bottom = 25
+        Caption = 'Autostart at Logon'
+        OnChange = CheckAutostartChange
         TabOrder = 6
+      end
+      object ButtonSetColours: TButton
+        AnchorSideRight.Control = GroupBox2
+        AnchorSideRight.Side = asrBottom
+        AnchorSideBottom.Control = GroupBox2
+        AnchorSideBottom.Side = asrBottom
+        Left = 499
+        Height = 23
+        Top = 305
+        Width = 99
+        Anchors = [akRight, akBottom]
+        BorderSpacing.Right = 10
+        BorderSpacing.Bottom = 10
+        Caption = 'Set colours'
+        OnClick = ButtonSetColoursClick
+        TabOrder = 7
+      end
+      object CheckShowSearchAtStart: TCheckBox
+        AnchorSideLeft.Control = TabBasic
+        AnchorSideTop.Control = GroupBox2
+        AnchorSideBottom.Control = GroupBox5
+        Left = 25
+        Height = 23
+        Top = 136
+        Width = 142
+        Anchors = [akLeft, akBottom]
+        BorderSpacing.Left = 25
+        BorderSpacing.Top = 24
+        BorderSpacing.Bottom = 25
+        Caption = 'Show Search at Start'
+        OnChange = CheckShowSearchAtStartChange
+        TabOrder = 8
       end
     end
     object TabSync: TTabSheet
