@@ -43,8 +43,8 @@ begin
     setParam('RemoteAddess',AppendPathDelim(ChompPathDelim(getParam('RemoteAddress'))));
     repo := getParam('RemoteAddress');
 
-    if not DirectoryExists(repo) then
-        if not DirectoryExists(repo) then begin    // try again because it might be just remounted.
+    if not DirectoryExistsUTF8(repo) then
+        if not DirectoryExistsUTF8(repo) then begin    // try again because it might be just remounted.
            ErrorString := 'Remote Dir does not exist : ' + repo;
 	   exit(SyncNoRemoteEnd);
         end;
@@ -54,8 +54,8 @@ begin
       exit(SyncNoRemoteWrite);
     end;
 
-    ManExists := FileExists(repo + 'manifest.xml');
-    ZeroExists := DirectoryExists(repo + '0');
+    ManExists := FileExistsUTF8(repo + 'manifest.xml');
+    ZeroExists := DirectoryExistsUTF8(repo + '0');
 
     if (ManExists) and (not ZeroExists) then
     begin
@@ -127,7 +127,7 @@ begin
     end;
 
     manifest:= getParam('RemoteAddress') + 'manifest.xml';
-    if not FileExists(manifest) then
+    if not FileExistsUTF8(manifest) then
     begin
         TRlog('Manifest notexistant : '+manifest);
         exit(true);
@@ -285,7 +285,7 @@ var
 begin
    filename := GetRemoteNotePath(rev,ID);
 
-   if not FileExists(filename) then
+   if not FileExistsUTF8(filename) then
    begin
         Error := 'ERROR - File not found, cant read note change date for remote ' +  filename;
         exit('');

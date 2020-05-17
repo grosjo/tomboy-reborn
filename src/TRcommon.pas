@@ -290,7 +290,7 @@ begin
     TRlog('ConfigWrite '+source);
 
     try
-      DeleteFile(ConfigFile);
+      DeleteFileUTF8(ConfigFile);
       f :=  TINIFile.Create(ConfigFile);
     except on E: Exception do begin
        showmessage('Unable to write config '+ ConfigFile);
@@ -363,7 +363,7 @@ begin
 
     TRlog('ConfigRead(' + source + ')');
 
-    if fileexists(ConfigFile) then
+    if FileExistsUTF8(ConfigFile) then
     begin
        try
           f :=  TINIFile.Create(ConfigFile);

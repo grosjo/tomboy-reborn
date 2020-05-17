@@ -482,8 +482,8 @@ begin
 
     backupdir := NotesDir + 'Backup' + PathDelim;
 
-    if not DirectoryExists(backupdir) then
-        if not ForceDirectoryUTF8(backupdir) then
+    if not DirectoryExistsUTF8(backupdir) then
+        if not ForceDirectoriesUTF8(backupdir) then
         begin
             ErrorString := 'Failed to create Backup directory.';
             exit(False);
@@ -497,7 +497,7 @@ begin
 
         dest := GetLocalNoteFile(ID);
         backup := GetLocalBackupPath();
-        if FileExists(dest) then
+        if FileExistsUTF8(dest) then
         begin
            ForceDirectoriesUTF8(backup);
            if not CopyFile(dest, GetLocalNoteFile(ID, backup)) then
@@ -529,12 +529,12 @@ begin
         s:= GetLocalNoteFile(ID);
         d:= GetLocalNoteFile(ID,GetLocalBackupPath());
 
-        if FileExists(s) then
+        if FileExistsUTF8(s) then
         begin
             ForceDirectoriesUTF8(GetLocalBackupPath());
 
             if CopyFile(s,d)
-            then DeleteFile(s)
+            then DeleteFileUTF8(s)
             else begin
                ErrorString := 'Failed to backup file '+ s + ' to Backup ' + d;
                TRlog(ErrorString);
@@ -705,7 +705,7 @@ begin
 
     manifest:= getManifestName();
     TRlog('Reading manifest '+manifest);
-    if not FileExists(manifest) then exit();
+    if not FileExistsUTF8(manifest) then exit();
 
     try
          ReadXMLFile(Doc, manifest);

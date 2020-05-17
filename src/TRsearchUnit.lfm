@@ -137,6 +137,7 @@ object FormSearch: TFormSearch
       OnDblClick = SGNotesListDblClick
       OnKeyDown = FormKeyDown
       OnResize = SGNotesListResize
+      OnDrawCell = SGNotesListDraw
     end
   end
   object CheckCaseSensitive: TCheckBox

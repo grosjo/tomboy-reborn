@@ -596,7 +596,7 @@ begin
     {$define STAGEDWRITE}
     {$ifdef STAGEDWRITE}
         TmpName := AppendPathDelim(NotesDir) + 'tmp';
-        if not DirectoryExists(TmpName) then
+        if not DirectoryExistsUTF8(TmpName) then
            if not CreateDir(AppendPathDelim(tmpname)) then begin
                 NoteLoc.ErrorStr:='Failed Create Dir';
                 exit(False);
@@ -609,7 +609,7 @@ begin
             OutStream := nil;
         end;
         {$ifdef WINDOWS}
-            if FileExists(FileName) then    // will not be there if its a new note.
+            if FileExistsUTF8FileName) then    // will not be there if its a new note.
                 if not SafeWindowsDelete(FileName, ErrorMsg) then
                    exit(false);
         {$endif}

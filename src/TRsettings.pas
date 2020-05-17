@@ -654,7 +654,7 @@ var
 begin
    result := false;
 
-   if not FileExists(FullDicName) then
+   if not FileExistsUTF8(FullDicName) then
    begin
       TRlog('VerifyDictFile: ' + FullDicName + 'does not exist');
       LabelDicStatus.Caption := rsCannotFindNote + FullDicName;
@@ -694,7 +694,7 @@ var
 begin
     LabelLibraryStatus.Caption := '';
 
-    if fileexists(libname)
+    if FileExistsUTF8(libname)
     then Spell :=  THunspell.Create(libname)
     else Spell :=  THunspell.Create();
 

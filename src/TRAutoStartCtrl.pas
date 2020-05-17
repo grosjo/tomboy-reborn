@@ -5,7 +5,7 @@ unit TRAutoStartCtrl;
 interface
 
 uses
-    Classes, SysUtils;
+    Classes, SysUtils,LazFileUtils , FileUtil, ExtCtrls;
 
 type
 
@@ -29,8 +29,8 @@ type
 
 implementation
 
-uses LazLogger, LazFileUtils, FileUtil, LazUTF8
-    {$ifdef WINDOWS}, Windows, ShlObj, ActiveX, ComObj, ExtCtrls{$endif};
+uses LazUTF8
+    {$ifdef WINDOWS}, Windows, ShlObj, ActiveX, ComObj{$endif};
 
 { TAutoStartCtrl }
 
@@ -61,7 +61,7 @@ begin
     {$ifdef LINUX}
         // Just copy the desktop file, too easy.
         if not DirPathExists(LinkDestination) then
-            ForceDirectoryUTF8(LinkDestination);
+            ForceDirectoriesUTF8(LinkDestination);
         if  FileExistsUTF8(TargetName) then
             CopyFile(TargetName, LinkDestination + LinkName)
         else ErrorMessage := 'Cannot find ' + TargetName;

@@ -1223,7 +1223,7 @@ var
     InFile, OutFile: TextFile;
     {NoteDateSt, }InString, TempName : string;
 begin
-  if not fileexists(NRec.FFName) then exit(false);     // if its not there, the note has just been deleted
+  if not FileExistsUTF8(NRec.FFName) then exit(false);     // if its not there, the note has just been deleted
   TempName := GetTempFile();
   AssignFile(InFile, NRec.FFName);
   AssignFile(OutFile, TempName);
@@ -1260,7 +1260,7 @@ begin
   end;
   result := CopyFile(TempName, Nrec.FFName);    // wrap this in a Try
   if result = false then TRlog('ERROR copying [' + TempName + '] to [' + NRec.FFName + ']');
-  result := DeleteFile(TempName);
+  result := DeleteFileUTF8(TempName);
   if result = false then TRlog('ERROR deleting [' + TempName + '] ');
 end;
 

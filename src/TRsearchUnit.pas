@@ -41,6 +41,7 @@ type
         SGNotesList: TStringGrid;
 	SGNotebooks: TStringGrid;
         SelectDirectoryDialog1: TSelectDirectoryDialog;
+	SGImage : TImage;
 
         //TRAY
         TrayIcon: TTrayIcon;
@@ -78,6 +79,7 @@ type
         procedure SGNotebooksPrepareCanvas(sender: TObject; aCol,
             aRow: Integer; aState: TGridDrawState);
         procedure SGNotebooksResize(Sender: TObject);
+	procedure SGNotesListDraw(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
 private
         HelpNotes : TNoteLister;
         LocalTimer : TTimer;
@@ -761,6 +763,7 @@ begin
     SGNotesList.Columns[1].Title.Caption := rsLastChange;
     SGNotesList.FixedRows:=1;
     SGNotesList.Columns[1].Width := self.Canvas.GetTextWidth(' 2020-01-31 14:36:00 ');
+
     SGNotebooks.Clear;
     SGNotebooks.FixedCols := 0;
     SGNotebooks.Columns.Add;
@@ -989,6 +992,14 @@ begin
     end;
   	if length(NoteTitle) > 0 then
         OpenNote(NoteTitle, FullFileName);
+end;
+
+procedure TFormSearch.SGNotesListDraw(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+begin
+ if  (ACol = 1) then  // Column number.
+ begin
+   SGNotesList.Canvas.Draw(Rect.Left, Rect.Top, SGImage.Picture.Graphic);
+ end;
 end;
 
 

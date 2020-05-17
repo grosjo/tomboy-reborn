@@ -595,7 +595,7 @@ begin
             end;
     end;
     {$ifdef WINDOWS}
-        if FileExists(Dir + FileName) then    // will not be there if its a new note.
+        if FileExistsUTF8Dir + FileName) then    // will not be there if its a new note.
             if not SafeWindowsDelete(Dir + FileName, ErrorMsg) then         // In syncutils, maybe over kill but ......
                exit;
     {$endif}

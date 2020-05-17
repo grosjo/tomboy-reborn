@@ -145,9 +145,9 @@ var
     InFile, OutFile: TextFile;
     {NoteDateSt, }InString, TempName, NextSeekString : string;
 begin
-  if not fileexists(NotesDir + FileName) then exit(false);     // if its not there, the note has just been deleted
+  if not FileExistsUTF8(NotesDir + FileName) then exit(false);     // if its not there, the note has just been deleted
   TempName := AppendPathDelim(NotesDir) + 'tmp';
-  if not DirectoryExists(TempName) then
+  if not DirectoryExistsUTF8(TempName) then
       CreateDir(AppendPathDelim(tempname));
   TempName := tempName + pathDelim + FileName;
   AssignFile(InFile, NotesDir + FileName);
@@ -211,9 +211,9 @@ var
     InFile, OutFile: TextFile;
     InString, TempName, NextSeekString : string;
 begin
-  if not fileexists(NotesDir + FileName) then exit(false);     // if its not there, the note has just been deleted
+  if not FileExistsUTF8(NotesDir + FileName) then exit(false);     // if its not there, the note has just been deleted
   TempName := AppendPathDelim(NotesDir) + 'tmp';
-  if not DirectoryExists(TempName) then
+  if not DirectoryExistsUTF8(TempName) then
       CreateDir(AppendPathDelim(tempname));
   TempName := tempName + pathDelim + FileName;
   AssignFile(InFile, NotesDir + FileName);
