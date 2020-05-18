@@ -10,6 +10,7 @@ This effort came after reviewing existing efforts (tomboy-ng, QOwnNotes, ..), bu
 
 This is a fork from tomboy-ng, after obvious mis-alignement of users need and software objectives with tomboy-ng author.
 
+![alt text](https://github.com/grosjo/tomboy-reborn/blob/master/Screenshot%20from%202020-05-18%2015-32-20.png)
 
 Prerequisites
 -------------
