@@ -5,18 +5,18 @@ unit TRabout;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
+  TRcommon;
 
-type
 
-{ TRabout }
-
- TFormAbout = class(TForm)
+type TFormAbout = class(TForm)
     Image1: TImage;
     Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
-  private
+    procedure FormShow(Sender: TObject);
+
+ private
 
   public
 
@@ -25,6 +25,12 @@ type
 implementation
 
 {$R *.lfm}
+
+procedure TFormAbout.FormShow(Sender: TObject);
+begin
+    Left := mainWindow.Left + random(50);
+    Top := mainWindow.Top + random(50);
+end;
 
 end.
 

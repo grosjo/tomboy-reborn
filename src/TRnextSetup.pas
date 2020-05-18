@@ -96,6 +96,8 @@ begin
   TRlog('NC FormCreate');
   success :=false;
   listening := false;
+  Left := TForm(Sender).Left + random(100);
+  Top := TForm(Sender).Top + random(100);
 end;
 
 

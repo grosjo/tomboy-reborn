@@ -11,10 +11,6 @@ RESOURCESTRING
 
 // main
   rsAnotherInstanceRunning = 'Another instance of tomboy-reborn appears to be running. Will exit.';
-  rsFailedToIndex = 'Failed to index one or more notes.';
-  rsCannotDismiss1 = 'Sadly, on this OS or because of a Bad Note,';
-  rsCannotDismiss2 = 'I cannot let you dismiss this window';
-  rsCannotDismiss3 = 'Are you trying to shut me down ? Dave ?';
   rsAbout = 'This is Tomboy Reborn, a rewrite of Tomboy Notes using Lazarus and FPC.';
   rsAboutVer = 'Version ';
   rsAboutBDate = 'Build date';
@@ -31,12 +27,17 @@ RESOURCESTRING
   rsNumbNotesAffected = 'This will affect %d notes';                 // %d replaced by integer, 0 to big number
   rsEnterNewNotebook = 'Enter a new notebook name please';
 
+  rsConfirmDeleteNote = 'Do you really want'+sLineBreak+'to detele Note ';
+  rsConfirmDeleteNotebook1 = 'Do you really want'+sLineBreak+'to detele Notebook ';
+  rsConfirmDeleteNotebook2 = 'This will update all Notes accordingly';
 
 // SearchForm
   // these are main menu items and string grid headings -
   rsMenuNotes = 'File';
-  rsMenuOptions = 'Options';
+  rsMenuTools = 'Tools';
   rsMenuHelp = 'Help';
+  rsMenuDeleteNote = 'Delete Note';
+  rsMenuDeleteNotebook = 'Delete Notebook';
 
   rsMenuNewNote = 'New Note';
   rsMenuNewNotebook = 'New notebook';
@@ -70,6 +71,7 @@ RESOURCESTRING
   rsNotebookHint = 'Select a notebook to see the Notes attached to it';
 
 // Sync
+  rsOtherSyncProcess = 'Sync not possible for now (other process running)';
   rsNoSync = 'You shall setup sync first in "settings"';
   rsTestingSync = 'Testing Sync';
   rsUnableToSync = 'Unable to sync because ';

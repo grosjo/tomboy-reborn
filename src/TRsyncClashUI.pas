@@ -6,7 +6,8 @@ interface
 
 uses
     Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-    ExtCtrls, ComCtrls, Buttons;
+    ExtCtrls, ComCtrls, Buttons,
+    TRcommon;
 
 type
 
@@ -41,9 +42,9 @@ implementation
 {$R *.lfm}
 
 procedure TFormClash.FormShow(Sender: TObject);
-    begin
-    Left := 25 + random(25);
-    Top := 25 + random(25);
+begin
+    Left := mainWindow.Left + random(100);
+    Top := mainWindow.Top + random(100);
 end;
 
 end.

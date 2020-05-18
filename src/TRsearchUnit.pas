@@ -7,28 +7,22 @@ interface
 uses
     Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
     Buttons, Menus, ComCtrls, ExtCtrls, FileUtil, ActnList,
-    Grids, lazLogger, Math,
+    Grids, lazLogger, Math, LCLType,
     TRcommon, TRtexts;
 
 
 type TTrayTags = (ttNewNote, ttSearch, ttAbout, ttSync, ttSettings, ttQuit);
 
 // These are choices for main popup menus.
-type TMenuTags = (mtNewNote, mtNewNotebook, mtQuit, mtSync, mtExport1, mtSettings, mtAbout);
-
-// These are the possible kinds of main menu items
-type TMenuKind = (mkFileMenu, mkRecentMenu, mkHelpMenu, mkAllMenu);
+type TMenuTags = (mtNewNote, mtNewNotebook, mtDeleteNote, mtDeleteNotebook, mtQuit, mtSync, mtExport1, mtSettings, mtAbout);
 
 
-type
-
-{ TFormSearch }
-
- TFormSearch = class(TForm)
+type TFormSearch = class(TForm)
 
         CheckCaseSensitive: TCheckBox;
         MenuIconList: TImageList;
         MainMenu: TMainMenu;
+        FileMenu : TMenuItem;
         SearchBox: TEdit;
         Label1: TLabel;
 	Panel1: TPanel;
@@ -53,7 +47,10 @@ type
         procedure TrayMenuClicked(Sender : TObject);
         procedure TrayNoteClicked(Sender : TObject);
 
+        procedure BuildFileMenu(Sender: TObject);
         procedure MainMenuClicked(Sender : TObject);
+        procedure MenuNewNotebookNote(Sender : TObject);
+
 
         procedure CheckCaseSensitiveChange(Sender: TObject);
         procedure SearchBoxChange(Sender: TObject);
@@ -74,7 +71,6 @@ private
         NewNotebooksList : TStringList;
 
         LastSync : TDateTime;
-        TrayTimer : TTimer;
         SyncTimer : TTimer;
         ScanTimer : TTimer;
         ShowTimer : TTimer;
@@ -106,7 +102,10 @@ private
         procedure OpenNote(NoteTitle : String = ''; FullFileName : string = ''; TemplateIs : AnsiString = '');
         { Deletes the actual file then removes the indicated note from the internal
         data about notes, refreshes Grid }
-        procedure DeleteNote(const FullFileName : ANSIString);
+        function DeleteNote(ID: String) : boolean;
+        function SaveNote(ID: String) : boolean;
+
+        function DeleteNotebook(nb : String): boolean;
 
 end;
 
@@ -118,11 +117,8 @@ implementation
 
 
 uses
-    LCLType,
     LazFileUtils,
-    TRsettings,		// Manages settings.
-    TRsync,
-    TRnoteEdit, TRabout,
+    TRsettings, TRsync, TRnoteEdit, TRabout,
     process;
 
 
@@ -188,72 +184,41 @@ begin
     SearchBox.Hint:=rsSearchHint;
     SearchBox.Text := '';
 
-    MenuIconList.GetIcon(2, Self.Icon);
-
-    if UseTrayIcon then
-    begin
-        TrayMenu := TPopupMenu.Create(Self);
-        TrayIcon.PopUpMenu := TrayMenu;
-        MenuIconList.GetIcon(2, TrayIcon.Icon);
-
-        TrayIcon.Show;
-        TrayTimer := TTimer.Create(Nil);
-        TrayTimer.OnTimer:= @BuildTrayMenu;
-        TrayTimer.Interval:=200;
-        TrayTimer.Enabled := True;
-    end;
+    //MenuIconList.GetIcon(2, Self.Icon);
 
     MainMenu.Items.Clear;
     MainMenu.Images := MenuIconList;
 
+    ScanNotes(Self);
+
     // 'File'
+    FileMenu := TMenuItem.Create(MainMenu);
+    FileMenu.Caption := rsMenuNotes;
+    MainMenu.Items.Add(FileMenu);
+
+    // 'Tools'
     m1 := TMenuItem.Create(MainMenu);
-    m1.Caption := rsMenuNotes;
+    m1.Caption := rsMenuTools;
     MainMenu.Items.Add(m1);
-    // 'File' / New Note
-    m2 := TMenuItem.Create(m1);
-    m2.Tag := ord(mtNewNote);
-    m2.Caption := rsMenuNewNote+ '(Ctrl-N)';
-    m2.OnClick := @MainMenuClicked;
-    m2.ImageIndex:=3;
-    m1.Add(m2);
-    // 'File' / New Notebook
-    m2 := TMenuItem.Create(m1);
-    m2.Tag := ord(mtNewNotebook);
-    m2.Caption := rsMenuNewNotebook;
-    m2.OnClick := @MainMenuClicked;
-    m2.ImageIndex:=1;
-    m1.Add(m2);
-    // 'File' / Sync
+
+    // 'Tools' / Sync
     m2 := TMenuItem.Create(m1);
     m2.Tag := ord(mtSync);
     m2.Caption := rsMenuSync+ '(Ctrl-S)';
     m2.OnClick := @MainMenuClicked;
     m2.ImageIndex:=10;
     m1.Add(m2);
-    // 'File' / Quit
-    m2 := TMenuItem.Create(m1);
-    m2.Tag := ord(mtQuit);
-    m2.ImageIndex:=7;
-    m2.Caption := rsMenuQuit + '(Ctrl-Q)';
-    m2.OnClick := @MainMenuClicked;
-    m1.Add(m2);
 
-    // 'Options'
-    m1 := TMenuItem.Create(MainMenu);
-    m1.Caption := rsMenuOptions ;
-    MainMenu.Items.Add(m1);
-
-    // Options / Export
+    // Tools / Export
     m2 := TMenuItem.Create(m1);
     m2.Caption := rsMenuExport;
     m1.Add(m2);
-    // Options / Export1
+    // Tools / Export1
     m3 := TMenuItem.Create(m1);
     m3.Tag := ord(mtExport1);
     m3.Caption := rsMenuExport;
     m2.Add(m3);
-    // Options / Settings
+    // Tools / Settings
     m2 := TMenuItem.Create(m1);
     m2.Tag := ord(mtSettings);
     m2.Caption := rsMenuSettings + '(Ctrl-O)';
@@ -274,21 +239,24 @@ begin
     m1.Add(m2);
 
 
-    // TIMERS
-
-    ScanTimer := TTimer.Create(nil);
-    ScanTimer.OnTimer := @ScanNotes;
-    ScanTimer.Interval := 200;
-    ScanTimer.Enabled := True;
+    if UseTrayIcon then
+    begin
+        TrayMenu := TPopupMenu.Create(Self);
+        TrayIcon.PopUpMenu := TrayMenu;
+        MenuIconList.GetIcon(2, TrayIcon.Icon);
+        TrayIcon.Show;
+    end;
 
     syncshallrun := true;
     LastSync := now;
 
+    // TIMERS
     SyncTimer := TTimer.Create(nil);
     SyncTimer.OnTimer := @ProcessSync;
     SyncTimer.Interval := 1000;
     SyncTimer.Enabled := True;
 
+    Application.ProcessMessages;
     if(not SearchAtStart) then Hide();
 end;
 
@@ -304,6 +272,93 @@ begin
     TrayMenu.PopUp(p.x,p.y+24);
 end;
 
+
+procedure TFormSearch.BuildFileMenu(Sender : TObject);
+var
+    m1,m2 : TMenuItem;
+    n : PNOteInfo;
+    i : integer;
+begin
+    TRlog('BuildFileMenu');
+
+    FileMenu.Clear;
+
+    // 'File' / New Note
+    m1 := TMenuItem.Create(FileMenu);
+    m1.Tag := ord(mtNewNote);
+    m1.Caption := rsMenuNewNote+ '(Ctrl-N)';
+    m1.OnClick := @MainMenuClicked;
+    m1.ImageIndex:=3;
+    FileMenu.Add(m1);
+
+    // Notebooks menu
+    m1 := TMenuItem.Create(FileMenu);
+    m1.Caption := rsNotebooks;
+    m1.ImageIndex:=3;
+    FileMenu.Add(m1);
+
+    // Notebooks submenu
+    m2 := TMenuItem.Create(m1);
+    m2.Tag := ord(mtNewNoteBook);
+    m2.Caption := rsMenuNewNotebook;
+    m2.OnClick := @MainMenuClicked;
+    m2.ImageIndex:=1;
+    m1.Add(m2);
+
+    if(NotebooksList.Count>0) then m1.AddSeparator;
+    i:=0;
+    while(i<NotebooksList.Count) do
+    begin
+         m2 := TMenuItem.Create(m1);
+         m2.Tag := i;
+         m2.Caption := 'New "'+NotebooksList.Strings[i] + '" Note';
+         m2.OnClick := @MenuNewNotebookNote;
+         m2.ImageIndex:=3;
+         m1.Add(m2);
+         inc(i);
+    end;
+
+    FileMenu.AddSeparator;
+
+    // Delete note
+    m1 := TMenuItem.Create(FileMenu);
+    m1.Tag := ord(mtDeleteNote);
+    if(length(SelectedNote)=36) then
+    begin
+        m1.Caption := rsMenuDeleteNote + ' ' + SelectedNote;
+        m1.OnClick := @MainMenuClicked;
+        m1.ImageIndex:=11;
+    end else begin
+        m1.Caption := rsMenuDeleteNote + '...';
+        m1.Enabled:=false;
+    end;
+    FileMenu.Add(m1);
+
+    // Delete notenook
+    m1 := TMenuItem.Create(FileMenu);
+    m1.Tag := ord(mtDeleteNotebook);
+    if((length(SelectedNotebook)>0) and (CompareText(SelectedNotebook,'-')<>0)) then
+    begin
+         m1.Caption := rsMenuDeleteNotebook + ' "' + SelectedNotebook + '"';
+         m1.OnClick := @MainMenuClicked;
+         m1.ImageIndex:=12;
+    end else begin
+        m1.Caption := rsMenuDeleteNotebook + '...';
+        m1.Enabled:=false;
+    end;
+    FileMenu.Add(m1);
+
+    FileMenu.AddSeparator;
+
+    // 'File' / Quit
+    m1 := TMenuItem.Create(FileMenu);
+    m1.Tag := ord(mtQuit);
+    m1.ImageIndex:=7;
+    m1.Caption := rsMenuQuit + '(Ctrl-Q)';
+    m1.OnClick := @MainMenuClicked;
+    FileMenu.Add(m1);
+end;
+
 procedure TFormSearch.BuildTrayMenu(Sender : TObject);
 var
     m1,m2 : TMenuItem;
@@ -312,18 +367,15 @@ var
 begin
    TRlog('BuildTrayMenu');
 
-   if(assigned(TrayTimer)) then
-   begin
-     TrayTimer.Enabled := False;
-     FreeAndNil(TrayTimer);
-   end;
+   if(not UseTrayIcon) then exit();
+
 
    TrayMenu.Items.Clear;
    TrayMenu.Images := MenuIconList;
    // New Note
    m1 := TMenuItem.Create(TrayMenu);
    m1.Tag := ord(ttNewNote);
-   m1.Caption := rsTrayNewNote + '(Ctrl-N)';
+   m1.Caption := rsTrayNewNote;
    m1.OnClick := @TrayMenuClicked;
    m1.ImageIndex:=3;
    TrayMenu.Items.Add(m1);
@@ -331,7 +383,7 @@ begin
    // Search
    m1 := TMenuItem.Create(TrayMenu);
    m1.Tag := ord(ttSearch);
-   m1.Caption := rsTraySearchNote + '(Ctrl-A)';
+   m1.Caption := rsTraySearchNote;
    m1.ImageIndex:=5;
    m1.OnClick := @TrayMenuClicked;
    TrayMenu.Items.Add(m1);
@@ -350,20 +402,20 @@ begin
 
    // App menu
    m1 := TMenuItem.Create(TrayMenu);
-   m1.Caption := rsMenuOptions;
+   m1.Caption := rsMenuTools;
    TrayMenu.Items.Add(m1);
 
    // Sync
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttSync);
    m2.ImageIndex:=10;
-   m2.Caption := rsTraySync + '(Ctrl-S)';
+   m2.Caption := rsTraySync;
    m2.OnClick := @TrayMenuClicked;
    m1.Add(m2);
    // Settings
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttSettings);
-   m2.Caption := rsTraySettings + '(Ctrl-O)';
+   m2.Caption := rsTraySettings;
    m2.ImageIndex:=8;
    m2.OnClick := @TrayMenuClicked;
    m1.Add(m2);
@@ -378,7 +430,7 @@ begin
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttQuit);
    m2.ImageIndex:=7;
-   m2.Caption := rsTrayQuit + '(Ctrl-Q)';
+   m2.Caption := rsTrayQuit;
    m2.OnClick := @TrayMenuClicked;
    m1.Add(m2);
 
@@ -400,6 +452,11 @@ begin
       end;
       inc(i);
    end;
+end;
+
+procedure TFormSearch.MenuNewNotebookNote(Sender : TObject);
+begin
+   ShowMessage('Shall be creating new note on notebook '+SelectedNotebook);
 end;
 
 procedure TFormSearch.TrayNoteClicked(Sender : TObject);
@@ -443,6 +500,7 @@ begin
 
         ttSync :
           begin
+            if(not syncshallrun) then begin ShowMessage(rsOtherSyncProcess); exit(); end;
             syncshallrun := false;
             TRlog('TrayMenuClicked Sync');
             if(isSyncConfigured()) then
@@ -450,7 +508,7 @@ begin
                try
                   FormSync := TFormSync.Create(Self);
                   FormSync.SyncVisible();
-                  TRlog('menu click ttSync done');
+                  ProcessSyncUpdates(FormSync.DeletedList, FormSync.DownloadList);
                   FreeAndNil(FormSync);
                   LastSync := now;
                except on E:Exception do TRlog(E.message);
@@ -468,10 +526,7 @@ begin
 
    end;
 
-   TrayTimer := TTimer.Create(Nil);
-   TrayTimer.OnTimer:= @BuildTrayMenu;
-   TrayTimer.Interval:=200;
-   TrayTimer.Enabled := True;
+   BuildTrayMenu(Self);
 
 end;
 
@@ -507,6 +562,7 @@ begin
           end;
 
         mtSettings: begin
+            if(not syncshallrun) then begin ShowMessage(rsOtherSyncProcess); exit(); end;
             syncshallrun := false;
             TRlog('MainMenuClicked Settings');
             FormSettings := TSettings.Create(self);
@@ -592,7 +648,7 @@ var
    i : integer;
 begin
    nb := Trim(nb);
-   if(length(nb)<1) then exit(false);
+   if((length(nb)=0) or (CompareText(nb,'-') =0)) then exit(false);
 
    i:=0;
    while(i<NotebooksList.Count) do
@@ -603,6 +659,55 @@ begin
 
    NotebooksList.Add(nb);
    Result:=true;
+end;
+
+function TFormSearch.DeleteNotebook(nb : String): boolean;
+var
+   i,j : integer;
+   deleted : boolean;
+   n : PNoteInfo;
+   s : String;
+begin
+   nb := Trim(nb);
+   if((length(nb)=0) or (CompareText(nb,'-') =0)) then exit(false);
+
+   s:= rsConfirmDeleteNotebook1 + nb + sLineBreak + rsConfirmDeleteNotebook2;
+
+   if(Application.MessageBox(PChar(s), 'Tomboy Reborn', MB_YESNO) <> IDYES)
+   then exit(false);
+
+   i:=0;
+   while(i<NewNotebooksList.Count) do
+   begin
+      if(CompareText(NewNotebooksList.Strings[i],nb) = 0) then NewNotebooksList.Delete(i)
+      else inc(i);
+   end;
+
+   deleted := false;
+   i:=0;
+   while(i<NotebooksList.Count) do
+   begin
+      if(CompareText(NotebooksList.Strings[i],nb) = 0) then begin NotebooksList.Delete(i); deleted:= true; end
+      else inc(i);
+   end;
+
+   if(not deleted) then exit(false);
+
+   for i := 0 to NotesList.Count - 1 do
+   begin
+      n := NotesList.Items[i];
+      if(not NoteBelongs(nb,n)) then continue;
+
+      j:=0;
+      while(j<n^.Tags.Count) do
+      begin
+         if(CompareText('systen:notebook:'+nb,n^.Tags.Strings[j]) = 0) then n^.Tags.Delete(j)
+         else inc(j);
+      end;
+      if(not NoteToFile(n,GetLocalNoteFile(n^.ID))) then deleted := false;;
+   end;
+
+   Result:=deleted;
 end;
 
 procedure TFormSearch.ScanNotes(Sender : TObject);
@@ -694,13 +799,14 @@ end;
 procedure TFormSearch.ProcessSync(Sender : TObject);
 var
   m : integer;
+  FormSync : TFormSync;
 begin
    SyncTimer.Enabled := False;
    FreeAndNil(SyncTimer);
 
    TRlog('ProcessSync');
 
-   if(not syncshallrun) then TRlog('Sync not possible for now (other process running)')
+   if(not syncshallrun) then TRlog(rsOtherSyncProcess)
 
    else if(SyncRepeat>0) then
    begin
@@ -709,6 +815,21 @@ begin
       then TRlog('Should process sync every '+IntToStr(SyncRepeat)+' min (now waiting for '+IntToStr(m)+' minutes')
       else begin
          // DO SYNC
+         syncshallrun := false;
+         TRlog('Starting background Sync');
+         if(isSyncConfigured()) then
+         begin
+           try
+              FormSync := TFormSync.Create(Self);
+              FormSync.SyncHidden();
+              ProcessSyncUpdates(FormSync.DeletedList, FormSync.DownloadList);
+              FreeAndNil(FormSync);
+              LastSync := now;
+           except on E:Exception do TRlog(E.message);
+           end;
+         end
+         else ShowMessage(rsSetupSyncFirst);
+         syncshallrun := true;
       end;
    end
    else TRlog('AutoSync not enabled');
@@ -726,6 +847,7 @@ var
     n : PNoteInfo;
     changes : boolean;
 begin
+   TRlog('ProcessSyncUpdates');
 
    changes := false;
    i:=0;
@@ -808,29 +930,90 @@ begin
 end;
 
 
-procedure TFormSearch.DeleteNote(const FullFileName: ANSIString);
+function TFormSearch.DeleteNote(ID: String) : boolean;
 var
-    NewName, ShortFileName : ANSIString;
-    //LocalMan : TSync;
+    s,d : String;
+    n : PNoteInfo;
 begin
-    TRlog('TO BE DONE');
-    ShowMessage('TO BE DONE');
-    {
-    ShortFileName := ExtractFileNameOnly(FullFileName);
-    if NoteLister.IsATemplate(ShortFileName) then begin
-        NoteLister.DeleteNoteBookwithID(ShortFileName);
-      	DeleteFileUTF8(FullFileName);
-        ButtonClearFiltersClick(self);
-    end else begin
-        NoteLister.DeleteNote(ShortFileName);
-     	NewName := GetLocalNoteFile(ShortFileName,GetLocalBackupPath());
 
-        if not RenameFileUTF8(FullFileName, NewName)
-    		then TRlog('Failed to move ' + FullFileName + ' to ' + NewName);
-    end;
-    UseList();
-    }
+   s:= rsConfirmDeleteNote + ID;
+   if(Application.MessageBox(PChar(s), 'Tomboy Reborn', MB_YESNO) = IDYES)
+   then begin
+
+
+
+   if(length(ID)<>36) then exit(false);
+
+   s:= GetLocalNoteFile(ID);
+   d:= GetLocalNoteFile(ID,GetLocalBackupPath());
+
+   if FileExistsUTF8(s) then
+   begin
+      ForceDirectoriesUTF8(GetLocalBackupPath());
+
+      if CopyFile(s,d)
+      then DeleteFileUTF8(s)
+      else begin
+         s:= 'Failed to backup file '+ s + ' to Backup ' + d;
+         TRlog(s);
+         ShowMessage(s);
+         exit(false);
+      end;
+
+      n := NotesList.FindID(ID);
+      if(n<>nil) then
+      begin
+         if(n^.FormEdit <> nil) then
+         begin
+            n^.FormEdit^.Close;
+            FreeAndNil(n^.FormEdit);
+         end;
+         NotesList.Remove(n);
+         Dispose(n);
+      end;
+
+      exit(true);
+   end;
+
+
+   end;
+   Result := false;
 end;
+
+function TFormSearch.SaveNote(ID: String) : boolean;
+var
+    s,d : String;
+    n : PNoteInfo;
+begin
+
+   if(length(ID)<>36) then exit(false);
+
+   s:= GetLocalNoteFile(ID);
+   d:= GetLocalNoteFile(ID,GetLocalBackupPath());
+
+   n := NotesList.FindID(ID);
+   if(n = nil) then exit(false);
+
+   if FileExistsUTF8(s) then
+   begin
+      ForceDirectoriesUTF8(GetLocalBackupPath());
+
+      if CopyFile(s,d)
+      then begin
+         if(NoteToFile(n,s)) then exit(true);
+         s:= 'Failed to save Note '+ ID + ' to ' + ID;
+         TRlog(s);
+         ShowMessage(s);
+      end
+      else begin
+         s:= 'Failed to backup file '+ s + ' to Backup ' + d;
+         TRlog(s);
+         ShowMessage(s);
+      end;
+   end;
+   Result := false;
+end;
+
 
 procedure TFormSearch.ShowLists(sender: TObject);
 var
@@ -871,13 +1054,19 @@ begin
    end;
 
    // Show notebooks
+   s:='';
    while SGNotebooks.RowCount > 1 do SGNotebooks.DeleteRow(SGNotebooks.RowCount-1);
    SGNotebooks.InsertRowWithValues(SGNotebooks.RowCount,['',rsAnyNotebook,'']);
    SGNotebooks.InsertRowWithValues(SGNotebooks.RowCount,['',rsNoNotebook,'-']);
    for i := 0 to NotebooksList.Count - 1 do
+   begin
         SGNotebooks.InsertRowWithValues(SGNotebooks.RowCount, ['',NotebooksList.Strings[i],NotebooksList.Strings[i]]);
+        if(CompareText(NotebooksList.Strings[i],SelectedNoteBook)=0) then s:=SelectedNoteBook;
+   end;
+   if(CompareText(SelectedNoteBook,'-')<>0) then SelectedNotebook := s;
 
    // Show notes
+   s:='';
    while SGNotes.RowCount > 1 do SGNotes.DeleteRow(SGNotes.RowCount-1);
    for i := 0 to NotesList.Count - 1 do
    begin
@@ -885,8 +1074,13 @@ begin
        if(not NoteBelongs(SelectedNotebook,n)) then continue;
        if(not NoteContains(sl,n,SearchCaseSensitive)) then continue;
 
+       if(CompareText(n^.ID,SelectedNote)=0) then s:=SelectedNote;
+
        SGNotes.InsertRowWithValues(SGNotes.RowCount, [n^.Title,GetDisplayTimeFromGMT(n^.LastChangeGMT),n^.ID]);
    end;
+   SelectedNote:=s;
+
+   BuildFileMenu(Self);
 
    sl.Free;
 end;
@@ -957,6 +1151,8 @@ begin
 
    SelectedNoteBook := SGNotebooks.Cells[2,SGNotebooks.Row];
 
+   BuildFileMenu(Self);
+
    if(length(SelectedNoteBook)=0)
    then StatusBar1.SimpleText := 'Notes with any notebook(s) selected'
    else if SelectedNoteBook = '-'
@@ -998,11 +1194,6 @@ procedure TFormSearch.FormDestroy(Sender: TObject);
 begin
   TRlog('FormDestroy');
 
-   if(assigned(TrayTimer)) then
-   begin
-     TrayTimer.Enabled := False;
-     FreeAndNil(TrayTimer);
-   end;
    if(assigned(ScanTimer)) then
    begin
      ScanTimer.Enabled := False;
@@ -1031,8 +1222,11 @@ var
    FormSettings : TSettings;
    FormSync : TFormSync;
 begin
-   if {$ifdef DARWIN}ssMeta{$else}ssCtrl{$endif} in Shift then
-   begin
+  TRlog('KeyDown '+IntToStr(Key));
+
+  // CTRL
+  if {$ifdef DARWIN}ssMeta{$else}ssCtrl{$endif} in Shift then
+  begin
 
      // New Note
      if key = ord('N') then begin TrLog('Ctrl-N'); OpenNote(); Key := 0; exit(); end;
@@ -1050,6 +1244,7 @@ begin
              try
                 FormSync := TFormSync.Create(Self);
                 FormSync.SyncVisible();
+                ProcessSyncUpdates(FormSync.DeletedList, FormSync.DownloadList);
                 FreeAndNil(FormSync);
                 LastSync := now;
              except on E:Exception do TRlog(E.message);
@@ -1072,13 +1267,36 @@ begin
           syncshallrun := true;
           exit();
         end;
+        exit();
    end;
+
+  // SHIFT
+  if ssShift in Shift then
+  begin
+    if(DeleteNotebook(SelectedNotebook)) then Key := 0;
+    exit();
+  end;
+
+  // OTHER
+  if((Key = VK_DELETE) and (Sender<>SearchBox)) then
+  begin
+    if(DeleteNote(SelectedNote)) then Key := 0;
+    exit();
+  end;
+
+
 end;
 
 procedure TFormSearch.FormShow(Sender: TObject);
 begin
-    Left := Placement + random(Placement*2);
-    Top := Placement + random(Placement * 2);
+    Left := random(250)+50;
+    Top := random(250)+50;
+
+    ShowLists(Self);
+    BuildFileMenu(Self);
+    BuildTrayMenu(Self);
+
+
 end;
 
 procedure TFormSearch.CheckCaseSensitiveChange(Sender: TObject);
@@ -1208,6 +1426,8 @@ begin
    else SelectedNote := SGNotes.Cells[2,SGNotes.Row];
 
    SGNotes.Refresh;
+
+   BuildFileMenu(Self);
 
    StatusBar1.SimpleText:= 'Note "'+SelectedNote+'" selected';
 

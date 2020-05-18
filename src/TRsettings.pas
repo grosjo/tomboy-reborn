@@ -379,6 +379,8 @@ procedure TSettings.FormShow(Sender: TObject);
 begin
      TRlog('FormSettingsShow');
      LoadSettings();
+     Left := mainWindow.Left + random(100);
+     Top := mainWindow.Top + random(100);
 end;
 
 procedure TSettings.LastUsedMaxChange(Sender: TObject);

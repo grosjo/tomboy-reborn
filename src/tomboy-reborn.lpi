@@ -13,6 +13,7 @@
         <TextName Value="DRB"/>
         <TextDesc Value=""/>
       </XPManifest>
+      <Icon Value="0"/>
     </General>
     <i18n>
       <EnableI18N Value="True"/>
@@ -814,7 +815,7 @@
       <Unit13>
         <Filename Value="TRabout.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="Rabout"/>
+        <ComponentName Value="FormAbout"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit13>

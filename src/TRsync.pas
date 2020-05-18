@@ -25,7 +25,7 @@ type
      SettingsOK: TSpeedButton;
 
      StringGridReport: TStringGrid;
-
+     DeletedList, DownloadList : TStringList;
 
      procedure FormShow(Sender: TObject);
      procedure FormHide(Sender: TObject);
@@ -150,6 +150,9 @@ begin
   LocalMetaData := TNoteInfoList.Create;
   LocalMetaData.LName := 'Local list';
 
+  DeletedList := TStringList.Create;
+  DownloadList := TStringList.Create;
+
   Transport := nil;
 end;
 
@@ -162,6 +165,8 @@ begin
    FreeandNil(NoteMetaData);
    FreeandNil(Transport);
    FreeAndNil(LocalTimer);
+   FreeAndNil(DeletedList);
+   FreeAndNil(DownloadList);
 end;
 
 function TFormSync.getManifestName() : String;
@@ -508,6 +513,7 @@ begin
                 end;
         end;
         NoteToFile(note,dest);
+        DownloadList.Add(ID);
     end;
 
     result := True;
@@ -534,7 +540,10 @@ begin
             ForceDirectoriesUTF8(GetLocalBackupPath());
 
             if CopyFile(s,d)
-            then DeleteFileUTF8(s)
+            then begin
+                DeleteFileUTF8(s);
+                DeletedList.Add(ID);
+            end
             else begin
                ErrorString := 'Failed to backup file '+ s + ' to Backup ' + d;
                TRlog(ErrorString);
@@ -1113,7 +1122,7 @@ begin
     LabelStats.Caption := rsRunningSync;
     StringGridReport.Clear;
 
-    PrepareSync(nil);
+    PrepareSync(Self);
 
     if((Undecided>0) or (DelLoc>0) or (DelRem>0)) then
     begin
