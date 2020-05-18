@@ -255,24 +255,17 @@ implementation
 {$R *.lfm}
 
 { TNoteEditForm }
-uses //RichMemoUtils,     // Provides the InsertFontText() procedure.
-    LazUTF8,
-    //LCLType,			// For the MessageBox
+uses LazUTF8,
     keditcommon,        // Holds some editing defines
     TRcommon,			// User settings and some defines used across units.
     LoadNote,           // Will know how to load a Tomboy formatted note.
-    {SyncGUI,}
     LazFileUtils,		// For ExtractFileName()
     Spelling,
-    NoteBook,
-    //MainUnit,            // Not needed now for anything other than MainForm.Close()
     K_Prn,              // Custom print unit.
     Markdown,
     Index,              // An Index of current note.
     math,
-    //LazFileUtils,       // ToDo : UTF8 complient, unlike FileUtil ...
     FileUtil, strutils,         // just for ExtractSimplePath ... ~#1620
-    // XMLRead, DOM, XMLWrite;     // For updating locations on a clean note (May 19, not needed ?)
     LCLIntf;            // OpenUrl(
 
 
@@ -349,9 +342,10 @@ begin
 end;
 
 procedure TNoteEditForm.SpeedButtonNotebookClick(Sender: TObject);
-var
-    NotebookPick : TNotebookPick;
+//var
+    //NotebookPick : TNotebookPick;
 begin
+    {
     NotebookPick := TNotebookPick.Create(Application);
     NotebookPick.FullFileName := NoteFileName;
     NotebookPick.Title := NoteTitle;
@@ -360,6 +354,7 @@ begin
     NotebookPick.Left := Left;
     if mrOK = NotebookPick.ShowModal then MarkDirty();
     NotebookPick.Free;
+    }
 end;
 
 procedure TNoteEditForm.BulletControl(const Toggle, TurnOn : boolean);

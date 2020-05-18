@@ -123,8 +123,7 @@ uses
     TRsettings,		// Manages settings.
     TRsync,
     TRnoteEdit, TRabout,
-    process,        // Linux, we call wmctrl to move note to current workspace
-    NoteBook;
+    process;
 
 
 
@@ -164,11 +163,16 @@ begin
     SGNotebooks.Clear;
     SGNotebooks.FixedCols := 0;
     SGNotebooks.Columns.Add;
-    SGNotebooks.Columns[0].Title.Caption := rsNotebooks;
+    SGNotebooks.Columns[0].Title.Caption := '';
+    SGNotebooks.Columns.Add;
+    SGNotebooks.Columns[1].Title.Caption := rsNotebooks;
+    SGNotebooks.Columns.Add;
+    SGNotebooks.Columns[2].Title.Caption := 'Notebook';
+    SGNotebooks.Columns[2].Visible := false;
     SGNotebooks.FixedRows:=1;
     SGNotebooks.GridLineStyle:=TPenStyle.psClear;
     SGNotebooks.Hint := rsNotebookHint;
-    SGNotebooks.Options := SGNotebooks.Options - [goRowHighlight];
+    SGNotebooks.Options := SGNotebooks.Options - [goRowHighlight]; // +[goRowSelect];
     SGNotebooks.ScrollBars := ssAutoVertical;
     SGNotebooks.FocusRectVisible := false;
     SGNotebooks.TitleStyle := tsNative;
@@ -185,7 +189,6 @@ begin
     SearchBox.Text := '';
 
     MenuIconList.GetIcon(2, Self.Icon);
-    //MenuIconList.GetIcon(2, Application.Icon);
 
     if UseTrayIcon then
     begin
@@ -408,7 +411,7 @@ begin
 
    try
        n := PNoteInfo(TMenuItem(Sender).Tag);
-       ShowMessage('DEBUG (TBD) : SHall show note '+n^.ID);
+       ShowMessage('DEBUG (TBD) : Shall show note '+n^.ID);
    except on E:Exception do TRlog(E.message);
    end;
 end;
@@ -423,9 +426,11 @@ begin
    TRlog('TrayMenuClicked');
 
    case TTrayTags(TMenuItem(Sender).Tag) of
+
         ttNewNote : if (NotesDir = '')
                   then ShowMessage(rsSetupNotesDirFirst)
                   else OpenNote();
+
         ttSettings:
           begin
             TRlog('TrayMenuClicked Settings');
@@ -435,6 +440,7 @@ begin
             FreeAndNil(FormSettings);
             syncshallrun := true;
           end;
+
         ttSync :
           begin
             syncshallrun := false;
@@ -453,8 +459,11 @@ begin
             else ShowMessage(rsSetupSyncFirst);
             syncshallrun := true;
           end;
+
         ttAbout : Begin FormAbout := TFormAbout.Create(self); FormAbout.ShowModal; FreeAndNil(FormAbout); end;
+
         ttSearch : begin Show(); end;
+
         ttQuit : begin ConfigWrite('TrayMenu Quit'); Application.terminate; end;
 
    end;
@@ -481,9 +490,11 @@ begin
    TRlog('MainMenuClicked');
 
    case TMenuTags(TMenuItem(Sender).Tag) of
+
         mtNewNote : if (NotesDir = '')
-                  then ShowMessage(rsSetupNotesDirFirst)
-                  else OpenNote();
+            then ShowMessage(rsSetupNotesDirFirst)
+            else OpenNote();
+
         mtNewNotebook : begin
             s:='';
             InputQuery(rsNotebooks,rsEnterNewNotebook ,s);
@@ -494,6 +505,7 @@ begin
                StatusBar1.SimpleText:= 'Notebook "'+SelectedNoteBook+'" selected'
             end;
           end;
+
         mtSettings: begin
             syncshallrun := false;
             TRlog('MainMenuClicked Settings');
@@ -502,6 +514,7 @@ begin
             FreeAndNil(FormSettings);
             syncshallrun := true;
           end;
+
         mtSync : begin
             TRlog('MainMenuClicked Sync');
             if(isSyncConfigured()) then
@@ -518,7 +531,9 @@ begin
             end
             else ShowMessage(rsSetupSyncFirst);
             end;
+
         mtAbout : Begin FormAbout := TFormAbout.Create(self); FormAbout.ShowModal; FreeAndNil(FormAbout); end;
+
         mtQuit : begin ConfigWrite('MainMenu QUit'); Application.terminate; end;
    end;
 end;
@@ -594,7 +609,7 @@ procedure TFormSearch.ScanNotes(Sender : TObject);
 Var
     ID : String;
     n : PNoteInfo;
-    i,c1,c2,j : integer;
+    i,c1,c2 : integer;
     Info : TSearchRec;
     s : String;
 begin
@@ -678,14 +693,12 @@ end;
 
 procedure TFormSearch.ProcessSync(Sender : TObject);
 var
-  // sync :
   m : integer;
 begin
    SyncTimer.Enabled := False;
    FreeAndNil(SyncTimer);
 
    TRlog('ProcessSync');
-   //StatusBar1.SimpleText:= 'ProcessSync '+IntToStr(Random(10000));
 
    if(not syncshallrun) then TRlog('Sync not possible for now (other process running)')
 
@@ -766,17 +779,12 @@ procedure TFormSearch.SGNotebooksPrepareCanvas(sender: TObject; aCol,
 begin
    //TRlog('SGNotebooksPrepareCanvas');
 
-   if (length(SelectedNoteBook) > 0) and (CompareText(SGNotebooks.Cells[0,aRow],SelectedNotebook) = 0)
+   if ((CompareText(SGNotebooks.Cells[2,aRow],SelectedNotebook) = 0) and (aRow>0))
    then begin
      SGNotebooks.canvas.brush.color := clOlive;
      SGNotebooks.canvas.Font.Color:= clWhite;
    end;
 
-   if((length(SelectedNoteBook) = 0) and (aRow = 1))
-   then begin
-     SGNotebooks.canvas.brush.color := clOlive;
-     SGNotebooks.canvas.Font.Color:= clWhite;
-   end;
 
 end;
 
@@ -795,7 +803,8 @@ end;
 
 procedure TFormSearch.SGNotebooksResize(Sender: TObject);
 begin
-    SGNotebooks.Columns[0].Width := SGNotebooks.width-1;
+    SGNotebooks.Columns[0].Width := 16;
+    SGNotebooks.Columns[1].Width := SGNotebooks.width - 17;
 end;
 
 
@@ -863,9 +872,10 @@ begin
 
    // Show notebooks
    while SGNotebooks.RowCount > 1 do SGNotebooks.DeleteRow(SGNotebooks.RowCount-1);
-   SGNotebooks.InsertRowWithValues(SGNotebooks.RowCount,[rsAnyNotebook]);
+   SGNotebooks.InsertRowWithValues(SGNotebooks.RowCount,['',rsAnyNotebook,'']);
+   SGNotebooks.InsertRowWithValues(SGNotebooks.RowCount,['',rsNoNotebook,'-']);
    for i := 0 to NotebooksList.Count - 1 do
-        SGNotebooks.InsertRowWithValues(SGNotebooks.RowCount, [NotebooksList.Strings[i]]);
+        SGNotebooks.InsertRowWithValues(SGNotebooks.RowCount, ['',NotebooksList.Strings[i],NotebooksList.Strings[i]]);
 
    // Show notes
    while SGNotes.RowCount > 1 do SGNotes.DeleteRow(SGNotes.RowCount-1);
@@ -912,8 +922,19 @@ begin
 end;
 
 procedure TFormSearch.SGNotebooksDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+var
+   bm : TBitmap;
 begin
    TRlog('SGNotebooksDrawCell col='+IntToStr(Acol)+' row='+IntToStr(Arow));
+
+   if((ACol = 0) and (ARow>0)) then
+   begin
+     // Put icon
+     bm := TBitmap.Create;
+     MenuIconList.GetBitmap(9, bm);
+     SGNotebooks.Canvas.Draw(floor((Rect.Left+Rect.Right)/2-8), floor((Rect.Top+Rect.Bottom)/2-8),bm);
+     bm.Free;
+   end;
 
    //SGNotesList.Canvas.Draw(Rect.Left, Rect.Top, SGImage.Picture.Graphic);
 
@@ -922,9 +943,6 @@ end;
 procedure TFormSearch.SGNotebooksClick(Sender: TObject);
 begin
    TRlog('SGNotebooksClick on row '+IntToStr(SGNotebooks.Row));
-   if(SGNotebooks.Row<2)
-   then SelectedNoteBook := ''
-   else SelectedNoteBook := SGNotebooks.Cells[0,SGNotebooks.Row];
 
    if(assigned(ShowTimer)) then
    begin
@@ -937,9 +955,13 @@ begin
    ShowTimer.Interval := 100;
    ShowTimer.Enabled := True;
 
-   if(length(SelectedNoteBook)>0)
-   then StatusBar1.SimpleText:= 'Notebook "'+SelectedNoteBook+'" selected'
-   else StatusBar1.SimpleText:= 'All notebooks selected';
+   SelectedNoteBook := SGNotebooks.Cells[2,SGNotebooks.Row];
+
+   if(length(SelectedNoteBook)=0)
+   then StatusBar1.SimpleText := 'Notes with any notebook(s) selected'
+   else if SelectedNoteBook = '-'
+   then StatusBar1.SimpleText := 'Notes without notebook selected'
+   else StatusBar1.SimpleText := 'All notebooks selected';
 
    TRlog('SGNotebooksClick NB = '+SelectedNotebook);
 end;
@@ -1009,20 +1031,21 @@ var
    FormSettings : TSettings;
    FormSync : TFormSync;
 begin
-     if {$ifdef DARWIN}ssMeta{$else}ssCtrl{$endif} in Shift then begin
+   if {$ifdef DARWIN}ssMeta{$else}ssCtrl{$endif} in Shift then
+   begin
 
-        // New Note
-        if key = ord('N') then begin TrLog('Ctrl-N'); OpenNote(); Key := 0; exit(); end;
+     // New Note
+     if key = ord('N') then begin TrLog('Ctrl-N'); OpenNote(); Key := 0; exit(); end;
 
-        // Quit
-        if key = ord('Q') then begin TRlog('Ctrl-Q'); ConfigWrite('Ctrl-Q Quit'); Key := 0; Application.terminate; exit(); end;
+     // Quit
+     if key = ord('Q') then begin TRlog('Ctrl-Q'); ConfigWrite('Ctrl-Q Quit'); Key := 0; Application.terminate; exit(); end;
 
-        // Sync
-        if key = ord('S') then
-        begin
-          TRlog('Ctrl-S');
-          syncshallrun := false;
-          if(isSyncConfigured()) then
+     // Sync
+     if key = ord('S') then
+     begin
+        TRlog('Ctrl-S');
+        syncshallrun := false;
+        if(isSyncConfigured()) then
           begin
              try
                 FormSync := TFormSync.Create(Self);
@@ -1032,24 +1055,24 @@ begin
              except on E:Exception do TRlog(E.message);
              end;
           end
-          else ShowMessage(rsSetupSyncFirst);
-          syncshallrun := true;
-          exit();
-        end;
+        else ShowMessage(rsSetupSyncFirst);
 
-        // Settings
-        if key = ord('O') then
+        syncshallrun := true;
+        exit();
+     end;
+
+     // Settings
+     if key = ord('O') then
         begin
           TRlog('Ctrl-O');
           syncshallrun := false;
-            FormSettings := TSettings.Create(self);
-            FormSettings.ShowModal;
-            FreeAndNil(FormSettings);
-            syncshallrun := true;
+          FormSettings := TSettings.Create(self);
+          FormSettings.ShowModal;
+          FreeAndNil(FormSettings);
+          syncshallrun := true;
           exit();
         end;
-
-     end;
+   end;
 end;
 
 procedure TFormSearch.FormShow(Sender: TObject);

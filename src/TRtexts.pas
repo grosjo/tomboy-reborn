@@ -48,6 +48,7 @@ RESOURCESTRING
   rsMenuQuit = 'Quit';
   rsNotebooks = 'Notebooks';
   rsAnyNotebook = 'Any notebook';
+  rsNoNotebook = 'Without notebook';
   rsName = 'Name';
   rsLastChange = 'Last Change';
 
