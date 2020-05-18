@@ -11,7 +11,7 @@ uses
     TRcommon, TRtexts;
 
 
-type TTrayTags = (ttNewNote, ttNewNotebook, ttSearch, ttAbout, ttSync, ttSettings, ttQuit);
+type TTrayTags = (ttNewNote, ttSearch, ttAbout, ttSync, ttSettings, ttQuit);
 
 // These are choices for main popup menus.
 type TMenuTags = (mtNewNote, mtNewNotebook, mtQuit, mtSync, mtExport1, mtSettings, mtAbout);
@@ -27,6 +27,7 @@ type
  TFormSearch = class(TForm)
 
         CheckCaseSensitive: TCheckBox;
+        MenuIconList: TImageList;
         MainMenu: TMainMenu;
         SearchBox: TEdit;
         Label1: TLabel;
@@ -70,6 +71,7 @@ type
 private
         NotesList : TNoteInfoList;
         NotebooksList : TStringList;
+        NewNotebooksList : TStringList;
 
         LastSync : TDateTime;
         TrayTimer : TTimer;
@@ -84,6 +86,7 @@ private
         syncshallrun : boolean;
         procedure ShowLists(sender: TObject);
         function AddNotebook(nb : String) : boolean;
+        function AddNewNotebook(nb : String): boolean;
 
         function AddLastUsed(ID : String; atend : boolean = false) : boolean;
 
@@ -136,6 +139,8 @@ begin
     NotesList.Lname := 'TSearch list';
 
     NotebooksList := TStringList.Create;
+    NewNotebooksList := TStringList.Create;
+
     LastUsed := TStringList.Create;
 
     SGNotes.Clear;
@@ -179,10 +184,14 @@ begin
     SearchBox.Hint:=rsSearchHint;
     SearchBox.Text := '';
 
+    MenuIconList.GetIcon(2, Self.Icon);
+    //MenuIconList.GetIcon(2, Application.Icon);
+
     if UseTrayIcon then
     begin
         TrayMenu := TPopupMenu.Create(Self);
         TrayIcon.PopUpMenu := TrayMenu;
+        MenuIconList.GetIcon(2, TrayIcon.Icon);
 
         TrayIcon.Show;
         TrayTimer := TTimer.Create(Nil);
@@ -192,6 +201,8 @@ begin
     end;
 
     MainMenu.Items.Clear;
+    MainMenu.Images := MenuIconList;
+
     // 'File'
     m1 := TMenuItem.Create(MainMenu);
     m1.Caption := rsMenuNotes;
@@ -199,31 +210,35 @@ begin
     // 'File' / New Note
     m2 := TMenuItem.Create(m1);
     m2.Tag := ord(mtNewNote);
-    m2.Caption := rsMenuNewNote;
+    m2.Caption := rsMenuNewNote+ '(Ctrl-N)';
     m2.OnClick := @MainMenuClicked;
+    m2.ImageIndex:=3;
     m1.Add(m2);
     // 'File' / New Notebook
     m2 := TMenuItem.Create(m1);
     m2.Tag := ord(mtNewNotebook);
     m2.Caption := rsMenuNewNotebook;
     m2.OnClick := @MainMenuClicked;
+    m2.ImageIndex:=1;
     m1.Add(m2);
     // 'File' / Sync
     m2 := TMenuItem.Create(m1);
     m2.Tag := ord(mtSync);
-    m2.Caption := rsMenuSync;
+    m2.Caption := rsMenuSync+ '(Ctrl-S)';
     m2.OnClick := @MainMenuClicked;
+    m2.ImageIndex:=10;
     m1.Add(m2);
     // 'File' / Quit
     m2 := TMenuItem.Create(m1);
     m2.Tag := ord(mtQuit);
-    m2.Caption := rsMenuQuit;
+    m2.ImageIndex:=7;
+    m2.Caption := rsMenuQuit + '(Ctrl-Q)';
     m2.OnClick := @MainMenuClicked;
     m1.Add(m2);
 
     // 'Options'
     m1 := TMenuItem.Create(MainMenu);
-    m1.Caption := rsMenuOptions;
+    m1.Caption := rsMenuOptions ;
     MainMenu.Items.Add(m1);
 
     // Options / Export
@@ -238,8 +253,9 @@ begin
     // Options / Settings
     m2 := TMenuItem.Create(m1);
     m2.Tag := ord(mtSettings);
-    m2.Caption := rsMenuSettings;
+    m2.Caption := rsMenuSettings + '(Ctrl-O)';
     m2.OnClick := @MainMenuClicked;
+    m2.ImageIndex:=8;
     m1.Add(m2);
 
     // 'Help'
@@ -251,6 +267,7 @@ begin
     m2.Caption := rsMenuAbout;
     m2.Tag := ord(mtAbout);
     m2.OnClick := @MainMenuClicked;
+    m2.ImageIndex:=9;
     m1.Add(m2);
 
 
@@ -299,23 +316,27 @@ begin
    end;
 
    TrayMenu.Items.Clear;
+   TrayMenu.Images := MenuIconList;
    // New Note
    m1 := TMenuItem.Create(TrayMenu);
    m1.Tag := ord(ttNewNote);
-   m1.Caption := rsTrayNewNote;
+   m1.Caption := rsTrayNewNote + '(Ctrl-N)';
    m1.OnClick := @TrayMenuClicked;
+   m1.ImageIndex:=3;
    TrayMenu.Items.Add(m1);
 
    // Search
    m1 := TMenuItem.Create(TrayMenu);
    m1.Tag := ord(ttSearch);
-   m1.Caption := rsTraySearchNote;
+   m1.Caption := rsTraySearchNote + '(Ctrl-A)';
+   m1.ImageIndex:=5;
    m1.OnClick := @TrayMenuClicked;
    TrayMenu.Items.Add(m1);
 
    // Notebooks
    m1 := TMenuItem.Create(TrayMenu);
    m1.Caption := rsTrayNotebooks;
+   m1.ImageIndex:=1;
    TrayMenu.Items.Add(m1);
 
    // List notebooks
@@ -332,13 +353,15 @@ begin
    // Sync
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttSync);
-   m2.Caption := rsTraySync;
+   m2.ImageIndex:=10;
+   m2.Caption := rsTraySync + '(Ctrl-S)';
    m2.OnClick := @TrayMenuClicked;
    m1.Add(m2);
    // Settings
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttSettings);
-   m2.Caption := rsTraySettings;
+   m2.Caption := rsTraySettings + '(Ctrl-O)';
+   m2.ImageIndex:=8;
    m2.OnClick := @TrayMenuClicked;
    m1.Add(m2);
    // About
@@ -346,11 +369,13 @@ begin
    m2.Tag := ord(ttAbout);
    m2.Caption := rsTrayAbout;
    m2.OnClick := @TrayMenuClicked;
+   m2.ImageIndex:=9;
    m1.Add(m2);
    // Quit
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttQuit);
-   m2.Caption := rsTrayQuit;
+   m2.ImageIndex:=7;
+   m2.Caption := rsTrayQuit + '(Ctrl-Q)';
    m2.OnClick := @TrayMenuClicked;
    m1.Add(m2);
 
@@ -366,6 +391,7 @@ begin
          m1 := TMenuItem.Create(TrayMenu);
          m1.Tag := PtrInt(n);
          m1.Caption := n^.Title;
+         m1.ImageIndex:=6;
          m1.OnClick := @TrayNoteClicked;
          TrayMenu.Items.Add(m1);
       end;
@@ -447,6 +473,7 @@ var
     FormSettings : TSettings;
     FormSync : TFormSync;
     FormAbout : TFormAbout;
+    s : String;
 begin
 
    //type TMenuTags = (mtNewNote, mtNewTemplate, mtQuit, mtSync, mtExport, mtSettings, mtAbout);
@@ -454,16 +481,32 @@ begin
    TRlog('MainMenuClicked');
 
    case TMenuTags(TMenuItem(Sender).Tag) of
+        mtNewNote : if (NotesDir = '')
+                  then ShowMessage(rsSetupNotesDirFirst)
+                  else OpenNote();
+        mtNewNotebook : begin
+            s:='';
+            InputQuery(rsNotebooks,rsEnterNewNotebook ,s);
+            if(AddNewNotebook(s)) then
+            begin
+               SelectedNotebook := Trim(s);
+               ShowLists(Sender);
+               StatusBar1.SimpleText:= 'Notebook "'+SelectedNoteBook+'" selected'
+            end;
+          end;
         mtSettings: begin
+            syncshallrun := false;
             TRlog('MainMenuClicked Settings');
             FormSettings := TSettings.Create(self);
             FormSettings.ShowModal;
             FreeAndNil(FormSettings);
-            end;
+            syncshallrun := true;
+          end;
         mtSync : begin
             TRlog('MainMenuClicked Sync');
             if(isSyncConfigured()) then
             begin
+               syncshallrun := false;
                try
                   FormSync := TFormSync.Create(Self);
                   FormSync.SyncVisible();
@@ -471,6 +514,7 @@ begin
                   FreeAndNil(FormSync);
                except on E:Exception do TRlog(E.message);
                end;
+               syncshallrun := true;
             end
             else ShowMessage(rsSetupSyncFirst);
             end;
@@ -510,10 +554,31 @@ begin
    Result := true;
 end;
 
+function TFormSearch.AddNewNotebook(nb : String): boolean;
+var
+   i : integer;
+begin
+   nb := Trim(nb);
+   if(length(nb)<1) then exit(false);
+
+   i:=0;
+   while(i<NewNotebooksList.Count) do
+    begin
+        if(CompareText(NewNotebooksList.Strings[i],nb) = 0) then exit(false);
+        inc(i);
+    end;
+
+   NewNotebooksList.Add(nb);
+   Result:=true;
+end;
+
 function TFormSearch.AddNotebook(nb : String): boolean;
 var
    i : integer;
 begin
+   nb := Trim(nb);
+   if(length(nb)<1) then exit(false);
+
    i:=0;
    while(i<NotebooksList.Count) do
     begin
@@ -529,9 +594,9 @@ procedure TFormSearch.ScanNotes(Sender : TObject);
 Var
     ID : String;
     n : PNoteInfo;
-    i,c1,c2 : integer;
+    i,c1,c2,j : integer;
     Info : TSearchRec;
-    //ids : TNoteInfoList;
+    s : String;
 begin
    TRlog('ScanNotes');
 
@@ -557,21 +622,31 @@ begin
            n^.Rev := -1;
            n^.LastSyncGMT := 0;
            n^.LastSync := '';
-           n^.OpenNote:= nil;
+           n^.FormEdit:= nil;
            NotesList.Add(n);
         end
         else FreeAndNil(n^.Tags);
 
         inc(c1);
-        FileToNote(GetLocalNoteFile(ID), n);
+        s := GetLocalNoteFile(ID);
+        FileToNote(s, n);
         i:=0;
         while(i<n^.Tags.Count) do
         begin
-            if(AddNotebook(n^.Tags.Strings[i])) then inc(c2);
+            s := n^.Tags.Strings[i];
+            if(Copy(s,1,16) = 'system:notebook:') then
+            if(AddNotebook(Copy(s,17))) then inc(c2);
             inc(i);
         end;
    until FindNext(Info) <> 0;
    FindClose(Info);
+
+   i:=0;
+   while(i<NewNotebooksList.Count) do
+   begin
+        AddNotebook(NewNotebooksList.Strings[i]);
+        inc(i);
+   end;
 
    // Cleanup LastUsed
    TRlog('Cleaning up last used');
@@ -646,10 +721,10 @@ begin
         n := NotesList.FindID(DeletedList.Strings[i]);
         if(n<>nil) then
         begin
-           if(n^.OpenNote <> nil) then
+           if(n^.FormEdit <> nil) then
            begin
-                n^.OpenNote^.Close;
-                n^.OpenNote := nil;
+                n^.FormEdit^.Close;
+                FreeAndNil(n^.FormEdit);
            end;
            NotesList.Remove(n);
            Dispose(n);
@@ -669,10 +744,10 @@ begin
            NotesList.Add(n);
         end
         else begin
-           if(n^.OpenNote <> nil) then
+           if(n^.FormEdit <> nil) then
            begin
-                n^.OpenNote^.Close;
-                n^.OpenNote := nil;
+                n^.FormEdit^.Close;
+                FreeAndNil(n^.FormEdit);
            end;
            FileToNote(GetLocalNoteFile(n^.ID),n);
            NotesList.Add(n);
@@ -779,6 +854,13 @@ begin
         inc(i);
     end;
 
+   i:=0;
+   while(i<NewNotebooksList.Count) do
+   begin
+        AddNotebook(NewNotebooksList.Strings[i]);
+        inc(i);
+   end;
+
    // Show notebooks
    while SGNotebooks.RowCount > 1 do SGNotebooks.DeleteRow(SGNotebooks.RowCount-1);
    SGNotebooks.InsertRowWithValues(SGNotebooks.RowCount,[rsAnyNotebook]);
@@ -797,6 +879,69 @@ begin
    end;
 
    sl.Free;
+end;
+
+procedure TFormSearch.SGNotesDblClick(Sender: TObject);
+var
+   r : integer;
+   n : PNoteInfo;
+   ID : String;
+begin
+   r := SGNotes.Row;
+   TRlog('Double Clicked (Notes) on line : '+IntToStr(r));
+
+   if(r>0) then begin
+     ID := SGNotes.Cells[2, r];
+     TRlog('Double Clicked (Notes) -> ID = '+ID);
+     n := NotesList.FindID(ID);
+     if(n<>nil) then
+     begin
+          AddLastUsed(ID);
+          TRlog('Clicked on Note:'+n^.ID+' Title='+n^.Title);
+     end
+     else TRlog('ID not found...');
+   end;
+end;
+
+procedure TFormSearch.SGNotesDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+begin
+   //TRlog('SGNotesDrawCell col='+IntToStr(Acol)+' row='+IntToStr(Arow));
+
+   //SGNotesList.Canvas.Draw(Rect.Left, Rect.Top, SGImage.Picture.Graphic);
+
+end;
+
+procedure TFormSearch.SGNotebooksDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+begin
+   TRlog('SGNotebooksDrawCell col='+IntToStr(Acol)+' row='+IntToStr(Arow));
+
+   //SGNotesList.Canvas.Draw(Rect.Left, Rect.Top, SGImage.Picture.Graphic);
+
+end;
+
+procedure TFormSearch.SGNotebooksClick(Sender: TObject);
+begin
+   TRlog('SGNotebooksClick on row '+IntToStr(SGNotebooks.Row));
+   if(SGNotebooks.Row<2)
+   then SelectedNoteBook := ''
+   else SelectedNoteBook := SGNotebooks.Cells[0,SGNotebooks.Row];
+
+   if(assigned(ShowTimer)) then
+   begin
+      ShowTimer.Enabled := False;
+      FreeAndNil(ShowTimer);
+   end;
+
+   ShowTimer := TTimer.Create(nil);
+   ShowTimer.OnTimer := @ShowLists;
+   ShowTimer.Interval := 100;
+   ShowTimer.Enabled := True;
+
+   if(length(SelectedNoteBook)>0)
+   then StatusBar1.SimpleText:= 'Notebook "'+SelectedNoteBook+'" selected'
+   else StatusBar1.SimpleText:= 'All notebooks selected';
+
+   TRlog('SGNotebooksClick NB = '+SelectedNotebook);
 end;
 
 procedure TFormSearch.SearchBoxChange(Sender: TObject);
@@ -855,14 +1000,55 @@ begin
   FreeAndNil(SGNotes);
   FreeAndNil(NotesList);
   FreeAndNil(NotebooksList);
+  FreeAndNil(NewNotebooksList);
 end;
 
 procedure TFormSearch.FormKeyDown(Sender: TObject; var Key: Word;
     Shift: TShiftState);
+var
+   FormSettings : TSettings;
+   FormSync : TFormSync;
 begin
      if {$ifdef DARWIN}ssMeta{$else}ssCtrl{$endif} in Shift then begin
-       if key = ord('N') then begin OpenNote(); Key := 0; exit(); end;
-       //if key = VK_Q then MainForm.Close();
+
+        // New Note
+        if key = ord('N') then begin TrLog('Ctrl-N'); OpenNote(); Key := 0; exit(); end;
+
+        // Quit
+        if key = ord('Q') then begin TRlog('Ctrl-Q'); ConfigWrite('Ctrl-Q Quit'); Key := 0; Application.terminate; exit(); end;
+
+        // Sync
+        if key = ord('S') then
+        begin
+          TRlog('Ctrl-S');
+          syncshallrun := false;
+          if(isSyncConfigured()) then
+          begin
+             try
+                FormSync := TFormSync.Create(Self);
+                FormSync.SyncVisible();
+                FreeAndNil(FormSync);
+                LastSync := now;
+             except on E:Exception do TRlog(E.message);
+             end;
+          end
+          else ShowMessage(rsSetupSyncFirst);
+          syncshallrun := true;
+          exit();
+        end;
+
+        // Settings
+        if key = ord('O') then
+        begin
+          TRlog('Ctrl-O');
+          syncshallrun := false;
+            FormSettings := TSettings.Create(self);
+            FormSettings.ShowModal;
+            FreeAndNil(FormSettings);
+            syncshallrun := true;
+          exit();
+        end;
+
      end;
 end;
 
@@ -990,66 +1176,6 @@ begin
     }
 end;
 
-procedure TFormSearch.SGNotesDblClick(Sender: TObject);
-var
-   r : integer;
-   n : PNoteInfo;
-   ID : String;
-begin
-   r := SGNotes.Row;
-   TRlog('Double Clicked (Notes) on line : '+IntToStr(r));
-
-   if(r>0) then begin
-     ID := SGNotes.Cells[2, r];
-     TRlog('Double Clicked (Notes) -> ID = '+ID);
-     n := NotesList.FindID(ID);
-     if(n<>nil) then
-     begin
-          AddLastUsed(ID);
-          TRlog('Clicked on Note:'+n^.ID+' Title='+n^.Title);
-     end
-     else TRlog('ID not found...');
-   end;
-end;
-
-procedure TFormSearch.SGNotesDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
-begin
-   //TRlog('SGNotesDrawCell col='+IntToStr(Acol)+' row='+IntToStr(Arow));
-
-   //SGNotesList.Canvas.Draw(Rect.Left, Rect.Top, SGImage.Picture.Graphic);
-
-end;
-
-procedure TFormSearch.SGNotebooksDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
-begin
-   TRlog('SGNotebooksDrawCell col='+IntToStr(Acol)+' row='+IntToStr(Arow));
-
-   //SGNotesList.Canvas.Draw(Rect.Left, Rect.Top, SGImage.Picture.Graphic);
-
-end;
-
-procedure TFormSearch.SGNotebooksClick(Sender: TObject);
-begin
-   TRlog('SGNotebooksClick on row '+IntToStr(SGNotebooks.Row));
-   if(SGNotebooks.Row<2)
-   then SelectedNoteBook := ''
-   else SelectedNoteBook := SGNotebooks.Cells[0,SGNotebooks.Row];
-
-   if(assigned(ShowTimer)) then
-   begin
-      ShowTimer.Enabled := False;
-      FreeAndNil(ShowTimer);
-   end;
-
-   ShowTimer := TTimer.Create(nil);
-   ShowTimer.OnTimer := @ShowLists;
-   ShowTimer.Interval := 100;
-   ShowTimer.Enabled := True;
-
-   StatusBar1.SimpleText:= 'Notebook "'+SelectedNoteBook+'" selected';
-
-   TRlog('SGNotebooksClick NB = '+SelectedNotebook);
-end;
 
 procedure TFormSearch.SGNotesClick(Sender: TObject);
 begin

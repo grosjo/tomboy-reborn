@@ -77,7 +77,7 @@ type TNoteInfo =
         Tags : TStringList;
         Error : String;
         Deleted : boolean;
-        OpenNote : ^TForm;
+        FormEdit : ^TForm;
   end;
 
 type PNoteInfo=^TNoteInfo;
@@ -608,7 +608,7 @@ begin
   c^.Error := A^.Error;
   c^.Deleted := A^.Deleted;
 
-  c^.OpenNote := nil;
+  c^.FormEdit := nil;
 
 end;
 
