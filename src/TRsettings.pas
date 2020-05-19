@@ -155,10 +155,14 @@ begin
 end;
 
 procedure TSettings.ButtonSetColoursClick(Sender: TObject);
+var
+    FormColours : TFormColours;
 begin
    TRlog('ButtonSetColoursClick');
 
    if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
+
+   FormColours := TFormColours.Create(Self);
 
    FormColours.CBack   := BackGndColour;
    FormColours.CHiBack := HiColour;
@@ -173,6 +177,8 @@ begin
 	 TitleColour := FormColours.CTitle;
       end;
    end;
+
+   FormColours.Free;
 end;
 
 procedure TSettings.ButtonNCSetupClick(Sender: TObject);

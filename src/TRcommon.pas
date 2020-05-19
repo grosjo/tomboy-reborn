@@ -188,6 +188,7 @@ var
     mainWindow : TForm;
 
     Debug : boolean;
+
 Const
   Placement = 45;
 

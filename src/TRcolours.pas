@@ -8,8 +8,7 @@ uses
         Classes, SysUtils, kmemo, Forms, Controls, Graphics, Dialogs, StdCtrls,
 		Buttons;
 
-type    { TFormColours }
-    TFormColours = class(TForm)
+type TFormColours = class(TForm)
 		ColorDialog1: TColorDialog;
 		KMemo1: TKMemo;
 		Label1: TLabel;
@@ -37,8 +36,6 @@ type    { TFormColours }
         CTitle, CBack, CText, CHiBack : TColor;
 end;
 
-var
-        FormColours: TFormColours;
 
 implementation
 
@@ -55,13 +52,11 @@ begin
     TB := KMemo1.Blocks.AddTextBlock('The Title');
     TB.TextStyle.Font.Size:= 16;
     TB.TextStyle.Font.Color:= CTitle;
-    //TB.TextStyle.Brush.Color:= CBack;
     TB.TextStyle.Font.Underline := true;
     KMemo1.blocks.AddParagraph();
     TB := KMemo1.Blocks.AddTextBlock('Normal Text');
     TB.TextStyle.Font.Size:= 11;
     TB.TextStyle.Font.Color:=CText;
-    //TB.TextStyle.Brush.Color:= CBack;
     KMemo1.blocks.AddParagraph();
     TB := KMemo1.Blocks.AddTextBlock('Some Highlight');
     TB.TextStyle.Font.Size:= 11;
@@ -71,7 +66,6 @@ begin
     TB := KMemo1.Blocks.AddTextBlock('More normal Text');
     TB.TextStyle.Font.Size:=11;
     TB.TextStyle.Font.Color:= CText;
-    //TB.TextStyle.Brush.Color:= CBack;
     KMemo1.blocks.AddParagraph();
 end;
 

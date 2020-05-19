@@ -6,10 +6,14 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  TRcommon;
+  RichMemo, ExtendedNotebook, TRcommon;
 
 
-type TFormAbout = class(TForm)
+type
+
+{ TFormAbout }
+
+ TFormAbout = class(TForm)
     Image1: TImage;
     Label1: TLabel;
     Label2: TLabel;
