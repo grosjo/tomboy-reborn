@@ -17,9 +17,6 @@ uses
 type TNoteEditForm = class(TForm)
     FindDialog1: TFindDialog;
     KMemo1: TKMemo;
-    Label2: TLabel;
-    Label3: TLabel;
-    Label4: TLabel;
     MenuBold: TMenuItem;
     MenuItalic: TMenuItem;
     MenuHighLight: TMenuItem;
@@ -52,7 +49,6 @@ type TNoteEditForm = class(TForm)
     MenuFixedWidth: TMenuItem;
     MenuUnderline: TMenuItem;
     MenuStrikeout: TMenuItem;
-    PanelReadOnly: TPanel;
     PopupMainTBMenu: TPopupMenu;
     PopupMenuRightClick: TPopupMenu;
     PopupMenuTools: TPopupMenu;
@@ -251,7 +247,7 @@ private
             { Will mark this note as ReadOnly and not to be saved because the Sync Process
               has either replaced or deleted this note OR we are using it as an internal viewer.
               Can still read and copy content. Viewer users don't need big ugly yellow warning}
-        procedure SetReadOnly(ShowWarning : Boolean = True);
+        //procedure SetReadOnly(ShowWarning : Boolean = True);
     end;
 
 type PNoteEditForm = ^TNoteEditForm;
@@ -901,11 +897,6 @@ begin
     else Result := Caption;
 end;
 
-procedure TNoteEditForm.SetReadOnly(ShowWarning : Boolean = True);
-begin
-   if ShowWarning then PanelReadOnly.Height:= 60;
-   KMemo1.ReadOnly := True;
-end;
 
 procedure TNoteEditForm.MenuItemPasteClick(Sender: TObject);
 begin
@@ -1119,7 +1110,7 @@ var
     ItsANewNote : boolean = false;
 begin
     if Ready then exit();				// its a "re-show" event. Already have a note loaded.
-    PanelReadOnly.Height := 1;
+    //PanelReadOnly.Height := 1;
     TimerSave.Enabled := False;
     //KMemo1.Font.Size := FontSizeNormal;
     {$ifdef LINUX}

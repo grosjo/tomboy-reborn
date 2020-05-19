@@ -117,11 +117,12 @@ function ConfigRead(source : String) : integer;
 // Note generic function
 function GetNewID() : String;
 function NoteIDLooksOK(const ID : string) : boolean;
-procedure FileToNote(filename : String; NoteInfo : PNoteInfo);
+function FileToNote(filename : String; NoteInfo : PNoteInfo) : boolean;
 function NoteToFile(note : PNoteInfo; filename : String) : boolean;
 function RemoveBadXMLCharacters(const InStr : String; DoQuotes : boolean = false) : String;
 function RemoveXml(const St : String) : String;
 procedure CopyNote(A : PNoteInfo; c : PNoteInfo);
+function EmptyNote() : PNoteInfo;
 function NoteContains(const TermList: TStringList; N : PNoteInfo ; CaseSensitive : boolean = false): boolean;
 function NoteBelongs(const notebook : String ; N : PNoteInfo ): boolean;
 function NoteTimeOrder(Item1: Pointer;Item2: Pointer):Integer;
@@ -268,6 +269,7 @@ end;
 
 function GetLocalNoteFile(NoteID : string; altrep : String = ''): string;
 begin
+    TRlog('GetLocalNoteFile ('+NoteID+')');
     altrep := chomppathdelim(altrep);
     if(length(altrep)>0)
     then begin
@@ -622,17 +624,60 @@ begin
   c^.Y := A^.Y;
   c^.X := A^.X;
 
-  if(not assigned(A^.Tags)) then A^.Tags := TStringList.Create;
-  c^.Tags := TStringList.Create;
+  c^.Tags.Clear;
   for i:=0 to A^.Tags.Count -1 do c^.Tags.Add(A^.Tags.Strings[i]);
 
   c^.Error := A^.Error;
   c^.Deleted := A^.Deleted;
 
-  c^.FormEdit := nil;
+  c^.FormEdit := A^.FormEdit;
 
 end;
 
+function EmptyNote() : PNoteInfo;
+var
+   n : PNoteInfo;
+begin
+   new(n);
+   n^.Action:=SynUnset;
+   n^.ID := GetNewID();
+   n^.Rev := -1;
+   n^.LastSyncGMT := 0;
+   n^.LastSync := '';
+   n^.FormEdit:= nil;
+   n^.Tags := TStringList.Create;
+
+   n^.Deleted := false;
+   n^.CreateDate := GetCurrentTimeStr();
+   n^.CreateDateGMT := GetGMTFromStr(n^.CreateDate);
+
+   n^.LastChange := GetCurrentTimeStr();
+   n^.LastChangeGMT := GetGMTFromStr(n^.LastChange);
+   n^.LastMetaChange := GetCurrentTimeStr();
+   n^.LastMetaChangeGMT := GetGMTFromStr(n^.LastMetaChange);
+
+   n^.Version := '0.3';
+   n^.Title := 'New Note '+ n^.CreateDate;
+   n^.Content := 'Empty note';
+
+   n^.X := 0;
+   n^.Y := 0;
+
+   n^.width := 300;
+   n^.height := 300;
+
+   n^.CursorPosition := 0;
+   n^.SelectBoundPosition :=0;
+
+   n^.Pinned := false;
+   n^.OpenOnStartup := false;
+
+   n^.Error := '';
+   n^.Deleted := false;
+   n^.FormEdit := nil;
+
+   Result := n;
+end;
 
 function NoteToFile(note : PNoteInfo; filename : String) : boolean;
 var
@@ -675,7 +720,7 @@ begin
    result := ok;
 end;
 
-procedure FileToNote(filename : String; NoteInfo : PNoteInfo);
+function FileToNote(filename : String; NoteInfo : PNoteInfo) : boolean;
 var
     Doc : TXMLDocument;
     Node : TDOMNode;
@@ -683,26 +728,24 @@ var
     j : integer;
     xmlfile : String ;
 begin
-  xmlfile := Trim(filename);
+   xmlfile := Trim(filename);
    TRlog('File to note '+xmlfile);
 
    try
-        ReadXMLFile(Doc, Trim(xmlfile));
+        ReadXMLFile(Doc, xmlfile);
    except on E:Exception do
-        begin
-          TRlog('File to note ERROR '+filename);
-          TRlog(E.message);
-          NoteInfo^.Error := E.message;
-          NoteInfo^.Action:= SynClash;
-          FreeAndNil(Doc);
-          exit();
-        end;
+       begin
+           TRlog('File to note ERROR '+filename);
+           TRlog(E.message);
+           NoteInfo^.Error := E.message;
+           NoteInfo^.Action:= SynClash;
+           FreeAndNil(Doc);
+           exit(false);
+       end;
    end;
 
-   NoteInfo^.Tags := TStringList.Create;
-
-     try
-        Node := Doc.DocumentElement.FindNode('create-date');
+   try
+       Node := Doc.DocumentElement.FindNode('create-date');
         NoteInfo^.CreateDate := '';
         if(assigned(Node)) then NoteInfo^.CreateDate := Node.FirstChild.NodeValue;
         if NoteInfo^.CreateDate = '' then NoteInfo^.CreateDate := GetCurrentTimeStr();
@@ -801,42 +844,41 @@ begin
              if(Assigned(Node)) then NoteInfo^.Version := Node.NodeValue;
         end
         else TRlog('No text');
-
         if(assigned(Node)) then Node.Free;
 
         //TRlog('Looking for tags');
+        NoteInfo^.Tags.Clear;
         Node := Doc.DocumentElement.FindNode('tags');
         if(assigned(Node)) then
         begin
            NodeList := Node.ChildNodes;
            for j := 0 to NodeList.Count-1 do
-               begin
-                //TRlog('Found tag ' + NodeList.Item[j].TextContent);
                 NoteInfo^.Tags.Add(NodeList.Item[j].TextContent);
-               end;
         end
         //else TRlog('No tags')
         ;
 
-        if(assigned(Node)) then Node.Free;
+       if(assigned(Node)) then Node.Free;
 
 
 
-        NoteInfo^.Deleted := false;
+       NoteInfo^.Deleted := false;
 
-     except on E:Exception do
-        begin
-         TRlog('File to note ERROR2 '+filename);
+   except on E:Exception do
+       begin
+           TRlog('File to note ERROR2 '+filename);
+           NoteInfo^.Error := E.Message;
+           NoteInfo^.Action:= SynClash;
+           TRlog(E.message);
+           FreeAndNil(Doc);
+           exit(false);
+       end;
+   end;
 
-          NoteInfo^.Error := E.Message;
-          NoteInfo^.Action:= SynClash;
-          TRlog(E.message);
-        end;
-     end;
+   FreeAndNil(Doc);
+   TRlog('File to note DONE '+filename);
 
-     FreeAndNil(Doc);
-     TRlog('File to note DONE '+filename);
-
+   Result := true;
 end;
 
 function NoteTimeOrder(Item1: Pointer;Item2: Pointer):Integer;

@@ -173,8 +173,6 @@ begin
     SearchBox.Hint:=rsSearchHint;
     SearchBox.Text := '';
 
-    //MenuIconList.GetIcon(2, Self.Icon);
-
     MainMenu.Items.Clear;
     MainMenu.Images := MenuIconList;
 
@@ -530,8 +528,6 @@ var
     s : String;
 begin
 
-   //type TMenuTags = (mtNewNote, mtNewTemplate, mtQuit, mtSync, mtExport, mtSettings, mtAbout);
-
    TRlog('MainMenuClicked');
 
    case TMenuTags(TMenuItem(Sender).Tag) of
@@ -703,7 +699,7 @@ end;
 procedure TFormSearch.ScanNotes(Sender : TObject);
 Var
     ID : String;
-    n : PNoteInfo;
+    n,n2 : PNoteInfo;
     i,c1,c2 : integer;
     Info : TSearchRec;
     s : String;
@@ -726,20 +722,19 @@ begin
         n := NotesList.FindID(ID);
         if(n = nil) then
         begin
-           new(n);
-           n^.Action:=SynUnset;
+           n := EmptyNote();
            n^.ID := ID;
-           n^.Rev := -1;
-           n^.LastSyncGMT := 0;
-           n^.LastSync := '';
-           n^.FormEdit:= nil;
            NotesList.Add(n);
         end
-        else FreeAndNil(n^.Tags);
+        else n^.Tags.Clear;
 
+        n2 := EmptyNote();
+        CopyNote(n,n2);
         inc(c1);
         s := GetLocalNoteFile(ID);
-        FileToNote(s, n);
+        if(not FileToNote(s, n2)) then begin ShowMessage('Error reading '+ID +' : '+n2^.Error ); Dispose(n2); continue; end;
+        CopyNote(n2,n);
+        Dispose(n2);
         i:=0;
         while(i<n^.Tags.Count) do
         begin
@@ -1317,24 +1312,12 @@ begin
 
    n := NotesList.FindID(ID);
 
-   if(n = nil) then begin
-        new(n);
-        n^.Action:=SynUnset;
-        n^.ID := ID;
-        n^.Deleted := false;
-        n^.LastSyncGMT := 0;
-        n^.LastSync := '';
-        n^.CreateDate := GetCurrentTimeStr();
-        n^.CreateDateGMT := GetGMTFromStr(n^.CreateDate);
-        n^.LastChange := GetCurrentTimeStr();
-        n^.LastChangeGMT := GetGMTFromStr(n^.LastChange);
-        n^.LastMetaChange := GetCurrentTimeStr();
-        n^.LastMetaChangeGMT := GetGMTFromStr(n^.LastMetaChange);
-        n^.Tags := TStringList.Create;
-        n^.Title := 'New Note '+ n^.CreateDate;
-        if((length(Notebook)>0) and (CompareText(Notebook,'-')<>0)) then n^.Tags.Add('system:notebook:'+Notebook);
-        n^.FormEdit:= nil;
-        NotesList.Add(n);
+   if(n = nil) then
+   begin
+      n := EmptyNote();
+      n^.ID := ID;
+      if((length(Notebook)>0) and (CompareText(Notebook,'-')<>0)) then n^.Tags.Add('system:notebook:'+Notebook);
+      NotesList.Add(n);
    end;
 
    if(n^.FormEdit <> nil) then begin
@@ -1345,7 +1328,6 @@ begin
       FreeAndNil(n^.FormEdit);
    end;
 
-   new(Ebox);
    Ebox^ := TNoteEditForm.Create(Self);
    n^.FormEdit := Ebox;
    EBox^.note := n;

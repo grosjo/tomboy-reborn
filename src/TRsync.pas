@@ -228,7 +228,7 @@ begin
         PNote := NoteMetaData.FindID(ID);
         if(PNote <> Nil) then continue;
 
-        new(PNote);
+        PNote := EmptyNote();
         CopyNote(LNote, PNote);
 
         if(DatesCompare(LNote^.LastChangeGMT,LNote^.LastSyncGMT)<0)
@@ -294,7 +294,7 @@ begin
 
       TRlog('Found one ! '+ID);
 
-      new(PNote);
+      PNote := EmptyNote();
       CopyNote(LNote, PNote);
       PNote^.Action:=SynUploadNew;
       LNote^.Action:=PNote^.Action;
@@ -456,7 +456,7 @@ begin
         remote := NoteMetaData.Items[i];
         if remote^.Action <> SynCopy then continue;
 
-        new(local);
+        local := EmptyNote();
         CopyNote(remote,local);
 
         local^.Title := local^.Title + ' (Server Rev=' + IntToStr(Transport.ServerRev) +' )';
@@ -575,14 +575,14 @@ begin
        if((n^.Action  = SynUploadNew) or (n^.Action  = SynUploadEdit)) then
           begin
              l := LocalMetaData.FindID(n^.ID);
-             new(n);
+             n := EmptyNote();
              CopyNote(l,n);
              n^.Action := NoteMetaData.Items[i]^.Action;
              notes.Add(n);
           end
        else if n^.Action = SynDeleteRemote then
           begin
-              new(n);
+              n := EmptyNote();
               CopyNote(NoteMetaData.Items[i],n);
               notes.Add(n)
           end;
@@ -695,18 +695,16 @@ begin
     if FindFirstUTF8(GetLocalNoteFile('*'), faAnyFile, Info)=0 then
     repeat
         ID := copy(Info.Name, 1, 36);
-        new(PNote);
-        PNote^.Action:=SynUnset;
+        PNote := EmptyNote();
         PNote^.ID := ID;
-        PNote^.Rev := -1;
-        PNote^.LastSyncGMT := 0;
-        PNote^.LastSync := '';
 
         s := GetLocalNoteFile(ID);
-        FileToNote(s, PNote );
-
-        LocalMetaData.Add(PNote);
-        inc(c);
+        if(FileToNote(s, PNote )) then
+        begin
+            LocalMetaData.Add(PNote);
+            inc(c);
+        end
+        else Dispose(PNote);
 
     until FindNext(Info) <> 0;
     FindClose(Info);
@@ -744,12 +742,9 @@ begin
 
         PNote := LocalMetaData.FindID(ID);
         if(PNote = Nil) then begin
-            new(PNote);
-            PNote^.Action:=SynUnset;
+            PNote := EmptyNote();
             PNote^.ID := ID;
             PNote^.Deleted := true;
-            PNote^.LastSyncGMT := 0;
-            PNote^.LastSync := '';
             LocalMetaData.Add(PNote);
         end;
 
