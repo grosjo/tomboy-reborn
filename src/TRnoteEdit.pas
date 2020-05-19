@@ -9,6 +9,7 @@ uses
     Menus, StdCtrls, Buttons, kmemo, LazLogger, PrintersDlgs,
     clipbrd, lcltype,      // required up here for copy on selection stuff.
     fpexprpars,         // for calc stuff ;
+    TRcommon,
     SaveNote;      		// Knows how to save a Note to disk in Tomboy's XML
 
 
@@ -127,6 +128,8 @@ type TNoteEditForm = class(TForm)
     procedure TimerSaveTimer(Sender: TObject);
     procedure TimerHousekeepingTimer(Sender: TObject);
 
+    procedure Commit();
+
 private
 
     CreateDate : string;		// Will be '' if new note
@@ -235,6 +238,8 @@ private
         procedure UnsetPrimarySelection;
         function UpdateNote(NRec: TNoteUpdaterec): boolean;
     public
+        note : PNoteInfo;
+
         // Set by the calling process.
         SingleNoteMode : Boolean;
         NoteFileName, NoteTitle : string;
@@ -249,6 +254,7 @@ private
         procedure SetReadOnly(ShowWarning : Boolean = True);
     end;
 
+type PNoteEditForm = ^TNoteEditForm;
 
 implementation
 
@@ -257,16 +263,16 @@ implementation
 { TNoteEditForm }
 uses LazUTF8,
     keditcommon,        // Holds some editing defines
-    TRcommon,			// User settings and some defines used across units.
-    LoadNote,           // Will know how to load a Tomboy formatted note.
     LazFileUtils,		// For ExtractFileName()
+    math,
+    FileUtil, strutils,         // just for ExtractSimplePath ... ~#1620
+    LCLIntf,
+
+    LoadNote,           // Will know how to load a Tomboy formatted note.
     Spelling,
     K_Prn,              // Custom print unit.
     Markdown,
-    Index,              // An Index of current note.
-    math,
-    FileUtil, strutils,         // just for ExtractSimplePath ... ~#1620
-    LCLIntf;            // OpenUrl(
+    Index;              // An Index of current note.
 
 
 const
@@ -339,6 +345,11 @@ begin
             SL.Free;
 		end;
 	end;
+end;
+
+procedure TNoteEditForm.Commit();
+begin
+
 end;
 
 procedure TNoteEditForm.SpeedButtonNotebookClick(Sender: TObject);

@@ -90,18 +90,7 @@ private
         procedure ProcessSync(Sender: TObject);
         procedure ProcessSyncUpdates(const DeletedList, DownList: TStringList);
 
-        function MoveWindowHere(WTitle: string): boolean;
-        { If there is an open note from the passed filename, it will be marked read Only,
-          If deleted, remove entry from NoteLister, will accept a GUID, Filename or FullFileName inc path }
-        procedure MarkNoteReadOnly(const FullFileName: string; const WasDeleted : boolean);
-
-        { Gets called with a title and filename (clicking grid), with just a title
-          (clicked a note link or recent menu item or Link Button) or nothing
-          (new note). If its just Title but Title does not exist, its Link
-          Button. }
-        procedure OpenNote(NoteTitle : String = ''; FullFileName : string = ''; TemplateIs : AnsiString = '');
-        { Deletes the actual file then removes the indicated note from the internal
-        data about notes, refreshes Grid }
+        procedure OpenNote(ID : String = ''; Notebook : String = '');
         function DeleteNote(ID: String) : boolean;
         function SaveNote(ID: String) : boolean;
 
@@ -456,7 +445,8 @@ end;
 
 procedure TFormSearch.MenuNewNotebookNote(Sender : TObject);
 begin
-   ShowMessage('Shall be creating new note on notebook '+SelectedNotebook);
+   ShowMessage('Opening new note on notebook '+SelectedNotebook);
+   OpenNote('',NotebooksList.Strings[TMenuItem(Sender).Tag]);
 end;
 
 procedure TFormSearch.TrayNoteClicked(Sender : TObject);
@@ -1102,6 +1092,7 @@ begin
      begin
           AddLastUsed(ID);
           TRlog('Clicked on Note:'+n^.ID+' Title='+n^.Title);
+          OpenNote(ID);
      end
      else TRlog('ID not found...');
    end;
@@ -1315,106 +1306,52 @@ begin
 
 end;
 
-procedure TFormSearch.MarkNoteReadOnly(const FullFileName : string; const WasDeleted : boolean);
+
+
+procedure TFormSearch.OpenNote(ID : String = ''; Notebook : String = '');
 var
-    TheForm : TForm;
+    EBox : PNoteEditForm;
+    n : PNoteInfo;
 begin
-    {
-    if NoteLister = nil then exit;
-    if NoteLister.IsThisNoteOpen(FullFileName, TheForm) then begin
-       // if user opened and then closed, we wont know we cannot access
-        try
-       	    TNoteEditForm(TheForm).SetReadOnly();
-            exit();
-        except on  EAccessViolation do
-       	    TRlog('Tried to mark a closed note as readOnly, thats OK');
-   	    end;
-    end;
-    if WasDeleted then
-        NoteLister.DeleteNote(FullFileName);
-        }
-end;
+   if(not NoteIDLooksOK(ID)) then ID:=GetNewID();
 
-function TFormSearch.MoveWindowHere(WTitle: string): boolean;
-var
-    AProcess: TProcess;
-    List : TStringList = nil;
-begin
-   {
-    Result := False;
-    {$IFDEF LINUX}      // ToDo : Apparently, Windows now has something like Workspaces, implement .....
-    //TRlog('In MoveWindowHere with ', WTitle);
-    AProcess := TProcess.Create(nil);
-    AProcess.Executable:= 'wmctrl';
-    AProcess.Parameters.Add('-R' + WTitle);
-    AProcess.Options := AProcess.Options + [poWaitOnExit, poUsePipes];
-    try
-        AProcess.Execute;
-        Result := (AProcess.ExitStatus = 0);        // says at least one packet got back
-    except on
-        E: EProcess do TRlog('Is wmctrl available ? Cannot move ' + WTitle);
-    end;
-    {if not Result then
-        TRlog('wmctrl exit error trying to move ' + WTitle); }  // wmctrl always appears to return something !
-    List := TStringList.Create;
-    List.LoadFromStream(AProcess.Output);       // just to clear it away.
-    //TRlog('Process List ' + List.Text);
-    List.Free;
-    AProcess.Free;
-    {$endif}
-    }
-end;
+   n := NotesList.FindID(ID);
 
-procedure TFormSearch.OpenNote(NoteTitle: String; FullFileName: string;
-		TemplateIs: AnsiString);
-// Might be called with no Title (NewNote) or a Title with or without a Filename
-var
-    EBox : TNoteEditForm;
-    NoteFileName : string;
-    TheForm : TForm;
-begin
-   {
-    NoteFileName := FullFileName;
-    if (NoteTitle <> '') then begin
-        if FullFileName = '' then Begin
-        	if NoteLister.FileNameForTitle(NoteTitle, NoteFileName) then
-            	NoteFileName := NotesDir+ NoteFileName
-            else NoteFileName := '';
-		end else NoteFileName := FullFileName;
-        // if we have a Title and a Filename, it might be open aleady
-        if NoteLister.IsThisNoteOpen(NoteFileName, TheForm) then begin
-            // if user opened and then closed, we wont know we cannot re-show
-            try
-            	TheForm.Show;
-                MoveWindowHere(TheForm.Caption);
-                TheForm.EnsureVisible(true);
-                exit();
-			except on  EAccessViolation do
-            	TRlog('Tried to re show a closed note, thats OK');
-			end;
-            // We catch the exception and proceed .... but it should never happen.
-        end;
-    end;
-    // if to here, we need open a new window. If Filename blank, its a new note
-    //if (NoteFileName = '') and (NoteTitle ='') and ButtonNoteBookOptions.Enabled then  // a new note with notebook selected.
-    //   TemplateIs := SGNotebooks.Cells[0, SGNotebooks.Row];
+   if(n = nil) then begin
+        new(n);
+        n^.Action:=SynUnset;
+        n^.ID := ID;
+        n^.Deleted := false;
+        n^.LastSyncGMT := 0;
+        n^.LastSync := '';
+        n^.CreateDate := GetCurrentTimeStr();
+        n^.CreateDateGMT := GetGMTFromStr(n^.CreateDate);
+        n^.LastChange := GetCurrentTimeStr();
+        n^.LastChangeGMT := GetGMTFromStr(n^.LastChange);
+        n^.LastMetaChange := GetCurrentTimeStr();
+        n^.LastMetaChangeGMT := GetGMTFromStr(n^.LastMetaChange);
+        n^.Tags := TStringList.Create;
+        n^.Title := 'New Note '+ n^.CreateDate;
+        if((length(Notebook)>0) and (CompareText(Notebook,'-')<>0)) then n^.Tags.Add('system:notebook:'+Notebook);
+        n^.FormEdit:= nil;
+        NotesList.Add(n);
+   end;
 
-    EBox := TNoteEditForm.Create(Application);
+   if(n^.FormEdit <> nil) then begin
+      EBox := PNoteEditForm(n^.FormEdit);
+      EBox^.Hide();
+      EBox^.Commit();
+      EBox^.Close;
+      FreeAndNil(n^.FormEdit);
+   end;
 
-    if (NoteFileName <> '') and (NoteTitle <> '') and (SearchBox.Text <> '') and (SearchBox.Text <> 'Search') then
-        // Looks like we have a search in progress, lets take user there when note opens.
-        EBox.SearchedTerm := SearchBox.Text
-    else
-        EBox.SearchedTerm := '';
-    EBox.NoteTitle:= NoteTitle;
-    EBox.NoteFileName := NoteFileName;
-    Ebox.TemplateIs := TemplateIs;
-    //EBox.Top := Placement + random(Placement*2);
-    //EBox.Left := Placement + random(Placement*2);
-    EBox.Show;
-    EBox.Dirty := False;
-    NoteLister.ThisNoteIsOpen(NoteFileName, EBox);
-    }
+   new(Ebox);
+   Ebox^ := TNoteEditForm.Create(Self);
+   n^.FormEdit := Ebox;
+   EBox^.note := n;
+
+   EBox^.Dirty := false;
+   EBox^.Show();
 end;
 
 
