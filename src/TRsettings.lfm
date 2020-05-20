@@ -1,7 +1,7 @@
 object Settings: TSettings
-  Left = 902
+  Left = 367
   Height = 410
-  Top = 147
+  Top = 183
   Width = 630
   BorderIcons = []
   Caption = 'Tomboy Reborn Settings'
@@ -33,45 +33,66 @@ object Settings: TSettings
       ClientHeight = 343
       ClientWidth = 620
       object LabelSettingPath: TLabel
-        Left = 128
+        AnchorSideLeft.Control = Label1
+        AnchorSideTop.Control = Label1
+        AnchorSideTop.Side = asrCenter
+        Left = 130
         Height = 15
-        Top = 16
+        Top = 25
         Width = 94
+        BorderSpacing.Left = 120
         Caption = 'LabelSettingPath'
         ParentColor = False
       end
       object LabelNotesPath: TLabel
-        Left = 128
+        AnchorSideLeft.Control = Label2
+        AnchorSideTop.Control = Label2
+        AnchorSideTop.Side = asrCenter
+        Left = 130
         Height = 15
-        Top = 67
+        Top = 75
         Width = 88
+        BorderSpacing.Left = 120
         Caption = 'LabelNotesPath'
         ParentColor = False
       end
       object Label1: TLabel
-        Left = 8
+        AnchorSideLeft.Control = TabBasic
+        AnchorSideTop.Control = TabBasic
+        Left = 10
         Height = 15
-        Top = 16
+        Top = 25
         Width = 98
+        BorderSpacing.Left = 10
+        BorderSpacing.Top = 25
         Caption = 'Settings location :'
         ParentColor = False
       end
       object Label2: TLabel
-        Left = 8
+        AnchorSideLeft.Control = TabBasic
+        AnchorSideTop.Control = Label1
+        AnchorSideTop.Side = asrBottom
+        Left = 10
         Height = 15
-        Top = 67
+        Top = 75
         Width = 75
+        BorderSpacing.Left = 10
+        BorderSpacing.Top = 35
         Caption = 'Notes folder :'
         ParentColor = False
       end
       object ButtonSetNotePath: TButton
+        AnchorSideTop.Control = Label2
+        AnchorSideTop.Side = asrCenter
+        AnchorSideRight.Control = TabBasic
         AnchorSideRight.Side = asrBottom
-        Left = 503
+        Left = 498
         Height = 24
         Hint = 'If you have notes somewhere else'
-        Top = 67
+        Top = 70
         Width = 112
-        Anchors = [akRight]
+        Anchors = [akTop, akRight]
+        BorderSpacing.Right = 10
         Caption = 'Set Notes'' path'
         OnClick = ButtonSetNotePathClick
         ParentShowHint = False
@@ -80,13 +101,18 @@ object Settings: TSettings
       end
       object ButtDefaultNoteDir: TButton
         AnchorSideLeft.Side = asrBottom
+        AnchorSideTop.Control = ButtonSetNotePath
+        AnchorSideTop.Side = asrBottom
+        AnchorSideRight.Control = TabBasic
         AnchorSideRight.Side = asrBottom
-        Left = 503
+        Left = 498
         Height = 24
         Hint = 'Will work for many new users'
         Top = 104
         Width = 112
-        Anchors = [akRight]
+        Anchors = [akTop, akRight]
+        BorderSpacing.Top = 10
+        BorderSpacing.Right = 10
         Caption = 'Reset path'
         OnClick = ButtDefaultNoteDirClick
         ParentShowHint = False
@@ -95,94 +121,126 @@ object Settings: TSettings
       end
       object GroupBox5: TGroupBox
         AnchorSideLeft.Control = TabBasic
+        AnchorSideRight.Control = GroupBox2
         AnchorSideBottom.Control = TabBasic
         AnchorSideBottom.Side = asrBottom
-        Left = 5
-        Height = 152
-        Top = 184
-        Width = 243
-        Anchors = [akLeft]
+        Left = 192
+        Height = 176
+        Top = 160
+        Width = 198
+        Anchors = [akRight]
         BorderSpacing.Left = 5
+        BorderSpacing.Right = 10
         BorderSpacing.Bottom = 5
         Caption = 'Font Size'
-        ClientHeight = 134
-        ClientWidth = 241
+        ClientHeight = 158
+        ClientWidth = 196
         TabOrder = 2
-        object RadioFontBig: TRadioButton
+        object ButtonSetColours: TButton
           AnchorSideLeft.Control = GroupBox5
-          AnchorSideTop.Control = RadioFontHuge
+          AnchorSideLeft.Side = asrCenter
+          AnchorSideTop.Control = ButtonFixedFont
           AnchorSideTop.Side = asrBottom
-          Left = 15
-          Height = 23
-          Top = 48
-          Width = 44
-          BorderSpacing.Left = 15
-          BorderSpacing.Top = 10
-          Caption = 'Big'
-          Checked = True
-          OnChange = RadioFontBigChange
-          TabOrder = 0
-          TabStop = True
-        end
-        object RadioFontMedium: TRadioButton
-          AnchorSideLeft.Control = RadioFontHuge
-          AnchorSideLeft.Side = asrBottom
-          AnchorSideTop.Control = RadioFontHuge
-          AnchorSideTop.Side = asrCenter
           AnchorSideRight.Control = GroupBox5
           AnchorSideRight.Side = asrBottom
-          Left = 154
+          AnchorSideBottom.Control = GroupBox5
+          AnchorSideBottom.Side = asrBottom
+          Left = 49
           Height = 23
-          Top = 15
-          Width = 72
-          Anchors = [akTop, akRight]
-          BorderSpacing.Left = 23
+          Top = 121
+          Width = 99
+          BorderSpacing.Left = 10
           BorderSpacing.Top = 10
-          BorderSpacing.Right = 15
-          Caption = 'Medium'
-          OnChange = RadioFontMediumChange
-          TabOrder = 1
+          BorderSpacing.Right = 10
+          BorderSpacing.Bottom = 10
+          Caption = 'Set colours'
+          OnClick = ButtonSetColoursClick
+          TabOrder = 0
         end
-        object RadioFontSmall: TRadioButton
-          AnchorSideLeft.Control = RadioFontMedium
-          AnchorSideTop.Control = RadioFontBig
-          AnchorSideTop.Side = asrCenter
-          Left = 169
-          Height = 23
-          Top = 48
-          Width = 57
-          BorderSpacing.Left = 15
-          BorderSpacing.Top = 10
-          Caption = 'Small'
-          OnChange = RadioFontSmallChange
-          TabOrder = 2
-        end
-        object RadioFontHuge: TRadioButton
+        object Label18: TLabel
           AnchorSideLeft.Control = GroupBox5
           AnchorSideTop.Control = GroupBox5
           Left = 15
-          Height = 23
+          Height = 15
           Top = 15
-          Width = 56
+          Width = 96
           BorderSpacing.Left = 15
           BorderSpacing.Top = 15
-          Caption = 'Huge'
-          OnChange = RadioFontHugeChange
+          Caption = 'Font scaling (%) : '
+          ParentColor = False
+        end
+        object EditScale: TEdit
+          AnchorSideLeft.Control = Label18
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Control = Label18
+          AnchorSideTop.Side = asrCenter
+          Left = 116
+          Height = 28
+          Top = 8
+          Width = 41
+          BorderSpacing.Left = 5
+          OnChange = EditScaleChange
+          TabOrder = 1
+          Text = '100'
+        end
+        object ButtonFont: TButton
+          AnchorSideLeft.Control = GroupBox5
+          AnchorSideLeft.Side = asrCenter
+          AnchorSideTop.Control = EditScale
+          AnchorSideTop.Side = asrBottom
+          AnchorSideRight.Control = GroupBox5
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = GroupBox5
+          AnchorSideBottom.Side = asrBottom
+          Left = 50
+          Height = 25
+          Top = 51
+          Width = 96
+          BorderSpacing.Left = 10
+          BorderSpacing.Top = 15
+          BorderSpacing.Bottom = 10
+          Caption = 'Usual Font'
+          OnClick = ButtonFontClick
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 2
+        end
+        object ButtonFixedFont: TButton
+          AnchorSideLeft.Control = GroupBox5
+          AnchorSideLeft.Side = asrCenter
+          AnchorSideTop.Control = ButtonFont
+          AnchorSideTop.Side = asrBottom
+          AnchorSideRight.Control = GroupBox5
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = GroupBox5
+          AnchorSideBottom.Side = asrBottom
+          Left = 50
+          Height = 25
+          Top = 86
+          Width = 96
+          BorderSpacing.Left = 10
+          BorderSpacing.Top = 5
+          BorderSpacing.Right = 10
+          BorderSpacing.Bottom = 10
+          Caption = 'Fixed Font'
+          OnClick = ButtonFixedFontClick
+          ParentShowHint = False
+          ShowHint = True
           TabOrder = 3
         end
       end
       object GroupBox2: TGroupBox
         AnchorSideBottom.Control = TabBasic
         AnchorSideBottom.Side = asrBottom
-        Left = 320
-        Height = 154
-        Top = 184
-        Width = 288
+        Left = 400
+        Height = 178
+        Top = 160
+        Width = 208
         Anchors = [akBottom]
         BorderSpacing.Bottom = 5
         Caption = 'Notes options'
-        ClientHeight = 136
-        ClientWidth = 286
+        ClientHeight = 160
+        ClientWidth = 206
         TabOrder = 3
         object CheckShowIntLinks: TCheckBox
           AnchorSideLeft.Control = GroupBox2
@@ -190,7 +248,7 @@ object Settings: TSettings
           AnchorSideTop.Side = asrBottom
           Left = 15
           Height = 23
-          Top = 48
+          Top = 68
           Width = 134
           BorderSpacing.Left = 15
           BorderSpacing.Top = 15
@@ -204,7 +262,7 @@ object Settings: TSettings
           AnchorSideTop.Side = asrBottom
           Left = 15
           Height = 23
-          Top = 86
+          Top = 106
           Width = 139
           BorderSpacing.Left = 15
           BorderSpacing.Top = 15
@@ -216,140 +274,99 @@ object Settings: TSettings
           AnchorSideLeft.Control = GroupBox2
           AnchorSideTop.Control = GroupBox2
           Left = 15
-          Height = 23
+          Height = 38
           Hint = 'This may adversly affect tradional Tomboy, take care.'
-          Top = 10
-          Width = 254
+          Top = 15
+          Width = 134
           BorderSpacing.Left = 15
-          BorderSpacing.Top = 10
-          Caption = 'Allow a Note to be in multiple Notebooks.'
+          BorderSpacing.Top = 15
+          Caption = 'Allow notes to have'#10'several notebooks'
           OnChange = CheckManyNotebooksChange
           TabOrder = 2
         end
       end
-      object ButtonFixedFont: TButton
-        AnchorSideLeft.Control = GroupBox5
-        AnchorSideTop.Control = GroupBox5
-        AnchorSideRight.Control = GroupBox5
-        AnchorSideRight.Side = asrBottom
-        AnchorSideBottom.Control = GroupBox5
-        AnchorSideBottom.Side = asrBottom
-        Left = 163
-        Height = 25
-        Top = 301
-        Width = 75
-        Anchors = [akRight, akBottom]
-        BorderSpacing.Top = 5
-        BorderSpacing.Right = 10
-        BorderSpacing.Bottom = 10
-        Caption = 'Fixed Font'
-        OnClick = ButtonFixedFontClick
-        ParentShowHint = False
-        ShowHint = True
-        TabOrder = 4
-      end
-      object ButtonFont: TButton
-        AnchorSideLeft.Control = GroupBox5
-        AnchorSideTop.Control = GroupBox5
-        AnchorSideRight.Control = GroupBox5
-        AnchorSideRight.Side = asrBottom
-        AnchorSideBottom.Control = GroupBox5
-        AnchorSideBottom.Side = asrBottom
-        Left = 15
-        Height = 25
-        Top = 301
-        Width = 75
-        Anchors = [akLeft, akBottom]
-        BorderSpacing.Left = 10
-        BorderSpacing.Top = 15
-        BorderSpacing.Bottom = 10
-        Caption = 'Usual Font'
-        OnClick = ButtonFontClick
-        ParentShowHint = False
-        ShowHint = True
-        TabOrder = 5
-      end
-      object CheckAutostart: TCheckBox
-        AnchorSideBottom.Control = CheckShowSearchAtStart
-        AnchorSideBottom.Side = asrCenter
-        Left = 224
-        Height = 23
-        Top = 145
-        Width = 129
-        Anchors = [akBottom]
-        BorderSpacing.Left = 15
-        BorderSpacing.Top = 15
-        BorderSpacing.Bottom = 15
-        Caption = 'Autostart at Logon'
-        OnChange = CheckAutostartChange
-        TabOrder = 6
-      end
-      object ButtonSetColours: TButton
-        AnchorSideRight.Control = GroupBox2
-        AnchorSideRight.Side = asrBottom
-        AnchorSideBottom.Control = GroupBox2
-        AnchorSideBottom.Side = asrBottom
-        Left = 499
-        Height = 23
-        Top = 305
-        Width = 99
-        Anchors = [akRight, akBottom]
-        BorderSpacing.Right = 10
-        BorderSpacing.Bottom = 10
-        Caption = 'Set colours'
-        OnClick = ButtonSetColoursClick
-        TabOrder = 7
-      end
-      object CheckShowSearchAtStart: TCheckBox
+      object GroupBox1: TGroupBox
         AnchorSideLeft.Control = TabBasic
-        AnchorSideTop.Control = GroupBox2
-        AnchorSideBottom.Control = GroupBox5
-        Left = 25
-        Height = 23
-        Top = 146
-        Width = 142
-        Anchors = [akLeft, akBottom]
-        BorderSpacing.Left = 25
-        BorderSpacing.Top = 24
-        BorderSpacing.Bottom = 15
-        Caption = 'Show Search at Start'
-        OnChange = CheckShowSearchAtStartChange
-        TabOrder = 8
-      end
-      object Label11: TLabel
-        AnchorSideBottom.Control = CheckAutostart
-        AnchorSideBottom.Side = asrCenter
-        Left = 400
-        Height = 15
-        Top = 148
-        Width = 62
-        Anchors = [akBottom]
-        BorderSpacing.Bottom = 15
-        Caption = 'Last used : '
-        ParentColor = False
-      end
-      object LastUsedMax: TEdit
-        AnchorSideBottom.Control = CheckAutostart
-        AnchorSideBottom.Side = asrCenter
-        Left = 472
-        Height = 28
-        Top = 142
-        Width = 41
-        Anchors = [akBottom]
-        OnChange = LastUsedMaxChange
-        TabOrder = 9
-        Text = 'LastUsedMax'
-      end
-      object Label14: TLabel
-        AnchorSideBottom.Control = CheckAutostart
-        AnchorSideBottom.Side = asrCenter
-        Left = 528
-        Height = 15
-        Top = 148
-        Width = 31
-        Anchors = [akLeft, akBottom]
-        Caption = 'notes'
-        ParentColor = False
+        AnchorSideRight.Control = GroupBox5
+        AnchorSideBottom.Control = TabBasic
+        AnchorSideBottom.Side = asrBottom
+        Left = 10
+        Height = 173
+        Top = 160
+        Width = 172
+        Anchors = [akLeft, akRight, akBottom]
+        BorderSpacing.Left = 10
+        BorderSpacing.Right = 10
+        BorderSpacing.Bottom = 10
+        Caption = 'App options'
+        ClientHeight = 155
+        ClientWidth = 170
+        TabOrder = 4
+        object CheckShowSearchAtStart: TCheckBox
+          AnchorSideLeft.Control = GroupBox1
+          AnchorSideTop.Control = GroupBox1
+          AnchorSideBottom.Control = GroupBox5
+          Left = 10
+          Height = 23
+          Top = 15
+          Width = 109
+          BorderSpacing.Left = 10
+          BorderSpacing.Top = 15
+          BorderSpacing.Bottom = 15
+          Caption = 'Search at Start'
+          OnChange = CheckShowSearchAtStartChange
+          TabOrder = 0
+        end
+        object CheckAutostart: TCheckBox
+          AnchorSideLeft.Control = GroupBox1
+          AnchorSideTop.Control = CheckShowSearchAtStart
+          AnchorSideTop.Side = asrBottom
+          AnchorSideBottom.Control = CheckShowSearchAtStart
+          AnchorSideBottom.Side = asrCenter
+          Left = 10
+          Height = 23
+          Top = 53
+          Width = 129
+          BorderSpacing.Left = 10
+          BorderSpacing.Top = 5
+          BorderSpacing.Bottom = 15
+          Caption = 'Autostart at Logon'
+          OnChange = CheckAutostartChange
+          TabOrder = 1
+        end
+        object Label11: TLabel
+          AnchorSideLeft.Control = GroupBox1
+          AnchorSideBottom.Control = GroupBox1
+          AnchorSideBottom.Side = asrBottom
+          Left = 10
+          Height = 30
+          Top = 110
+          Width = 70
+          Anchors = [akLeft, akBottom]
+          BorderSpacing.Left = 10
+          BorderSpacing.Bottom = 15
+          Caption = 'Lastest used'#10'visible : '
+          ParentColor = False
+          OnClick = Label11Click
+        end
+        object LastUsedMax: TEdit
+          AnchorSideLeft.Control = Label11
+          AnchorSideLeft.Side = asrBottom
+          AnchorSideTop.Side = asrCenter
+          AnchorSideRight.Control = GroupBox1
+          AnchorSideRight.Side = asrBottom
+          AnchorSideBottom.Control = Label11
+          AnchorSideBottom.Side = asrCenter
+          Left = 119
+          Height = 28
+          Top = 111
+          Width = 41
+          Anchors = [akRight, akBottom]
+          BorderSpacing.Right = 10
+          OnChange = LastUsedMaxChange
+          TabOrder = 2
+          Text = 'LastUsedMax'
+        end
       end
     end
     object TabSync: TTabSheet
@@ -618,7 +635,7 @@ object Settings: TSettings
         AnchorSideTop.Side = asrCenter
         Left = 150
         Height = 15
-        Top = 271
+        Top = 263
         Width = 83
         BorderSpacing.Left = 150
         Caption = 'LabelDicStatus'
@@ -643,7 +660,7 @@ object Settings: TSettings
         AnchorSideTop.Side = asrCenter
         Left = 150
         Height = 15
-        Top = 236
+        Top = 228
         Width = 48
         BorderSpacing.Left = 150
         BorderSpacing.Top = 50
@@ -678,7 +695,7 @@ object Settings: TSettings
         AnchorSideRight.Control = TabSpell
         AnchorSideRight.Side = asrBottom
         Left = 440
-        Height = 40
+        Height = 24
         Top = 65
         Width = 150
         Anchors = [akTop, akRight]
@@ -692,7 +709,7 @@ object Settings: TSettings
         AnchorSideLeft.Control = TabSpell
         AnchorSideTop.Control = Label10
         Left = 150
-        Height = 30
+        Height = 22
         Top = 186
         Width = 184
         BorderSpacing.Left = 150
@@ -733,7 +750,7 @@ object Settings: TSettings
         AnchorSideTop.Side = asrBottom
         Left = 15
         Height = 15
-        Top = 236
+        Top = 228
         Width = 109
         BorderSpacing.Left = 15
         BorderSpacing.Top = 20
@@ -746,7 +763,7 @@ object Settings: TSettings
         AnchorSideTop.Side = asrBottom
         Left = 15
         Height = 15
-        Top = 271
+        Top = 263
         Width = 110
         BorderSpacing.Left = 15
         BorderSpacing.Top = 20
@@ -777,17 +794,6 @@ object Settings: TSettings
         ParentColor = False
       end
     end
-  end
-  object Label15: TLabel
-    AnchorSideBottom.Side = asrBottom
-    Left = 24
-    Height = 15
-    Top = 361
-    Width = 44
-    Anchors = [akLeft, akBottom]
-    BorderSpacing.Bottom = 7
-    Caption = 'Label15'
-    ParentColor = False
   end
   object SettingsCancel: TSpeedButton
     AnchorSideRight.Control = Owner

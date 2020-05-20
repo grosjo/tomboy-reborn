@@ -73,6 +73,7 @@ RESOURCESTRING
 // Sync
   rsOtherSyncProcess = 'Sync not possible for now (other process running)';
   rsNoSync = 'You shall setup sync first in "settings"';
+  rsScaleIncorrect = 'Incorrect scale';
   rsTestingSync = 'Testing Sync';
   rsUnableToSync = 'Unable to sync because ';
   rsRunningSync = 'Running Sync';
@@ -149,21 +150,20 @@ RESOURCESTRING
   rsSpellNoDic = 'Select dic to use';
 
   rsHelpDelay = 'Delay startup 2 sec to allow OS to settle';
-    rsHelpLang = 'Force Language, supported es, nl';
-    rsHelpDebug = 'Show debug on stdout';
-    rsHelpHelp = 'Show this help message and exit.';
-    rsHelpVersion = 'Print version and exit';
-    rsHelpRedHat = 'Run in RedHatGnome mode, no TrayIcon';
-    rsHelpNoSplash = 'Dont show small status/splash window';
-    rsHelpDebugSync = 'Show debug messages during Sync';
-    rsHelpDebugIndex = 'Show debug msgs while indexing notes';
-    rsHelpDebugSpell = 'Show debug messages while spell setup';
-    rsHelpConfig = 'Create or use an alternative config';
-    rsHelpSingleNote = 'Open indicated note, switch is optional';
-    rsHelpSaveExit = 'After import single note, save & exit';
+  rsHelpLang = 'Force Language, supported es, nl';
+  rsHelpDebug = 'Show debug on stdout';
+  rsHelpHelp = 'Show this help message and exit.';
+  rsHelpVersion = 'Print version and exit';
+  rsHelpRedHat = 'Run in RedHatGnome mode, no TrayIcon';
+  rsHelpNoSplash = 'Dont show small status/splash window';
+  rsHelpDebugSync = 'Show debug messages during Sync';
+  rsHelpDebugIndex = 'Show debug msgs while indexing notes';
+  rsHelpDebugSpell = 'Show debug messages while spell setup';
+  rsHelpConfig = 'Create or use an alternative config';
+  rsHelpSingleNote = 'Open indicated note, switch is optional';
+  rsHelpSaveExit = 'After import single note, save & exit';
 
-
-sLineBreak = {$IFDEF LINUX} AnsiChar(#10) {$ENDIF}
+  sLineBreak = {$IFDEF LINUX} AnsiChar(#10) {$ENDIF}
                {$IFDEF MSWINDOWS} AnsiString(#13#10) {$ENDIF};
 implementation
 

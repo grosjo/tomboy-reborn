@@ -23,7 +23,9 @@ type
           ButtonSetColours: TButton;
           ButtonNCSetup: TSpeedButton;
 	  CheckBoxAutoSync: TCheckBox;
-          Label14: TLabel;
+          EditScale: TEdit;
+          GroupBox1: TGroupBox;
+          Label18: TLabel;
           LastUsedMax: TEdit;
           GroupBox2: TGroupBox;
           Label10: TLabel;
@@ -63,7 +65,6 @@ type
 	  Label1: TLabel;
           Label12: TLabel;
           Label13: TLabel;
-          Label15: TLabel;
           LabelDic: TLabel;
           LabelLibrary: TLabel;
           LabelDicStatus: TLabel;
@@ -76,10 +77,6 @@ type
 
           PageControl1: TPageControl;
           RadioAlwaysAsk: TRadioButton;
-          RadioFontHuge: TRadioButton;
-	  RadioFontBig: TRadioButton;
-	  RadioFontMedium: TRadioButton;
-	  RadioFontSmall: TRadioButton;
 	  RadioUseLocal: TRadioButton;
 	  RadioUseServer: TRadioButton;
           SettingsCancel: TSpeedButton;
@@ -105,6 +102,7 @@ type
         procedure CheckShowExtLinksChange(Sender: TObject);
         procedure CheckShowIntLinksChange(Sender: TObject);
         procedure CheckShowSearchAtStartChange(Sender: TObject);
+        procedure EditScaleChange(Sender: TObject);
         procedure EditTimerSyncChange(Sender: TObject);
         procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
         procedure FormCreate(Sender: TObject);
@@ -114,10 +112,6 @@ type
         procedure LastUsedMaxChange(Sender: TObject);
         procedure ListBoxDicClick(Sender: TObject);
 	procedure RadioConflictChange(Sender: TObject);
-        procedure RadioFontBigChange(Sender: TObject);
-        procedure RadioFontHugeChange(Sender: TObject);
-        procedure RadioFontMediumChange(Sender: TObject);
-        procedure RadioFontSmallChange(Sender: TObject);
         procedure SettingsOKClick(Sender: TObject);
 	procedure SettingsCancelClick(Sender: TObject);
         procedure ButtonFileSetupClick(Sender: TObject);
@@ -342,6 +336,19 @@ begin
    end else SearchAtStart := CheckShowSearchAtStart.Checked;
 end;
 
+procedure TSettings.EditScaleChange(Sender: TObject);
+begin
+  try
+     FontScale := round(StrToFloat(EditScale.Caption));
+  except on E:Exception do
+     begin
+        FontScale := 100;
+        ShowMessage(rsScaleIncorrect);
+     end;
+  end;
+  EditScale.Caption:= IntToStr(FontScale);
+end;
+
 procedure TSettings.EditTimerSyncChange(Sender: TObject);
 begin
    TRlog('EditTimerSyncChange');
@@ -389,6 +396,7 @@ begin
      Top := mainWindow.Top + random(100);
 end;
 
+
 procedure TSettings.LastUsedMaxChange(Sender: TObject);
 begin
   TRlog('LastUsedMaxChange');
@@ -418,41 +426,6 @@ begin
      else if RadioMakeCopy.Checked then SyncClashOption := TSyncClashOption.MakeCopy;
 end;
 
-procedure TSettings.RadioFontBigChange(Sender: TObject);
-begin
-   TRlog('RadioFontBigChange');
-
-   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
-
-   if RadioFontBig.checked then FontRange := FontBig;
-end;
-
-procedure TSettings.RadioFontHugeChange(Sender: TObject);
-begin
-   TRlog('RadioFontHugeChange');
-
-   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
-
-   if RadioFontHuge.checked then FontRange := FontHuge;
-end;
-
-procedure TSettings.RadioFontMediumChange(Sender: TObject);
-begin
-  TRlog('RadioFontMediumChange');
-
-  if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
-
-  if RadioFontMedium.checked then FontRange := FontMedium;
-end;
-
-procedure TSettings.RadioFontSmallChange(Sender: TObject);
-begin
-  TRlog('RadioFontSmallChange');
-
-  if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
-
-  if RadioFontSmall.Checked then FontRange := FontSmall;
-end;
 
 procedure TSettings.SettingsOKClick(Sender: TObject);
 begin
@@ -543,12 +516,7 @@ begin
   ButtonFont.Hint := UsualFont;
   ButtonFixedFont.Hint := FixedFont;
 
-  case FontRange of
-     FontHuge   : RadioFontHuge.Checked := true;
-     FontBig    : RadioFontBig.Checked := true;
-     FontMedium   : RadioFontMedium.Checked := true;
-     FontSmall   : RadioFontSmall.Checked := true;
-  end;
+  EditScale.Caption := intToStr(FontScale);
 
   LastUsedMax.Caption:= IntToStr(LastUsedNB);
 

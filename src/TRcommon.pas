@@ -130,8 +130,6 @@ function NoteTimeOrder(Item1: Pointer;Item2: Pointer):Integer;
 // Font
 function GetDefaultFixedFont() : string;
 function GetDefaultUsualFont() : string;
-procedure setFontSizes(out FontSizeSmall  : Integer; out FontSizeLarge  : Integer; out FontSizeHuge   : Integer; out FontSizeTitle  : Integer; out FontSizeNormal : Integer);
-
 
 // Datetime
 function GetGMTFromStr(const DateStr: ANSIString): TDateTime;
@@ -172,7 +170,8 @@ var
       Autostart, SearchAtStart, UseTrayIcon : boolean;
 
     UsualFont, FixedFont : string;
-    FontRange : TFontRange;
+    //FontRange : TFontRange;
+    FontScale : integer;
 
     SyncType : TSyncTransport;
     SyncClashOption : TSyncClashOption;
@@ -321,12 +320,7 @@ begin
 
     f.writestring('Fonts', 'UsualFont', UsualFont);
     f.writestring('Fonts', 'FixedFont', FixedFont);
-    case FontRange of
-         TFontRange.FontHuge :   f.writestring('Fonts', 'FontRange', 'huge');
-         TFontRange.FontBig :    f.writestring('Fonts', 'FontRange', 'big');
-         TFontRange.FontMedium : f.writestring('Fonts', 'FontRange', 'medium');
-         TFontRange.FontSmall :  f.writestring('Fonts', 'FontRange', 'small');
-    end;
+    f.writestring('Fonts', 'Scale', IntToStr(FontScale));
 
     f.writestring('Colors', 'BackGndColour', ColorToString(BackGndColour));
     f.writestring('Colors', 'HiColour', ColorToString(HiColour));
@@ -406,58 +400,54 @@ begin
 
        UsualFont            := f.readstring('Fonts', 'UsualFont', GetDefaultUsualFont());
        FixedFont            := f.readstring('Fonts', 'FixedFont', GetDefaultFixedFont());
-       FontRange := TFontRange.FontMedium;
-       case f.readstring('Fonts', 'FontRange', 'medium') of
-          'huge'    : FontRange := TFontRange.FontHuge;
-          'big'     : FontRange := TFontRange.FontBig;
-          'small'   : FontRange := TFontRange.FontSmall;
+       try
+           FontScale            := StrToInt(f.readstring('Fonts', 'Scale', '100'));
+       except on E:Exception do
+           FontScale            := 100;
        end;
 
-         BackGndColour := StringToColor(f.ReadString('Colors', 'BackGndColour',ColorToString(clCream)));
-         HiColour      := StringToColor(f.ReadString('Colors', 'HiColour',ColorToString(clYellow)));
-         TextColour    := StringToColor(f.ReadString('Colors', 'TextColour',ColorToString(clBlack)));
-         TitleColour   := StringToColor(f.ReadString('Colors', 'TitleColour',ColorToString(clBlue)));
+       BackGndColour := StringToColor(f.ReadString('Colors', 'BackGndColour',ColorToString(clCream)));
+       HiColour      := StringToColor(f.ReadString('Colors', 'HiColour',ColorToString(clYellow)));
+       TextColour    := StringToColor(f.ReadString('Colors', 'TextColour',ColorToString(clBlack)));
+       TitleColour   := StringToColor(f.ReadString('Colors', 'TitleColour',ColorToString(clBlue)));
 
-         SyncRepeat       := StrToInt(f.ReadString('Sync', 'Autosync', '0'));
-         SyncClashOption  := TSyncClashOption.AlwaysAsk;
-         case f.ReadString('Sync', 'ClashOption', 'AlwaysAsk') of
+       SyncRepeat       := StrToInt(f.ReadString('Sync', 'Autosync', '0'));
+       SyncClashOption  := TSyncClashOption.AlwaysAsk;
+       case f.ReadString('Sync', 'ClashOption', 'AlwaysAsk') of
               'UseLocal'  : SyncClashOption := TSyncClashOption.UseLocal;
               'UseServer' : SyncClashOption := TSyncClashOption.UseServer;
               'MakeCopy'  : SyncClashOption := TSyncClashOption.MakeCopy;
-         end;
+       end;
 
-         //TRlog('READSYNCTYPE = '+f.ReadString('Sync', 'Type','none'));
-
-         SyncType         := TSyncTransport.SyncNone;
-         case f.ReadString('Sync', 'Type','none') of
+       SyncType         := TSyncTransport.SyncNone;
+       case f.ReadString('Sync', 'Type','none') of
               'file'      : SyncType := TSyncTransport.SyncFile;
               'nextcloud' : SyncType := TSyncTransport.SyncNextCloud;
-         end;
+       end;
 
-         SyncFileRepo     := f.ReadString('Sync', 'FileRepo', '');
-         SyncNCUrl        := f.ReadString('Sync', 'NCUrl', '');
-         SyncNCKey        := f.ReadString('Sync', 'NCKey', '');
-         SyncNCToken      := f.ReadString('Sync', 'NCToken', '');
-         SyncNCSecret     := f.ReadString('Sync', 'NCSecret', '');
+       SyncFileRepo     := f.ReadString('Sync', 'FileRepo', '');
+       SyncNCUrl        := f.ReadString('Sync', 'NCUrl', '');
+       SyncNCKey        := f.ReadString('Sync', 'NCKey', '');
+       SyncNCToken      := f.ReadString('Sync', 'NCToken', '');
+       SyncNCSecret     := f.ReadString('Sync', 'NCSecret', '');
 
-         DictLibrary      := f.ReadString('Spelling', 'Library',GetDictDefaultLibrary());
-         DictPath         := f.ReadString('Spelling', 'DictPath', GetDictDefaultPath());
-         DictFile         := f.ReadString('Spelling', 'DictFile', DictFile);
-         DictPath         := AppendPathDelim(ChompPathDelim(DictPath));
+       DictLibrary      := f.ReadString('Spelling', 'Library',GetDictDefaultLibrary());
+       DictPath         := f.ReadString('Spelling', 'DictPath', GetDictDefaultPath());
+       DictFile         := f.ReadString('Spelling', 'DictFile', DictFile);
+       DictPath         := AppendPathDelim(ChompPathDelim(DictPath));
 
-         LastUsedNB       := StrToInt(f.ReadString('UI', 'LastUsed', '10'));
-         i:=0; LastUsed.Clear;
-         while(i<LastUsedNB) do
-         begin
-              s := f.ReadString('UI', 'Latest'+IntToStr(i), '');
-              if(length(s)>0) then LastUsed.Add(Trim(s));
-              inc(i);
-         end;
+       LastUsedNB       := StrToInt(f.ReadString('UI', 'LastUsed', '10'));
+       i:=0; LastUsed.Clear;
+       while(i<LastUsedNB) do
+       begin
+          s := f.ReadString('UI', 'Latest'+IntToStr(i), '');
+          if(length(s)>0) then LastUsed.Add(Trim(s));
+          inc(i);
+       end;
 
-         FreeAndNil(f);
+       FreeAndNil(f);
 
-         Result:= 1;
-
+       Result:= 1;
     end else begin
 
     // No config file
@@ -483,7 +473,7 @@ begin
 
         FixedFont := GetDefaultFixedFont();
         UsualFont := GetDefaultUsualFont();
-        FontRange := TFontRange.FontMedium;
+        FontScale := 100;
 
         DictLibrary      := GetDictDefaultLibrary();
         DictPath         := GetDictDefaultPath();
@@ -739,7 +729,7 @@ begin
            TRlog(E.message);
            NoteInfo^.Error := E.message;
            NoteInfo^.Action:= SynClash;
-           FreeAndNil(Doc);
+           Doc.Free;
            exit(false);
        end;
    end;
@@ -870,12 +860,12 @@ begin
            NoteInfo^.Error := E.Message;
            NoteInfo^.Action:= SynClash;
            TRlog(E.message);
-           FreeAndNil(Doc);
+           Doc.Free;
            exit(false);
        end;
    end;
 
-   FreeAndNil(Doc);
+   Doc.Free;
    TRlog('File to note DONE '+filename);
 
    Result := true;
@@ -1136,36 +1126,6 @@ begin
     FreeAndNil(f);
 end;
 
-procedure setFontSizes(out FontSizeSmall  : Integer; out FontSizeLarge  : Integer; out FontSizeHuge   : Integer; out FontSizeTitle  : Integer; out FontSizeNormal : Integer);
-begin
-   if(FontRange = FontBig) then begin
-    	FontSizeSmall  := 9;
-     	FontSizeLarge  := 17;
-     	FontSizeHuge   := 20;
-     	FontSizeTitle  := 18;			// Dont set this to one of the other sizes !
-     	FontSizeNormal := 14;
-   end
-   else if (FontRange = FontHuge) then begin
-        FontSizeSmall  := 11;
-        FontSizeLarge  := 20;
-        FontSizeHuge   := 23;
-        FontSizeTitle  := 21;			// Dont set this to one of the other sizes !
-        FontSizeNormal := 16;
-   end
-   else if (FontRange = FontMedium)then begin
-    	FontSizeSmall  := 8;
- 	FontSizeLarge  := 14;
- 	FontSizeHuge   := 18;
- 	FontSizeTitle  := 16;			// Dont set this to one of the other sizes !
- 	FontSizeNormal := 11;
-   end else begin
-    	FontSizeSmall  := 7;
-        FontSizeLarge  := 13;
- 	FontSizeHuge   := 16;
- 	FontSizeTitle  := 14;			// Dont set this to one of the other sizes !
- 	FontSizeNormal := 10;
-   end;
-end;
 
 { ===== NETWORK ==== }
 
