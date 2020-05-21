@@ -1,4 +1,4 @@
-unit TRnoteEdit;
+unit TRnote;
 
 {$mode objfpc}{$H+}
 
@@ -10,12 +10,18 @@ uses
     clipbrd, lcltype,      // required up here for copy on selection stuff.
     fpexprpars,         // for calc stuff ;
     TRcommon,
-    SaveNote;      		// Knows how to save a Note to disk in Tomboy's XML
+    SaveNote;      		// TO BE REMOVED
 
 
+type TFontRange = (FontHuge, FontLarge, FontNormal, FontSmall, FontTitle);
 
-type TNoteEditForm = class(TForm)
-    FindDialog1: TFindDialog;
+type TTagType = ( TagNone, TagBold, TagItalic, TagHighLight, TagUnderline, TagStrikeout, TagMonospace, TagSizeSmall, TagSizeLarge, TagSizeHuge, TagList);
+
+type
+
+{ TFormNote }
+
+ TFormNote = class(TForm)
     KMemo1: TKMemo;
     MenuBold: TMenuItem;
     MenuItalic: TMenuItem;
@@ -49,26 +55,18 @@ type TNoteEditForm = class(TForm)
     MenuFixedWidth: TMenuItem;
     MenuUnderline: TMenuItem;
     MenuStrikeout: TMenuItem;
-    PopupMainTBMenu: TPopupMenu;
+    Panel1: TPanel;
     PopupMenuRightClick: TPopupMenu;
     PopupMenuTools: TPopupMenu;
     PopupMenuText: TPopupMenu;
     PrintDialog1: TPrintDialog;
-    ButtMainTBMenu: TSpeedButton;
     SpeedButtonDelete: TSpeedButton;
     SpeedButtonLink: TSpeedButton;
     SpeedButtonNotebook: TSpeedButton;
     SpeedButtonSearch: TSpeedButton;
     SpeedButtonText: TSpeedButton;
     SpeedButtonTools: TSpeedButton;
-    TaskDialogDelete: TTaskDialog;
-    TimerSave: TTimer;
-    TimerHousekeeping: TTimer;
 
-    procedure ButtMainTBMenuClick(Sender: TObject);
-    procedure ButtTBMenuClick(Sender: TObject);
-    procedure FindDialog1Find(Sender: TObject);
-    procedure FormActivate(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
     procedure FormCreate(Sender: TObject);
@@ -96,7 +94,6 @@ type TNoteEditForm = class(TForm)
     procedure MenuItalicClick(Sender: TObject);
     procedure MenuItemEvaluateClick(Sender: TObject);
     procedure MenuItemExportMarkdownClick(Sender: TObject);
-    procedure MenuItemIndexClick(Sender: TObject);
     procedure MenuItemSettingsClick(Sender: TObject);
     procedure MenuUnderlineClick(Sender: TObject);
     procedure MenuStrikeoutClick(Sender: TObject);
@@ -105,13 +102,11 @@ type TNoteEditForm = class(TForm)
     procedure MenuItemDeleteClick(Sender: TObject);
     procedure MenuItemExportPlainTextClick(Sender: TObject);
     procedure MenuItemExportRTFClick(Sender: TObject);
-    procedure MenuItemFindClick(Sender: TObject);
     procedure MenuItemPasteClick(Sender: TObject);
     procedure MenuItemPrintClick(Sender: TObject);
     procedure MenuItemSelectAllClick(Sender: TObject);
     procedure MenuItemSpellClick(Sender: TObject);
     procedure MenuItemSyncClick(Sender: TObject);
-    procedure MenuItemWriteClick(Sender: TObject);
     procedure MenuLargeClick(Sender: TObject);
     procedure MenuNormalClick(Sender: TObject);
     procedure MenuSmallClick(Sender: TObject);
@@ -124,21 +119,36 @@ type TNoteEditForm = class(TForm)
     procedure TimerSaveTimer(Sender: TObject);
     procedure TimerHousekeepingTimer(Sender: TObject);
 
-    procedure Commit();
 
 private
+    Processing : boolean;
+    InitialLoaded : boolean;
 
-    CreateDate : string;		// Will be '' if new note
-    Ready : boolean;
-    LastFind : longint;			// Used in Find functions.
 
     { To save us checking the title if user is well beyond it }
     BlocksInTitle : integer;
+    LastFind : integer;
 
     // Set True by the delete button so we don't try and save it.
     DeletingThisNote : boolean;
 
-    procedure AdjustFormPosition();
+    procedure NoteToMemo();
+    procedure MemoToNote();
+    procedure MarkDirty();
+    procedure Commit();
+
+    { Take a piece of text into KMemo block recursively }
+    procedure TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange);
+
+    function ReplaceAngles(const Str : String) : String;
+
+    { Makes sure the first (and only the first) line is marked as Title
+          Title should be Blue, Underlined and FontTitle big.
+          Note that when a new note is loaded from disk, this function is not called,
+          the Load unit knows how to do it itself. Saves 200ms with a big (20K) note. }
+    procedure MarkTitle();
+
+
         { Alters the Font of Block as indicated }
         procedure AlterBlockFont(const FirstBlockNo, BlockNo: longint;
 				const Command: integer; const NewFontSize: integer=0);
@@ -180,10 +190,9 @@ private
 
         { Returns with the title, that is the first line of note, returns False if title is empty }
         function GetTitle(out TheTitle: ANSIString): boolean;
-        procedure ImportNote(FileName : string);
+
         procedure InitiateCalc();
-        { Test the note to see if its Tomboy XML, RTF or Text. Ret .T. if its a new note. }
-        function LoadSingleNote() : boolean;
+
         { Searches for all occurances of Term in the KMemo text, makes them Links
           Does not bother with single char terms. Expects KMemo1 to be already locked.}
         procedure MakeAllLinks(const PText: PChar; const Term: ANSIString;
@@ -196,11 +205,6 @@ private
             Its a SelectionIndex.  Note we no longer need pass this p the Link, remove ? }
 		procedure MakeLink(const Index, Len: longint);
 
-                            { Makes sure the first (and only the first) line is marked as Title
-                            Title should be Blue, Underlined and FontTitle big.
-                            Note that when a new note is loaded from disk, this function is not called,
-                            the Load unit knows how to do it itself. Saves 200ms with a big (20K) note. }
-        procedure MarkTitle();
         { Returns true if current cursor is 'near' a bullet item. That could be because we are
   		on a Para Marker thats a Bullet and/or either Leading or Trailing Para is a Bullet.
   		We return with IsFirstChar true if we are on the first visible char of a line (not
@@ -214,18 +218,7 @@ private
             Data: TStream);
         // Pastes into KMemo whatever is returned by the PrimarySelection system.
         procedure PrimaryPaste(SelIndex: integer);
-        { Saves the note in KMemo1, must have title but can make up a file name if needed
-          If filename is invalid, bad GUID, asks user if they want to change it (they do !)
-          WeAreClosing indicates that the whole application is closing (not just this note)
-          We always save the note on FormDestroy or application exit, even if not dirty to
-          update the position and OOS data.  We used to call UpdateNote in the hope its quicker
-          but it forgets to record notebook membership. Revist some day ....}
-		procedure SaveTheNote(WeAreClosing: boolean=False);
-        	{ Return a string with a title for new note "New Note 2018-01-24 14:46.11" }
-        function NewNoteTitle() : ANSIString;
-                 { Saves the note as text or rtf, consulting user about path and file name }
-        //procedure SaveNoteAs(TheExt: string);
-        procedure MarkDirty();
+
         function CleanCaption() : ANSIString;
         procedure SetBullet(PB: TKMemoParagraph; Bullet: boolean);
         // Advises other apps we can do middle button paste
@@ -236,27 +229,20 @@ private
     public
         note : PNoteInfo;
 
-        // Set by the calling process.
-        SingleNoteMode : Boolean;
-        NoteFileName, NoteTitle : string;
+    private
+        AlreadyLoaded : boolean;
         Dirty : boolean;
-        Verbose : boolean;
+
         SearchedTerm : string;  // If not empty, opening is associated with a search, go straight there.
-        // If a new note is a member of Notebook, this holds notebook name until first save.
-        TemplateIs : AnsiString;
-            { Will mark this note as ReadOnly and not to be saved because the Sync Process
-              has either replaced or deleted this note OR we are using it as an internal viewer.
-              Can still read and copy content. Viewer users don't need big ugly yellow warning}
-        //procedure SetReadOnly(ShowWarning : Boolean = True);
     end;
 
-type PNoteEditForm = ^TNoteEditForm;
+type PNoteEditForm = ^TFormNote;
 
 implementation
 
 {$R *.lfm}
 
-{ TNoteEditForm }
+{ TFormNote }
 uses LazUTF8,
     keditcommon,        // Holds some editing defines
     LazFileUtils,		// For ExtractFileName()
@@ -264,11 +250,9 @@ uses LazUTF8,
     FileUtil, strutils,         // just for ExtractSimplePath ... ~#1620
     LCLIntf,
 
-    LoadNote,           // Will know how to load a Tomboy formatted note.
     Spelling,
     K_Prn,              // Custom print unit.
-    Markdown,
-    Index;              // An Index of current note.
+    Markdown;
 
 
 const
@@ -279,41 +263,39 @@ const
 
 
 
-procedure TNoteEditForm.SpeedButtonTextClick(Sender: TObject);
+procedure TFormNote.SpeedButtonTextClick(Sender: TObject);
 begin
    PopupMenuText.PopUp;
 end;
 
-procedure TNoteEditForm.SpeedButtonToolsClick(Sender: TObject);
+procedure TFormNote.SpeedButtonToolsClick(Sender: TObject);
 begin
    PopupMenuTools.PopUp;
 end;
 
-procedure TNoteEditForm.SpeedButtonSearchClick(Sender: TObject);
+procedure TFormNote.SpeedButtonSearchClick(Sender: TObject);
 begin
     //SearchForm.Show;
 end;
 
-procedure TNoteEditForm.SpeedButtonDeleteClick(Sender: TObject);
+procedure TFormNote.SpeedButtonDeleteClick(Sender: TObject);
 var
     St : string;
 begin
     if KMemo1.ReadOnly then exit();
     St := CleanCaption();
-   if IDYES = Application.MessageBox('Delete this Note', PChar(St),
-   									MB_ICONQUESTION + MB_YESNO) then begin
-		TimerSave.Enabled := False;
-        if SingleNoteMode then
-            DeleteFileUTF8(NoteFileName)
-   		else if NoteFileName <> '' then
+   if IDYES = Application.MessageBox('Delete this Note', PChar(St), MB_ICONQUESTION + MB_YESNO) then begin
+        //if SingleNoteMode then
+        //    DeleteFileUTF8(NoteFileName)
+   	//	else if NoteFileName <> '' then
 	   		    //SearchForm.DeleteNote(NoteFileName);
         Dirty := False;
-        DeletingThisNote := True;
+        //DeletingThisNote := True;
 		Close;
    end;
 end;
 
-procedure TNoteEditForm.SpeedButtonLinkClick(Sender: TObject);
+procedure TFormNote.SpeedButtonLinkClick(Sender: TObject);
 var
     ThisTitle : ANSIString;
     Index : integer;
@@ -342,13 +324,198 @@ begin
 		end;
 	end;
 end;
+          {
+function TFormNote.GetSize() : integer;
+begin
+    case range of
+        FontHuge : Result := round(18*FontScale/100.0);
+        FontBig  : Result := round(14*FontScale/100.0);
+        FontMedium : Result := round(11*FontScale/100.0);
+        FontSmall : Result := round(8*FontScale/100.0);
+        FontTitle : Result := round(16*FontScale/100.0);
+    end;
+end;
+         }
+function TFormNote.ReplaceAngles(const Str : String) : String;
+var
+    s : String;
+begin
+   s := StringReplace(Str,'&lt;','<',[rfReplaceAll]);
+   s := StringReplace(s,'&gt;','>',[rfReplaceAll]);
+   Result := StringReplace(s,'&amp;','&',[rfReplaceAll]);
+end;
 
-procedure TNoteEditForm.Commit();
+
+procedure TFormNote.TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange);
+var
+    i,j,k : integer;
+    Ktext,tagtext,sub : String;
+    tagtype : TTagType;
+    ch : Char;
+    par : TKMemoParagraph;
+    ktb : TKMemoTextBlock;
+    f : TFont;
+begin
+   i:=0; j:= length(s);
+   Ktext := '';
+
+   TRlog('TFormNote.TextToMemo (j='+IntToStr(j)+')');
+   TRlog('SUB "'+s+'"');
+
+   par := KMemo1.Blocks.AddParagraph;
+   if InBullet then begin
+      par.Numbering := pnuBullets;
+      par.NumberingListLevel.FirstIndent := -20;    // Note, these numbers need match SettBullet() in editbox
+      par.NumberingListLevel.LeftIndent := 30;
+   end;
+
+   while (i<j) do
+   begin
+      ch := s.Chars[i];
+      if Ch = #13 then begin inc(i); continue; end; // Micro$ bug
+      if Ch = #9 then Ch := ' ';    // dont care tabs
+
+      tagtext :='';
+      tagtype := TTagType.TagNone;
+
+      if (Ch = '<') then  // new tag
+      begin
+//        type TTagType = ( TagBold, TagItalic, TagHighLight, TagUnderline, TagStrikeout, TagMonospace, TagSizeSmall, TagSizeLarge, TagSizeHuge, TagList);
+
+         if(CompareStr(LowerCase(Copy(s,i,4)),'bold')=0)                    then begin tagtext := 'bold'; tagtype := TTagType.TagBold; end
+          else if(CompareStr(LowerCase(Copy(s,i,6)),'italic')=0)            then begin tagtext := 'italic'; tagtype := TTagType.TagItalic; end
+          else if(CompareStr(LowerCase(Copy(s,i,9)),'highlight')=0)         then begin tagtext := 'highLight'; tagtype := TTagType.TagHighLight; end
+          else if(CompareStr(LowerCase(Copy(s,i,9)),'underline')=0)         then begin tagtext := 'underline'; tagtype := TTagType.TagUnderline; end
+          else if(CompareStr(LowerCase(Copy(s,i,9)),'strikeout')=0)         then begin tagtext := 'strikeout'; tagtype := TTagType.TagStrikeout; end
+          else if(CompareStr(LowerCase(Copy(s,i,9)),'monospace')=0)         then begin tagtext := 'monospace'; tagtype := TTagType.TagMonospace; end
+          else if(CompareStr(LowerCase(Copy(s,i,10)),'size:small')=0)       then begin tagtext := 'size:small'; tagtype := TTagType.TagSizeSmall; end
+          else if(CompareStr(LowerCase(Copy(s,i,10)),'size:large')=0)       then begin tagtext := 'size:large'; tagtype := TTagType.TagSizeLarge; end
+          else if(CompareStr(LowerCase(Copy(s,i,10)),'size:huge')=0)        then begin tagtext := 'size:huge'; tagtype := TTagType.TagSizeHuge; end
+          else if(CompareStr(LowerCase(Copy(s,i,10)),'list-item')=0)        then begin tagtext := 'list-item'; tagtype := TTagType.TagList; end;
+
+          while( (i<j) and (s.Chars[i] <> '>')) do inc(i); // end of opening tag
+          sub := LowerCase(Copy(s,i));
+          k:= Pos('</'+tagtext,sub);
+          if(k<1) then k:=length(sub);
+          sub:=Copy(s,i,k-1);
+          i:= i+k;
+          while( (i<j) and (s.Chars[i] <> '>')) do inc(i); // end of closing tag
+
+          case tagtype of
+              TTagType.TagBold         : TextToMemo(sub, true, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
+              TTagType.TagItalic       : TextToMemo(sub, Bold, true,   HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
+              TTagType.TagHighlight    : TextToMemo(sub, Bold, Italic, true,      Underline, Strikeout, FixedWidth, InBullet, FontSize);
+              TTagType.TagUnderline    : TextToMemo(sub, Bold, Italic, HighLight, true,      Strikeout, FixedWidth, InBullet, FontSize);
+              TTagType.TagStrikeout    : TextToMemo(sub, Bold, Italic, HighLight, Underline, true,      FixedWidth, InBullet, FontSize);
+              TTagType.TagMonospace    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, true,       InBullet, FontSize);
+              TTagType.TagSizeSmall    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, TFontRange.FontSmall );
+              TTagType.TagSizeLarge    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, TFontRange.FontLarge );
+              TTagType.TagSizeHuge     : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, TFontRange.FontHuge );
+              TTagType.TagList         : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, true,     FontSize);
+              else KText := KText + sub;
+          end;
+      end;
+
+      if(Ch >= ' ') then Ktext := Ktext + ch;
+
+      if((length(Ktext)>0) and ((Ch < ' ') or (tagtype <> TagNone) or (i>j-1))) then
+      begin
+         ktb := KMemo1.Blocks.AddTextBlock(ReplaceAngles(Ktext));  // We have to scan InStr for &lt; and &gt;  being < and >
+
+         f := TFont.Create();
+         f.Style := [];
+         if Bold then f.Style := f.Style + [fsBold];
+         if Italic then f.Style := f.Style + [fsItalic];
+         if Underline then f.Style := f.Style + [fsUnderline];
+         if Strikeout then f.Style := f.Style + [fsStrikeout];
+         if FixedWidth then f.Name := FixedFont else f.Name := UsualFont;
+         if FixedWidth then f.Pitch := fpFixed;
+         f.Color := TextColour;
+
+         ktb.TextStyle.Font := f;
+         if HighLight then ktb.TextStyle.Brush.Color := HiColour;
+
+         f.Free;
+         Ktext := '';
+      end;
+
+      inc(i);
+
+      if (Ch<' ') then // add Paragraph
+      begin
+         TRlog('New par i='+IntToStr(i)+' j='+IntToStr(j)+' s="'+s+'"');
+         TextToMemo(Copy(s,i+1), Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
+         i:=j;
+      end;
+   end;
+end;
+
+procedure TFormNote.NoteToMemo();
+begin
+
+   Trlog('NoteToMemo');
+
+   Processing := True;
+
+   // DISPLAY
+
+   // First of all, deal with zero or neg settings
+   if note^.Y < 20 then note^.Y := 20;
+   if note^.X < 20 then note^.X := 20;
+   if note^.Width < 50 then note^.Width := 50;
+   if note^.Height < 50 then note^.Height := 50;
+
+   //Make sure Note is within screen
+   if (note^.X + (note^.Width div 3)) > Screen.Width then
+        note^.X := Screen.Width - (Width div 3);
+
+   if (note^.Y + (note^.Height div 3)) > Screen.Height then
+        note^.Y := Screen.Height - (Height div 3);
+
+   Left := note^.X;
+   Top := note^.Y;
+   Height := note^.Height;
+   Width := note^.Width;
+
+   // DEFAULT TITLE
+
+   Caption := note^.Title;
+
+
+   // KMEMO
+   TRlog('Dealing with content');
+   KMemo1.Blocks.LockUpdate;
+   TRlog('Dealing with content2');
+   KMemo1.Clear;
+   TRlog('Dealing with content3');
+
+   TextToMemo(note^.Content, false, false, false, false, false, false, false, TFontRange.FontNormal);
+
+   TRlog('Dealing with content end');
+
+   KMemo1.Blocks.UnlockUpdate;
+
+   TRlog('Dealing with links');
+
+   if (ShowIntLinks or ShowExtLinks) then CheckForLinks();
+
+   TRlog('Done !');
+
+   Processing := false;
+end;
+
+
+procedure TFormNote.MemoToNote();
 begin
 
 end;
 
-procedure TNoteEditForm.SpeedButtonNotebookClick(Sender: TObject);
+procedure TFormNote.Commit();
+begin
+
+end;
+
+procedure TFormNote.SpeedButtonNotebookClick(Sender: TObject);
 //var
     //NotebookPick : TNotebookPick;
 begin
@@ -364,7 +531,7 @@ begin
     }
 end;
 
-procedure TNoteEditForm.BulletControl(const Toggle, TurnOn : boolean);
+procedure TFormNote.BulletControl(const Toggle, TurnOn : boolean);
 var
       BlockNo : longint = 1;
       LastBlock,  Blar : longint;
@@ -385,6 +552,7 @@ begin
         dec(LastBlock);
         dec(BlockNo);
     end;
+
     // Don't change any trailing empty lines.
     while KMemo1.Blocks.Items[LastBlock].ClassNameIs('TKMemoParagraph') do
         if LastBlock > BlockNo then dec(LastBlock)
@@ -407,7 +575,7 @@ begin
     until (BlockNo > LastBlock) and KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph');
 end;
 
-procedure TNoteEditForm.MenuBulletClick(Sender: TObject);
+procedure TFormNote.MenuBulletClick(Sender: TObject);
 {var
       BlockNo : longint = 1;
       LastBlock,  Blar : longint;
@@ -449,7 +617,7 @@ begin
     until (BlockNo > LastBlock) and KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph');   }
 end;
 
-procedure TNoteEditForm.KMemo1MouseDown(Sender: TObject; Button: TMouseButton;
+procedure TFormNote.KMemo1MouseDown(Sender: TObject; Button: TMouseButton;
 		Shift: TShiftState; X, Y: Integer);
 begin
     //{$ifdef LCLCOCOA}
@@ -462,7 +630,7 @@ end;
 
 // ------------------  COPY ON SELECTION METHODS for LINUX and Windows ------
 
-procedure TNoteEditForm.KMemo1MouseUp(Sender: TObject; Button: TMouseButton;
+procedure TFormNote.KMemo1MouseUp(Sender: TObject; Button: TMouseButton;
     Shift: TShiftState; X, Y: Integer);
 {$IFNDEF DARWIN}    // Mac cannot do Primary Paste, ie XWindows Paste
 var
@@ -489,7 +657,7 @@ begin
     {$endif}
 end;
 
-procedure TNoteEditForm.SetPrimarySelection;
+procedure TFormNote.SetPrimarySelection;
 var
   FormatList: Array [0..1] of TClipboardFormat;
 begin
@@ -502,13 +670,13 @@ begin
   end;
 end;
 
-procedure TNoteEditForm.UnsetPrimarySelection;
+procedure TFormNote.UnsetPrimarySelection;
 begin
   if PrimarySelection.OnRequest=@PrimaryCopy then
     PrimarySelection.OnRequest:=nil;
 end;
 
-procedure TNoteEditForm.PrimaryCopy(
+procedure TFormNote.PrimaryCopy(
   const RequestedFormatID: TClipboardFormat;  Data: TStream);
 var
   s : string;
@@ -519,7 +687,7 @@ begin
             Data.Write(s[1],length(s));
 end;
 
-procedure TNoteEditForm.PrimaryPaste(SelIndex : integer);
+procedure TFormNote.PrimaryPaste(SelIndex : integer);
 var
   Buff : string;
 begin
@@ -533,7 +701,7 @@ begin
     end;
 end;
 
-procedure TNoteEditForm.InsertDate();
+procedure TFormNote.InsertDate();
 var
   I : integer;
 begin
@@ -591,13 +759,15 @@ const
   AlterFont based on first char of selection and passed to AlterBlockFont.
 }
 
-procedure TNoteEditForm.AlterFont(const Command : integer; const NewFontSize : integer = 0);
+procedure TFormNote.AlterFont(const Command : integer; const NewFontSize : integer = 0);
 var
 	FirstBlockNo, LastBlockNo, IntIndex, LastChar, FirstChar : longint;
 	SplitStart : boolean = false;
 begin
     if KMemo1.ReadOnly then exit();
-    Ready := False;
+
+    Processing := True;
+
     MarkDirty();
 	LastChar := Kmemo1.RealSelEnd;			// SelEnd points to first non-selected char
     FirstChar := KMemo1.RealSelStart;
@@ -617,12 +787,13 @@ begin
     AlterBlockFont(FirstBlockNo, FirstBlockNo, Command, NewFontSize);
     KMemo1.SelEnd := LastChar;	// Any splitting above seems to subtly alter SelEnd, reset.
     KMemo1.SelStart := FirstChar;
-	Ready := True;
+
+    Processing := False;
 end;
 
 
 	{  Takes a Block number and applies changes to that block }
-procedure TNoteEditForm.AlterBlockFont(const FirstBlockNo, BlockNo : longint; const Command : integer; const NewFontSize : integer = 0);
+procedure TFormNote.AlterBlockFont(const FirstBlockNo, BlockNo : longint; const Command : integer; const NewFontSize : integer = 0);
 var
 	Block, FirstBlock : TKMemoTextBlock;
 
@@ -681,54 +852,55 @@ begin
 	end;
 end;
 
-procedure TNoteEditForm.MenuHighLightClick(Sender: TObject);
+procedure TFormNote.MenuHighLightClick(Sender: TObject);
 begin
     AlterFont(ChangeColor);
 end;
 
-procedure TNoteEditForm.MenuLargeClick(Sender: TObject);
+procedure TFormNote.MenuLargeClick(Sender: TObject);
 begin
    //AlterFont(ChangeSize, FontSizeLarge);
 end;
 
-procedure TNoteEditForm.MenuNormalClick(Sender: TObject);
+procedure TFormNote.MenuNormalClick(Sender: TObject);
 begin
    //AlterFont(ChangeSize, FontSizeNormal);	// Note, this won't toggle !
 end;
 
-procedure TNoteEditForm.MenuSmallClick(Sender: TObject);
+procedure TFormNote.MenuSmallClick(Sender: TObject);
 begin
     //AlterFont(ChangeSize, FontSizeSmall);
 end;
 
-procedure TNoteEditForm.MenuHugeClick(Sender: TObject);
+procedure TFormNote.MenuHugeClick(Sender: TObject);
 begin
    //AlterFont(ChangeSize, FontSizeHuge);
 end;
 
-procedure TNoteEditForm.MenuBoldClick(Sender: TObject);
+procedure TFormNote.MenuBoldClick(Sender: TObject);
 begin
 	AlterFont(ChangeBold);
 end;
 
-procedure TNoteEditForm.MenuItalicClick(Sender: TObject);
+procedure TFormNote.MenuItalicClick(Sender: TObject);
 begin
 	AlterFont(ChangeItalic);
 end;
 
-procedure TNoteEditForm.MenuItemEvaluateClick(Sender: TObject);
+procedure TFormNote.MenuItemEvaluateClick(Sender: TObject);
 begin
    InitiateCalc();
 end;
 
-procedure TNoteEditForm.MenuItemExportMarkdownClick(Sender: TObject);
+procedure TFormNote.MenuItemExportMarkdownClick(Sender: TObject);
 begin
   FormMarkDown.TheKMemo := KMemo1;
   FormMarkDown.Caption:= CleanCaption();
   FormMarkDown.Show;
 end;
 
-procedure TNoteEditForm.MenuItemIndexClick(Sender: TObject);
+{
+procedure TFormNote.MenuItemIndexClick(Sender: TObject);
 var
     IForm : TFormIndex;
 begin
@@ -744,23 +916,24 @@ begin
     IForm.Free;
     KMemo1.SetFocus;
 end;
+}
 
-procedure TNoteEditForm.MenuItemSettingsClick(Sender: TObject);
+procedure TFormNote.MenuItemSettingsClick(Sender: TObject);
 begin
     //FormSettings.show;
 end;
 
-procedure TNoteEditForm.MenuUnderlineClick(Sender: TObject);
+procedure TFormNote.MenuUnderlineClick(Sender: TObject);
 begin
     AlterFont(ChangeUnderline);
 end;
 
-procedure TNoteEditForm.MenuStrikeoutClick(Sender: TObject);
+procedure TFormNote.MenuStrikeoutClick(Sender: TObject);
 begin
         AlterFont(ChangeStrikeout);
 end;
 
-procedure TNoteEditForm.MenuFixedWidthClick(Sender: TObject);
+procedure TFormNote.MenuFixedWidthClick(Sender: TObject);
 begin
        AlterFont(ChangeFixedWidth);
 end;
@@ -769,7 +942,7 @@ end;
 
     // Locates if it can Term and selects it. Ret False if not found.
     // Uses regional var, LastFind to start its search from, set to 1 for new search
-function TNoteEditForm.FindIt(Term : string; GoForward, CaseSensitive : boolean) : boolean;
+function TFormNote.FindIt(Term : string; GoForward, CaseSensitive : boolean) : boolean;
 var
     NewPos : integer = 0;
     {$ifdef WINDOWS}
@@ -806,48 +979,13 @@ begin
     end;
 end;
 
-procedure TNoteEditForm.ButtMainTBMenuClick(Sender: TObject);
-begin
-    PopupMainTBMenu.Popup;
-end;
 
-procedure TNoteEditForm.ButtTBMenuClick(Sender: TObject);
-begin
-
-end;
-
-procedure TNoteEditForm.FindDialog1Find(Sender: TObject);
-begin
-    FindIt(FindDialog1.FindText,
-            frDown in FindDialog1.Options, frMatchCase in FindDialog1.Options);
-    // If above returns false, no more to be found, but how to tell user ?
-end;
-
-
-
-procedure TNoteEditForm.FormActivate(Sender: TObject);
-begin
-    if SingleNoteMode then begin
-        SpeedbuttonSearch.Enabled := False;
-        SpeedButtonLink.Enabled := False;
-        MenuItemSync.Enabled := False;
-        SpeedButtonNotebook.Enabled := False;
-    end;
-end;
-
-procedure TNoteEditForm.MenuItemFindClick(Sender: TObject);
-begin
-    LastFind := 1;
-    FindDialog1.Options := FindDialog1.Options + [frHideWholeWord, frEntireScope, frDown];
-	FindDialog1.Execute;
-end;
-
-procedure TNoteEditForm.MenuItemCopyClick(Sender: TObject);
+procedure TFormNote.MenuItemCopyClick(Sender: TObject);
 begin
 	KMemo1.ExecuteCommand(ecCopy);
 end;
 
-procedure TNoteEditForm.MenuItemCutClick(Sender: TObject);
+procedure TFormNote.MenuItemCutClick(Sender: TObject);
 begin
     if KMemo1.ReadOnly then exit();
     KMemo1.ExecuteCommand(ecCut);
@@ -857,7 +995,7 @@ begin
     //Label1.Caption := 'd';
 end;
 
-procedure TNoteEditForm.MenuItemDeleteClick(Sender: TObject);
+procedure TFormNote.MenuItemDeleteClick(Sender: TObject);
 begin
     if KMemo1.ReadOnly then exit();
     // KMemo1.ExecuteCommand(ecClearSelection);
@@ -868,20 +1006,19 @@ begin
     //Label1.Caption := 'd';
 end;
 
-procedure TNoteEditForm.MenuItemExportPlainTextClick(Sender: TObject);
+procedure TFormNote.MenuItemExportPlainTextClick(Sender: TObject);
 begin
      //SaveNoteAs('txt');
 end;
 
-procedure TNoteEditForm.MenuItemExportRTFClick(Sender: TObject);
+procedure TFormNote.MenuItemExportRTFClick(Sender: TObject);
 begin
    //SaveNoteAs('rtf');
 end;
 
 
-procedure TNoteEditForm.MarkDirty();
+procedure TFormNote.MarkDirty();
 begin
-    {if not Dirty then} TimerSave.Enabled := true;
     Dirty := true;
     if Caption = '' then Caption := '*'
     else if Caption[1] <> '*' then
@@ -889,7 +1026,7 @@ begin
 end;
 
 
-function TNoteEditForm.CleanCaption(): ANSIString;
+function TFormNote.CleanCaption(): ANSIString;
 begin
     if Caption = '' then exit('');
     if Caption[1] = '*' then
@@ -898,17 +1035,17 @@ begin
 end;
 
 
-procedure TNoteEditForm.MenuItemPasteClick(Sender: TObject);
+procedure TFormNote.MenuItemPasteClick(Sender: TObject);
 begin
     if KMemo1.ReadOnly then exit();
-    Ready := False;
+    Processing := True;
     KMemo1.ExecuteCommand(ecPaste);
     MarkDirty();
-    Ready := True;
+    Processing := False;
 end;
 
 
-procedure TNoteEditForm.MenuItemPrintClick(Sender: TObject);
+procedure TFormNote.MenuItemPrintClick(Sender: TObject);
 var
     KPrint : TKprn;
 begin
@@ -919,12 +1056,12 @@ begin
     end;
 end;
 
-procedure TNoteEditForm.MenuItemSelectAllClick(Sender: TObject);
+procedure TFormNote.MenuItemSelectAllClick(Sender: TObject);
 begin
 	KMemo1.ExecuteCommand(ecSelectAll);
 end;
 
-procedure TNoteEditForm.MenuItemSpellClick(Sender: TObject);
+procedure TFormNote.MenuItemSpellClick(Sender: TObject);
 var
     SpellBox : TFormSpell;
 begin
@@ -939,23 +1076,23 @@ begin
     //end else showmessage('Sorry, spelling not configured');
 end;
 
-procedure TNoteEditForm.MenuItemSyncClick(Sender: TObject);
+procedure TFormNote.MenuItemSyncClick(Sender: TObject);
 begin
     if KMemo1.ReadOnly then exit();
-	if Dirty then SaveTheNote();
+	//if Dirty then SaveTheNote();
     //Sett.Synchronise();
 end;
 
 { - - - H O U S E   K E E P I N G   F U C T I O N S ----- }
 
-procedure TNoteEditForm.TimerSaveTimer(Sender: TObject);
+procedure TFormNote.TimerSaveTimer(Sender: TObject);
 begin
-    TimerSave.Enabled:=False;
+    //TimerSave.Enabled:=False;
 	// showmessage('Time is up');
-    SaveTheNote();
+    //SaveTheNote();
 end;
 
-procedure TNoteEditForm.CleanUTF8();
+procedure TFormNote.CleanUTF8();
 
         function BitSet(Value : byte; TheBit : integer) : boolean;      // theBit 0-7
         begin
@@ -1015,190 +1152,64 @@ begin
     KMemo1.blocks.UnLockUpdate;
 end;
 
-function TNoteEditForm.LoadSingleNote() : boolean;
-var
-    SLNote : TStringList;
-    FileType : string;
+procedure TFormNote.FormShow(Sender: TObject);
 begin
-    { Here we do some checks of the file name the user put on command line.
-      If the file is not present, we assume that want to make a new note by that name.
-      If its a Tomboy note (and all we test for is 'xml' in first line, 'tomboy' in
-      second, then proceed normally.
-      Note that the rtf import is not working but it loads fine as text, rtf being the
-      kmemo's underlying lang.
-      If we load a Text file, I either append or change extension to .note as by
-      default, it becomes a note.
-    }
-    Result := False;
-{
-    TRlog('Path = [' + ExtractFilePath(NoteFileName) + ']');
-    TRlog('Filename = [' + ExtractFileNameOnly(NoteFileName) + ']');
-    if DirectoryExistsUTF8(ExtractFilePath(NoteFileName)) then
-        TRlog('Dir is writable');
-    TRlog('New name =' + AppendPathDelim(ExtractFilePath(NoteFileName)) +
-        ExtractFileNameOnly(NoteFileName) + '.note');    }
+   TRlog('TFormNote.FormShow');
+   if Processing then exit();				// its a "re-show" event. Already have a note loaded.
 
-    FileType := '';
-    if not FileExistsUTF8(NoteFileName) then FileType := 'new'
-    else begin
-          try
-          SLNote := TStringList.Create;
-          //try
-              SlNote.LoadFromFile(NoteFileName);
-              if (UTF8Pos('xml', SLNote.Strings[0]) > 0)  and
-                  (UTF8Pos('tomboy', SLNote.Strings[1]) > 0) then
-                      FileType := 'tomboy'
-              else if (UTF8Pos('{\rtf1', SLNote.Strings[0]) > 0) then
-                      FileType := 'rtf'
-              else
-                    if FileIsText(NoteFileName) then
-                        FileType := 'text';        // Wow, thats brave !
-          //except on
+   TRlog('TFormNote.FormShow Testing loaded');
 
-          //end;
-          finally
-            FreeAndNil(SLNote);
-          end;
-    end;
-      if Verbose then TRlog('Decided the file is of type ' + FileType);
-      case FileType of
-          'tomboy' : try ImportNote(NoteFileName); except on E: Exception do TRlog('!!! EXCEPTION during IMPORT ' + E.Message); end;
-     //     'rtf'    : KMemo1.LoadFromRTF(NoteFileName);  // Wrong, will write back there !
-          'text', 'rtf'   : begin
-                        try
-                        KMemo1.LoadFromFile(NoteFileName);
-                        CleanUTF8();
-                        NoteFileName := AppendPathDelim(ExtractFilePath(NoteFileName)) +
-                            ExtractFileNameOnly(NoteFileName) + '.note';
+   if not AlreadyLoaded then NoteToMemo();
 
-                        except on E: Exception do TRlog('!!! EXCEPTION during LoadFromFile ' + E.Message);
-                        end;
-                     end;
-          'new'    : begin
-                        Result := True;
-                        NoteTitle := NewNoteTitle();
-                    end;
-          ''       : TRlog('Error, cannot identify that file type');
-      end;
-
-    if Application.HasOption('save-exit') then begin
-        MarkDirty();
-        NoteFileName := '';
-        SaveTheNote();
-        // TRlog('hmm, this should be a close.');
-        close;
-    end;
-end;
-
-{	FormShow gets called under a number of conditions Title    Filename       Template
-	- Re-show, everything all loaded.  Ready = true   yes      .              .
-      just exit
-    - New Note                                        no       no             no
-      GetNewTitle(), add CR, CR, Ready, MarkTitle(O),
-      zero dates.
-    - New Note from Template                          no       yes, dispose   yes   R1
-      ImportNote(), null out filename
-    - New Note from Link Button, save immediatly      yes      no             no
-      cp Title to Caption and to KMemo, Ready,
-      MarkTitle().
-    - Existing Note from eg Tray Menu, Searchbox      yes      yes            no    R1
-      ImportNote()
-}
-
-procedure TNoteEditForm.FormShow(Sender: TObject);
-var
-    ItsANewNote : boolean = false;
-begin
-    if Ready then exit();				// its a "re-show" event. Already have a note loaded.
-    //PanelReadOnly.Height := 1;
-    TimerSave.Enabled := False;
-    //KMemo1.Font.Size := FontSizeNormal;
-    {$ifdef LINUX}
-    //{$DEFINE DEBUG_CLIPBOARD}
-    KMemo1.ExecuteCommand(ecPaste);         // this to deal with a "first copy" issue.
-                                            // note, in singlenotemode it triggers a GTK Assertion
-    //{$UNDEF DEBUG_CLIPBOARD}
-    {$endif}
-    Kmemo1.Clear;
-
-    {
-    // this is not the right place to enable or disable sync, it should happen in master
-    // menu control stuff way back in main/search.  All menus should be the same. DRB 14/04/20202
-
-    MenuItemSync.Enabled := (Sett.SyncRepoLocation.Caption <> rsSyncNotConfig)
-            and (Sett.SyncRepoLocation.Caption <> '') and (Sett.SyncRepo.Checked);
-    MenuItemSync.Enabled := MenuItemSync.Enabled or ((Sett.SyncNCURL.Caption <> rsSyncNotConfig)
-            and (Sett.SyncNCURL.Caption <> '') and (Sett.SyncNC.Checked));
-    }
+   TRlog('TFormNote.FormShow Notetomemo done');
 
 
-    if SingleNoteMode then
-            ItsANewNote := LoadSingleNote()    // Might not be Tomboy XML format
-    else
-        if NoteFileName = '' then begin		// might be a new note or a new note from Link
-            if NoteTitle = '' then              // New Note
-			    NoteTitle := NewNoteTitle();
-            ItsANewNote := True;
-	    end else begin
-	        Caption := NoteFileName;
-     	    ImportNote(NoteFileName);		// also sets Caption and Createdate
-            if TemplateIs <> '' then begin
-                NoteFilename := '';
-                NoteTitle := NewNoteTitle();
-                ItsANewNote := True;
-		    end;
-    end;
-    //TRlog('OK, back in EditBox.OnShow');
-    if ItsANewNote then begin
-        CreateDate := '';
-        Caption := NoteTitle;
-    	KMemo1.Blocks.AddParagraph();
-    	KMemo1.Blocks.AddParagraph();
-        if kmemo1.blocks.Items[0].ClassNameIs('TKMemoParagraph') then
-        	Kmemo1.Blocks.DeleteEOL(0);
-        if kmemo1.blocks.Items[0].ClassNameIs('TKMemoTextBlock') then
-            Kmemo1.Blocks.DeleteEOL(0);
-        KMemo1.Blocks.AddTextBlock(NoteTitle, 0);
-	end;
-    Ready := true;
-    MarkTitle();
-    KMemo1.SelStart := KMemo1.Text.Length;  // set curser pos to end
-    KMemo1.SelEnd := Kmemo1.Text.Length;
-    KMemo1.SetFocus;
-    Dirty := False;
-    if SearchedTerm <> '' then
+   {$ifdef LINUX}
+   KMemo1.ExecuteCommand(ecPaste);         // this to deal with a "first copy" issue.
+   {$endif}
+
+   MarkTitle();
+
+   KMemo1.SelStart := KMemo1.Text.Length;  // set curser pos to end
+   KMemo1.SelEnd := Kmemo1.Text.Length;
+
+   KMemo1.SetFocus;
+   Dirty := False;
+
+   if SearchedTerm <> '' then
         FindIt(SearchedTerm, True, False)
     else begin
         KMemo1.executecommand(ecEditorTop);
         KMemo1.ExecuteCommand(ecDown);          // DRB Playing
     end;
-    KMemo1.Blocks.LockUpdate;
-    {$ifdef windows}
-    Color:= Sett.textcolour;
-    {$endif}
-    KMemo1.Colors.BkGnd:= BackGndColour;
-    Kmemo1.Blocks.DefaultTextStyle.Font.Color := TextColour;
-    KMemo1.Blocks.UnLockUpdate;
+   KMemo1.Blocks.LockUpdate;
+   {$ifdef windows}
+    Color:= TextColour;
+   {$endif}
+   KMemo1.Colors.BkGnd:= BackGndColour;
+   Kmemo1.Blocks.DefaultTextStyle.Font.Color := TextColour;
+   KMemo1.Blocks.UnLockUpdate;
 end;
 
 	{ This gets called when the TrayMenu quit entry is clicked }
     { No it does not, only when user manually closes this form. }
-procedure TNoteEditForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+procedure TFormNote.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
     Release;
 end;
 
-procedure TNoteEditForm.FormCloseQuery(Sender: TObject; var CanClose: boolean);
+procedure TFormNote.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
+  TRlog('TFormNote.FormCloseQuery');
+
     CanClose := True;
 end;
 
-procedure TNoteEditForm.FormCreate(Sender: TObject);
+procedure TFormNote.FormCreate(Sender: TObject);
 begin
-    //if mainform.SingleNoteFileName = '' then
-    //    SearchForm.RefreshMenus(mkAllMenu, PopupMainTBMenu)
-    //else SingleNoteMode := True;
-    {$ifdef DARWIN}
+  TRlog('TFormNote.FormCreate');
+  AlreadyLoaded := false;
+  {$ifdef DARWIN}
     MenuBold.ShortCut      := KeyToShortCut(VK_B, [ssMeta]);
     MenuItalic.ShortCut    := KeyToShortCut(VK_I, [ssMeta]);
     MenuStrikeout.ShortCut := KeyToShortCut(VK_S, [ssMeta]);
@@ -1207,15 +1218,14 @@ begin
     MenuUnderline.ShortCut := KeyToShortCut(VK_U, [ssMeta]);
     MenuItemFind.ShortCut  := KeyToShortCut(VK_F, [ssMeta]);
     MenuItemEvaluate.ShortCut := KeyToShortCut(VK_E, [ssMeta]);
-    {$endif}
-    DeletingThisNote := False;
+  {$endif}
 end;
 
 
 // As UpdateNote does not record Notebook membership, abandon it for now.
 // Maybe come back later and see if it can be patched, its probably quicker.
 // Was only called on a clean note ....
-function TNoteEditForm.UpdateNote(NRec : TNoteUpdaterec) : boolean;
+function TFormNote.UpdateNote(NRec : TNoteUpdaterec) : boolean;
 var
     InFile, OutFile: TextFile;
     {NoteDateSt, }InString, TempName : string;
@@ -1261,12 +1271,12 @@ begin
   if result = false then TRlog('ERROR deleting [' + TempName + '] ');
 end;
 
-procedure TNoteEditForm.FormDestroy(Sender: TObject);
+procedure TFormNote.FormDestroy(Sender: TObject);
 {var
     ARec : TNoteUpdateRec; }
 begin
     UnsetPrimarySelection;                                      // tidy up copy on selection.
-    if (length(NoteFileName) = 0) and (not Dirty) then exit;    // A new, unchanged note, no need to save.
+    //if (length(NoteFileName) = 0) and (not Dirty) then exit;    // A new, unchanged note, no need to save.
     //if not Kmemo1.ReadOnly then
         //if not DeletingThisNote then
             //if (not SingleNoteMode) or Dirty then       // We always save, except in SingleNoteMode (where we save only if dirty)
@@ -1275,7 +1285,7 @@ begin
 
 end;
 
-function TNoteEditForm.GetTitle(out TheTitle : ANSIString) : boolean;
+function TFormNote.GetTitle(out TheTitle : ANSIString) : boolean;
 var
     BlockNo : longint = 0;
     //TestSt : ANSIString;
@@ -1292,20 +1302,19 @@ begin
     if TheTitle <> '' then Result := True;
 end;
 
-procedure TNoteEditForm.MarkTitle();
+procedure TFormNote.MarkTitle();
 var
     BlockNo : integer = 0;
-    //AtTheEnd : Boolean = False;
     EndBlock, blar : integer;
 begin
-  	if Not Ready then exit();
+   if Processing then exit();
     { if there is more than one block, and the first, [0], is a para, delete it.}
     if KMemo1.Blocks.Count <= 2 then exit();	// Don't try to mark title until more blocks.
-    Ready := false;
+    Processing := true;
     Kmemo1.Blocks.LockUpdate;
     if Kmemo1.Blocks.Items[BlockNo].ClassName = 'TKMemoParagraph' then
           Kmemo1.Blocks.DeleteEOL(0);
-	try
+
         while Kmemo1.Blocks.Items[BlockNo].ClassName <> 'TKMemoParagraph' do begin
             if Kmemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock') then begin    // just possible its an image, ignore ....
                 //TKMemoTextBlock(Kmemo1.Blocks.Items[BlockNo]).TextStyle.Font.Size := FontSizeTitle;
@@ -1331,16 +1340,15 @@ begin
             //    end;
             dec(EndBlock);
         end;
-	finally
-		KMemo1.Blocks.UnLockUpdate;
-    	Ready := True;
-	end;
+
+    KMemo1.Blocks.UnLockUpdate;
+    Processing := False;
 end;
 
 
 { -----------  L I N K    R E L A T E D    F U N C T I O N S  ---------- }
 
-procedure TNoteEditForm.MakeLink({const Link : ANSIString;} const Index, Len : longint);
+procedure TFormNote.MakeLink({const Link : ANSIString;} const Index, Len : longint);
 var
 	Hyperlink, HL: TKMemoHyperlink;
     TrueLink : string;
@@ -1393,7 +1401,7 @@ end;
 
 
 // Starts searching a string at StartAt for Term, returns 1 based offset from start of str if found, 0 if not. Like UTF8Pos(
-function TNoteEditForm.RelativePos(const Term : ANSIString; const MText : PChar; StartAt : integer) : integer;
+function TFormNote.RelativePos(const Term : ANSIString; const MText : PChar; StartAt : integer) : integer;
 begin
   result := Pos(Term, MText+StartAt);
   if Result <> 0 then
@@ -1401,7 +1409,7 @@ begin
 end;
 
 
-procedure TNoteEditForm.MakeAllLinks(const PText : PChar; const Term : ANSIString; const StartScan : longint =1; EndScan : longint = 0);
+procedure TFormNote.MakeAllLinks(const PText : PChar; const Term : ANSIString; const StartScan : longint =1; EndScan : longint = 0);
 var
 	Offset, NumbCR   : longint;
     {$ifdef WINDOWS}
@@ -1428,7 +1436,7 @@ begin
 end;
 
 
-procedure TNoteEditForm.CheckForHTTP(const PText : pchar; const StartS, EndS : longint);
+procedure TFormNote.CheckForHTTP(const PText : pchar; const StartS, EndS : longint);
 
     function ValidWebLength(StartAt : integer) : integer;               // stupid !  Don't pass StartAt, use local vars, cheaper....
     var
@@ -1483,24 +1491,24 @@ begin
 end;
 
 
-procedure TNoteEditForm.CheckForLinks(const StartScan : longint =1; EndScan : longint = 0);
+procedure TFormNote.CheckForLinks(const StartScan : longint =1; EndScan : longint = 0);
 var
     Searchterm : ANSIstring;
     Len, httpLen : longint;
 //    Tick, Tock : qword;
     pText : pchar;
 begin
-	if not Ready then exit();
-    if SingleNoteMode then exit();
-    // There is a thing called KMemo1.Blocks.SelectableLength but it returns the number of characters, not bytes, much faster though
-    // Note, we dont need Len if only doing http and its not whole note being checked (at startup). So, could save a bit ....
-    Len := length(KMemo1.Blocks.text);              // saves 7mS by calling length() only once ! But still 8mS
+   if Processing then exit();
+
+   // There is a thing called KMemo1.Blocks.SelectableLength but it returns the number of characters, not bytes, much faster though
+   // Note, we dont need Len if only doing http and its not whole note being checked (at startup). So, could save a bit ....
+   Len := length(KMemo1.Blocks.text);              // saves 7mS by calling length() only once ! But still 8mS
     if StartScan >= Len then exit;                  // prevent crash when memo almost empty
     if EndScan > Len then EndScan := Len;
     if EndScan = 0 then
         httpLen := Len
     else  httpLen := EndScan;
-    Ready := False;
+    Processing := True;
 	//SearchForm.StartSearch();
     KMemo1.Blocks.LockUpdate;
     //Tick := gettickcount64();
@@ -1514,12 +1522,12 @@ begin
     //Tock := gettickcount64();
     KMemo1.Blocks.UnLockUpdate;
     //TRlog('MakeAllLinks ' + inttostr(Tock - Tick) + 'mS');
-    Ready := True;
+    Processing := True;
 end;
 
 
 
-procedure TNoteEditForm.ClearNearLink(const StartS, EndS : integer); //CurrentPos : longint);
+procedure TFormNote.ClearNearLink(const StartS, EndS : integer); //CurrentPos : longint);
 var
     {BlockNo,}  Blar, StartBlock, EndBlock : longint;
     LinkText  : ANSIString;
@@ -1546,7 +1554,7 @@ var
     end;
 
 begin
-    Ready := False;
+    Processing := True;
     StartBlock := KMemo1.Blocks.IndexToBlockIndex(StartS, Blar);
     EndBlock := KMemo1.Blocks.IndexToBlockIndex(EndS, Blar);
     if StartBlock < 2 then StartBlock := 2;
@@ -1579,7 +1587,7 @@ begin
     end;
     finally
         KMemo1.Blocks.UnlockUpdate;
-        Ready := True;
+        Processing := False;
     end;
 
 (*          remove all this after a testing cycle.
@@ -1621,12 +1629,12 @@ end;
 
       This function is not needed at present but leave it here in case its
       useful after user chooses to not display links. }
-procedure TNoteEditForm.ClearLinks(const StartScan : longint =0; EndScan : longint = 0);
+procedure TFormNote.ClearLinks(const StartScan : longint =0; EndScan : longint = 0);
 var
       BlockNo, EndBlock, Blar : longint;
       LinkText : ANSIString;
 begin
-    Ready := False;
+    Processing := True;
     BlockNo := KMemo1.Blocks.IndexToBlockIndex(StartScan, Blar); // DANGER, we must adjust StartScan to block boundary
     EndBlock := KMemo1.Blocks.IndexToBlockIndex(EndScan, Blar);	 // DANGER, we must adjust EndScan to block boundary
     KMemo1.Blocks.LockUpdate;
@@ -1639,10 +1647,10 @@ begin
         inc(BlockNo);
 	end;
     KMemo1.Blocks.UnLockUpdate;
-    Ready := True;
+    Processing := False;
 end;
 
-procedure TNoteEditForm.OnUserClickLink(sender : TObject);
+procedure TFormNote.OnUserClickLink(sender : TObject);
 begin
     if (copy(TKMemoHyperlink(Sender).Text, 1, 7) = 'http://') or
         (copy(TKMemoHyperlink(Sender).Text, 1, 8) = 'https://') then
@@ -1652,7 +1660,7 @@ begin
 end;
 
 
-procedure TNoteEditForm.DoHousekeeping();
+procedure TFormNote.DoHousekeeping();
 var
     CurserPos, SelLen, StartScan, EndScan, BlockNo, Blar : longint;
     TempTitle : ANSIString;
@@ -1707,16 +1715,15 @@ begin
   }
 end;
 
-procedure TNoteEditForm.TimerHousekeepingTimer(Sender: TObject);
+procedure TFormNote.TimerHousekeepingTimer(Sender: TObject);
 begin
-    TimerHouseKeeping.Enabled := False;
     DoHouseKeeping();
 end;
 
 
 { ---------------------- C A L C U L A T E    F U N C T I O N S ---------------}
 
-procedure TNoteEditForm.ExprTan(var Result: TFPExpressionResult;
+procedure TFormNote.ExprTan(var Result: TFPExpressionResult;
     const Args: TExprParameterArray);
 var
   x: Double;
@@ -1725,7 +1732,7 @@ begin
   Result.resFloat := tan(x);
 end;
 
-function TNoteEditForm.DoCalculate(CalcStr : string) : string;
+function TFormNote.DoCalculate(CalcStr : string) : string;
 var
     FParser: TFPExpressionParser;
     parserResult: TFPExpressionResult;
@@ -1756,7 +1763,7 @@ RESOURCESTRING
     rsUnabletoEvaluate = 'Unable to find an expression to evaluate';
 // Called from a Ctrl-E, 'Equals', maybe 'Evaluate' ? Anyway, directs to appropriate
 // methods.
-procedure TNoteEditForm.InitiateCalc();
+procedure TFormNote.InitiateCalc();
 var
     AnsStr : string;
 begin
@@ -1780,7 +1787,7 @@ begin
 end;
 
 // Returns all text in a para, 0 says current one, 1 previous para etc ...
-function TNoteEditForm.PreviousParagraphText(const Backby : integer) : string;
+function TFormNote.PreviousParagraphText(const Backby : integer) : string;
 var
     BlockNo, StopBlockNo, Index : longint;
 begin
@@ -1808,7 +1815,7 @@ end;
 
 
 // Return content of paragraph that caret is within, up to caret pos.
-function TNoteEditForm.ParagraphTextTrunc() : string;
+function TFormNote.ParagraphTextTrunc() : string;
 var
     BlockNo, StopBlockNo, PosInBlock : longint;
 begin
@@ -1832,7 +1839,7 @@ begin
 end;
 
 // Looks for a number at both begining and end of string. Ret empty ones if unsuccessful
-function TNoteEditForm.FindNumbersInString(const AStr: string; out AtStart, AtEnd : string) : boolean;
+function TFormNote.FindNumbersInString(const AStr: string; out AtStart, AtEnd : string) : boolean;
 var
     Index : integer = 1;
 begin
@@ -1855,7 +1862,7 @@ end;
 
 // Tries to find a column of numbers above, trying to rhs, then lhs.
 // if we find tow or more lines, use it.
-function TNoteEditForm.ColumnCalculate(out AStr : string) : boolean;
+function TFormNote.ColumnCalculate(out AStr : string) : boolean;
 var
     TheLine, AtStart, AtEnd, CalcStrStart, CalcStrEnd : string;
     Index : integer = 1;
@@ -1890,7 +1897,7 @@ begin
 end;
 
 // Assumes that the current selection contains a complex calc expression.
-function TNoteEditForm.ComplexCalculate(out AStr : string) : boolean;
+function TFormNote.ComplexCalculate(out AStr : string) : boolean;
 var
     BlockNo, Temp : longint;
 begin
@@ -1911,7 +1918,7 @@ const
     CalcChars : set of char =  ['0'..'9'] + ['^', '*', '-', '+', '/'] + ['.', '=', ' ', '(', ')'];
 
 // acts iff char under curser or to left is an '='
-function TNoteEditForm.SimpleCalculate(out AStr : string) : boolean;
+function TFormNote.SimpleCalculate(out AStr : string) : boolean;
 var
     Index : longint;
     GotEquals : boolean = false;
@@ -1946,17 +1953,14 @@ begin
 end;
 
 	{ Any change to the note text and this gets called. So, vital it be quick }
-procedure TNoteEditForm.KMemo1Change(Sender: TObject);
+procedure TFormNote.KMemo1Change(Sender: TObject);
 begin
-    if not Ready then exit();           // don't do any of this while starting up.
-    //if not Dirty then TimerSave.Enabled := true;
+    if Processing then exit();           // don't do any of this while starting up.
+
     MarkDirty();
-    TimerHouseKeeping.Enabled := False;
-    TimerHouseKeeping.Enabled := True;
-    // HouseKeeping is now driven by a timer;
 end;
 
-function TNoteEditForm.NearABulletPoint(out Leading, Under, Trailing, IsFirstChar, NoBulletPara : Boolean;
+function TFormNote.NearABulletPoint(out Leading, Under, Trailing, IsFirstChar, NoBulletPara : Boolean;
         								out BlockNo, TrailOffset, LeadOffset : longint ) : boolean;
 	// on medium linux laptop, 20k note this function takes less than a mS
 var
@@ -1979,7 +1983,7 @@ begin
     end;
     if BlockNo < Index then begin
         Result := False;
-        if Verbose then TRlog('Returning False as we appear to be playing in Heading.');
+        TRlog('Returning False as we appear to be playing in Heading.');
         exit();
     end else Leading := (TKMemoParagraph(kmemo1.blocks.Items[BlockNo-Index]).Numbering = pnuBullets);
     IsFirstChar := (CharCount = 0);
@@ -1987,11 +1991,11 @@ begin
     Index := 0;
     while true do begin
         // must not call Classnameis with blockno = count
-        if Verbose then
-            TRlog('Doing para seek, C=' + inttostr(KMemo1.Blocks.Count) + ' B=' + inttostr(BlockNo) + ' I=' + inttostr(Index));
+        TRlog('Doing para seek, C=' + inttostr(KMemo1.Blocks.Count) + ' B=' + inttostr(BlockNo) + ' I=' + inttostr(Index));
         inc(Index);
         if (BlockNo + Index) >= (Kmemo1.Blocks.Count) then begin
-            if Verbose then TRlog('Overrun looking for a para marker.');
+
+            TRlog('Overrun looking for a para marker.');
             // means there are no para markers beyond here.  So cannot be TrailingBullet
             Index := 0;
             break;
@@ -2003,8 +2007,7 @@ begin
   	    Trailing := (TKMemoParagraph(kmemo1.blocks.Items[BlockNo+Index]).Numbering = pnuBullets)
     else Trailing := False;
     Result := (Leading or Under or Trailing);
-    if Verbose then begin
-	    TRlog('IsNearBullet -----------------------------------');
+    	    TRlog('IsNearBullet -----------------------------------');
         TRlog('      Result      =' + booltostr(Result, true));
         TRlog('      Leading     =' + booltostr(Leading, true));
         TRlog('      Under       =' + booltostr(Under, true));
@@ -2015,11 +2018,10 @@ begin
         TRlog('      TrailOffset =' + inttostr(Trailoffset));
         TRlog('      BlockNo     =' + inttostr(BlockNo));
 
-    end;
 end;
 
 {
-procedure TNoteEditForm.CancelBullet(const BlockNo : longint; const UnderBullet : boolean);
+procedure TFormNote.CancelBullet(const BlockNo : longint; const UnderBullet : boolean);
 begin
     TRlog('Cancel this bullet');
     if UnderBullet then begin
@@ -2073,7 +2075,7 @@ y   There is nothing after our bullet para marker. So, on an empty bulletline, u
     So, its should act as (a) but did, once, act as (d) ?? Needs more testing ......
 }
 
-procedure TNoteEditForm.KMemo1KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure TFormNote.KMemo1KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 var
   TrailOffset,
   BlockNo,              // Will hold block number cursor is under.
@@ -2084,7 +2086,7 @@ var
   FirstChar  : boolean; // Cursor is under the first character of a line of text.
   NoBulletPara : boolean = false;
 begin
-    if not Ready then exit();                   // should we drop key on floor ????
+    if Processing then exit();                   // should we drop key on floor ????
     // don't let any ctrl char get through the kmemo on mac
     {$ifdef DARWIN}
     if [ssCtrl] = Shift then begin
@@ -2120,7 +2122,7 @@ begin
             VK_T : MenuFixedWidthClick(Sender);
             VK_H : MenuHighLightClick(Sender);
             VK_U : MenuUnderLineClick(Sender);
-            VK_F : MenuItemFindClick(self);
+            //VK_F : MenuItemFindClick(self);
             VK_L : SpeedButtonLinkClick(Sender);
             VK_D : InsertDate();
             //VK_N : SearchForm.OpenNote();      // MainForm.MMNewNoteClick(self);    ok as long as notes dir set .....
@@ -2164,28 +2166,26 @@ begin
     if (not FirstChar) and (not UnderBullet) then exit();
     // We do have to act, don't pass key on.
     Key := 0;
-    Ready := False;
+    Processing := True;
     MarkDirty();
-    TimerHouseKeeping.Enabled := False;
-    TimerHouseKeeping.Enabled := True;
 
     // KMemo1.Blocks.LockUpdate;  Dont lock because we move the cursor down here.
     	if UnderBullet and (not FirstChar) then begin   // case a
             KMemo1.ExecuteCommand(ecDeleteLastChar);
-            if Verbose then TRlog('Case a');
-            Ready := True;
+            TRlog('Case a');
+            Processing := false;
             exit();
         end;
         // anything remaining must have FirstChar
         if TrailingBullet and (not NoBulletPara) then begin	// case b
-            if Verbose then TRlog('Case b or e');
+            TRlog('Case b or e');
             if UnderBullet then  						// case e
               	TrailOffset := 0;
             if kmemo1.blocks.Items[BlockNo+TrailOffset].ClassNameIs('TKMemoParagraph') then
                 SetBullet(TKMemoParagraph(kmemo1.blocks.Items[BlockNo+TrailOffset]), False)
             	// TKMemoParagraph(kmemo1.blocks.Items[BlockNo+TrailOffset]).Numbering := pnuNone
             else TRlog('ERROR - this case b block should be a para');
-            Ready := True;
+            Processing := False;
             exit();
         end;
         // anything remaining is outside bullet list, looking in. Except if Trailing is set...
@@ -2194,14 +2194,16 @@ begin
             if TrailingBullet then begin
             	KMemo1.ExecuteCommand(ecUp);
             	KMemo1.ExecuteCommand(ecLineEnd);
-                if Verbose then TRlog('Case x');
+                TRlog('Case x');
 			end else begin
             	if UnderBullet then begin				// this test is wrong, real test is are we at end of text ?
-                    if Verbose then TRlog('Case y');
+
+                TRlog('Case y');
                     KMemo1.Blocks.AddParagraph();		// Maybe only need add that if at end of text, NearABulletPoint() could tell us ?
                     KMemo1.ExecuteCommand(ecDown);
                 end else
-            		if Verbose then TRlog('Case c');
+
+                TRlog('Case c');
             end;
         end else begin				// merge the current line into bullet above.
             if kmemo1.blocks.Items[BlockNo+TrailOffset].ClassNameIs('TKMemoParagraph') then
@@ -2210,14 +2212,15 @@ begin
             else TRlog('ERROR - this case d block should be a para');
             if  kmemo1.blocks.Items[BlockNo-Leadoffset].ClassNameIs('TKMemoParagraph') then begin
             	KMemo1.Blocks.Delete(BlockNo-LeadOffset);
-            	if Verbose then TRlog('Case d');
+
+                TRlog('Case d');
         	end;
     	end;
-    Ready := True;
+    Processing := False;
     // most of the intevention paths through this method take ~180mS on medium powered linux laptop
 end;
 
-procedure TNoteEditForm.SetBullet(PB : TKMemoParagraph; Bullet : boolean);
+procedure TFormNote.SetBullet(PB : TKMemoParagraph; Bullet : boolean);
 var
   Index : integer;
   //Tick, Tock : qword;
@@ -2256,141 +2259,6 @@ begin
     finally
         KMemo1.Blocks.UnlockUpdate;
     end;
-end;
-
-	{ --- I M P O R T I N G   and   E X P O R T I N G    F U N C T I O N S  ---  }
-
-    // Make sure position and size is appropriate.
-procedure TNoteEditForm.AdjustFormPosition();
-begin
-    // First of all, deal with zero or neg settings
-    if Top < 20 then Top := 20;
-    if Left < 20 then Left := 20;
-    if Width < 50 then width := 50;
-    if Height < 50 then height := 50;
-    // ensure we don't start with more than two thirds _beyond_ boundaries.
-    // don't seem to need this, on Linux at least, new window is always within screen. Test on Windows/Mac
-    {$ifdef LINUX}exit;{$endif}
-    // Jan 2020, a possible problem in at least single note mode of notes beyond right hand edge of screen. bug #116
-    if (Left + (Width div 3)) > Screen.Width then begin
-        Left := Screen.Width - (Width div 3);
-    end;
-    if (Top + (Height div 3)) > Screen.Height then begin
-        Top := Screen.Height - (Height div 3);
-    end;
-end;
-
-procedure TNoteEditForm.ImportNote(FileName: string);
-var
-    Loader : TBLoadNote;
- 	//T1 : qword;          // Temp time stamping to test speed
-begin
-    // Timing numbers below using MyRecipes on my Acer linux laptop. For local comparison only !
-    //T1 := gettickcount64();
-    Loader := TBLoadNote.Create();
-    //Loader.FontNormal:= FontSizeNormal;
-    // Loader.FontName := FontName;
-    //Loader.FontSize:= FontSizeNormal;
-    KMemo1.Blocks.LockUpdate;
-    KMemo1.Clear;
-    Loader.LoadFile(FileName, KMemo1);                        // 340mS
-    KMemo1.Blocks.UnlockUpdate;                             // 370mS
-    // TRlog('Load Note=' + inttostr(gettickcount64() - T1) + 'mS');
-    Createdate := Loader.CreateDate;
-    Ready := true;
-    Caption := Loader.Title;
-    if ShowIntLinks or ShowExtLinks then
-    	CheckForLinks();                     		// 360mS
-    Left := Loader.X;
-    Top := Loader.Y;
-    Height := Loader.Height;
-    Width := Loader.Width;          // AdjustFormPosition() will fix if necessary
-    AdjustFormPosition();
-    Loader.Free;
-    TimerHouseKeeping.Enabled := False;     // we have changed note but no housekeeping reqired
-    // TRlog('Load Note=' + inttostr(gettickcount64() - T1) + 'mS');
-end;
-
-procedure TNoteEditForm.MenuItemWriteClick(Sender: TObject);
-begin
-    if KMemo1.ReadOnly then exit();
-    SaveTheNote();
-end;
-
-procedure TNoteEditForm.SaveTheNote(WeAreClosing : boolean = False);
-var
- 	Saver : TSaveNote;
-    SL : TStringList;
-    OldFileName : string ='';
-    Loc : TNoteUpdateRec;
-    // T1, T2, T3, T4, T5, T6, T7 : dword;
-    // TestI : integer;
-begin
-    // T1 := gettickcount64();
-    // TRlog('Saving this note' + Caption);
-    Saver := Nil;
-    if KMemo1.ReadOnly then exit();
-  	if length(NoteFileName) = 0 then
-        NoteFileName := GetLocalNoteFile(GetNewID());
-        if TemplateIs <> '' then begin
-        SL := TStringList.Create();
-        SL.Add(TemplateIs);
-        //SearchForm.NoteLister.SetNotebookMembership(ExtractFileNameOnly(NoteFileName) + '.note', SL);
-        SL.Free;
-        TemplateIs := '';
-    end;
-    Saver := TSaveNote.Create();
-    try
-        Saver.CreateDate := CreateDate;
-        if not GetTitle(Saver.Title) then exit();
-        Caption := Saver.Title;
-        // T2 := GetTickCount64();                   // 0mS
-        KMemo1.Blocks.LockUpdate;                 // to prevent changes during read of kmemo
-        try
-           // TRlog('about to save');
-            Saver.ReadKMemo(NoteFileName, KMemo1);
-            // T3 := GetTickCount64();               // 6mS
-        finally
-            KMemo1.Blocks.UnLockUpdate;
-        end;
-        // T4 := GetTickCount64();                   //  0mS
-        Loc.Width:=inttostr(Width);
-        Loc.Height:=inttostr(Height);
-        Loc.X := inttostr(Left);
-        Loc.Y := inttostr(Top);
-        Loc.OOS := booltostr(WeAreClosing, True);
-        Loc.CPos:='1';
-        loc.FFName:='';
-        //if Dirty or SingleNoteMode then     // In SingeNoteMode, there is no NoteLister, so date is always updated.
-        //    Loc.LastChangeDate:=''
-        //else
-        //    Loc.LastChangeDate:= SearchForm.NoteLister.GetLastChangeDate(ExtractFileNameOnly(NoteFileName));
-        // Use old DateSt if only metadata. Sets it to '' if not in list, Saver will sort it.
-        if (not Saver.WriteToDisk(NoteFileName, Loc)) and (not WeAreClosing) then begin
-            Showmessage('ERROR, cannot save,  please report [' + Loc.ErrorStr + ']');     // maybe some windows delete problem ??
-            //Showmessage('Name=' + Sett.NoteDirectory + NoteFileName);
-        end;
-        // T5 := GetTickCount64();                   // 1mS
-        // No point in calling UpDateList() if we are closing the app or just updating metadata.
-        //if ((not WeAreClosing) and (Loc.LastChangeDate = '')) then
-        //    SearchForm.UpdateList(CleanCaption(), Saver.TimeStamp, NoteFileName, self);
-                                        // if we have rewritten GUID, that will create new entry for it.
-        // T6 := GetTickCount64();                   //  14mS
-        //if OldFileName <> '' then
-        //    SearchForm.DeleteNote(OldFileName);
-    finally
-        if Saver <> Nil then Saver.Destroy;
-        Dirty := false;
-        Caption := CleanCaption();
-    end;
-    {T7 := GetTickCount64();                       // 0mS
-    TRlog('EditBox.SaveTheNote Timing ' + inttostr(T2 - T1) + ' ' + inttostr(T3 - T2) + ' ' + inttostr(T4 - T3) + ' ' +
-            inttostr(T5 - T4) + ' ' + inttostr(T6 - T5) + ' ' + inttostr(T7 - T6));  }
-end;
-
-function TNoteEditForm.NewNoteTitle(): ANSIString;
-begin
-  Result := 'New Note ' + FormatDateTime('YYYY-MM-DD hh:mm:ss.zzz', Now);
 end;
 
 

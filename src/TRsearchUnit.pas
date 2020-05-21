@@ -96,6 +96,7 @@ private
 
         function DeleteNotebook(nb : String): boolean;
 
+
 end;
 
 
@@ -107,7 +108,7 @@ implementation
 
 uses
     LazFileUtils,
-    TRsettings, TRsync, TRnoteEdit, TRabout,
+    TRsettings, TRsync, TRnote, TRabout,
     process;
 
 
@@ -841,10 +842,10 @@ begin
         n := NotesList.FindID(DeletedList.Strings[i]);
         if(n<>nil) then
         begin
-           if(n^.FormEdit <> nil) then
+           if(n^.Display <> nil) then
            begin
-                n^.FormEdit^.Close;
-                FreeAndNil(n^.FormEdit);
+                n^.Display^.Close;
+                FreeAndNil(n^.Display);
            end;
            NotesList.Remove(n);
            Dispose(n);
@@ -864,10 +865,10 @@ begin
            NotesList.Add(n);
         end
         else begin
-           if(n^.FormEdit <> nil) then
+           if(n^.Display <> nil) then
            begin
-                n^.FormEdit^.Close;
-                FreeAndNil(n^.FormEdit);
+                n^.Display^.Close;
+                FreeAndNil(n^.Display);
            end;
            FileToNote(GetLocalNoteFile(n^.ID),n);
            NotesList.Add(n);
@@ -948,10 +949,10 @@ begin
       n := NotesList.FindID(ID);
       if(n<>nil) then
       begin
-         if(n^.FormEdit <> nil) then
+         if(n^.Display <> nil) then
          begin
-            n^.FormEdit^.Close;
-            FreeAndNil(n^.FormEdit);
+            n^.Display^.Close;
+            FreeAndNil(n^.Display);
          end;
          NotesList.Remove(n);
          Dispose(n);
@@ -1302,37 +1303,43 @@ begin
 end;
 
 
-
 procedure TFormSearch.OpenNote(ID : String = ''; Notebook : String = '');
 var
     EBox : PNoteEditForm;
     n : PNoteInfo;
 begin
-   if(not NoteIDLooksOK(ID)) then ID:=GetNewID();
+   TRlog('OpenNote('+ID+' , '+Notebook+' )');
 
    n := NotesList.FindID(ID);
 
    if(n = nil) then
    begin
+      TRlog('Creating new note (old ID= '+ID+' )');
       n := EmptyNote();
-      n^.ID := ID;
+      TRlog('Creating new note (new ID= '+n^.ID+' )');
+
       if((length(Notebook)>0) and (CompareText(Notebook,'-')<>0)) then n^.Tags.Add('system:notebook:'+Notebook);
       NotesList.Add(n);
    end;
 
-   if(n^.FormEdit <> nil) then begin
-      EBox := PNoteEditForm(n^.FormEdit);
+   TRlog('Testing TNoteEditForm');
+
+   if(n^.Display <> nil) then begin
+      EBox := PNoteEditForm(n^.Display);
       EBox^.Hide();
-      EBox^.Commit();
       EBox^.Close;
-      FreeAndNil(n^.FormEdit);
+      FreeAndNil(n^.Display);
    end;
 
-   Ebox^ := TNoteEditForm.Create(Self);
-   n^.FormEdit := Ebox;
+   TRlog('Creating TNoteEditForm');
+
+   Ebox^ := TFormNote.Create(Self);
+   TRlog('Assigning data ');
+   n^.Display := Ebox;
    EBox^.note := n;
 
-   EBox^.Dirty := false;
+   TRlog('Showing FormEdit');
+
    EBox^.Show();
 end;
 

@@ -746,9 +746,9 @@
         <ResourceBaseClass Value="Form"/>
       </Unit1>
       <Unit2>
-        <Filename Value="TRnoteEdit.pas"/>
+        <Filename Value="TRnote.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="NoteEditForm"/>
+        <ComponentName Value="FormNote"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit2>
@@ -757,11 +757,6 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="SaveNote"/>
       </Unit3>
-      <Unit4>
-        <Filename Value="loadnote.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="LoadNote"/>
-      </Unit4>
       <Unit5>
         <Filename Value="TRsettings.pas"/>
         <IsPartOfProject Value="True"/>

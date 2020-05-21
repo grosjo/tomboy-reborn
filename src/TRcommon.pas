@@ -10,8 +10,6 @@ uses
     FileInfo, TRAutoStartCtrl, Trtexts;
 
 
-type TFontRange = (FontHuge, FontBig, FontMedium, FontSmall);	// Relating to sync clash pref in config file
-
 type TSyncClashOption = (AlwaysAsk, UseServer, UseLocal, MakeCopy);	// Relating to sync clash pref in config file
 
 type TSyncTransport=(
@@ -77,7 +75,7 @@ type TNoteInfo =
         Tags : TStringList;
         Error : String;
         Deleted : boolean;
-        FormEdit : ^TForm;
+        Display : ^TForm;
   end;
 
 type PNoteInfo=^TNoteInfo;
@@ -620,7 +618,7 @@ begin
   c^.Error := A^.Error;
   c^.Deleted := A^.Deleted;
 
-  c^.FormEdit := A^.FormEdit;
+  c^.Display := A^.Display;
 
 end;
 
@@ -634,7 +632,7 @@ begin
    n^.Rev := -1;
    n^.LastSyncGMT := 0;
    n^.LastSync := '';
-   n^.FormEdit:= nil;
+   n^.Display := nil;
    n^.Tags := TStringList.Create;
 
    n^.Deleted := false;
@@ -664,7 +662,7 @@ begin
 
    n^.Error := '';
    n^.Deleted := false;
-   n^.FormEdit := nil;
+   n^.Display := nil;
 
    Result := n;
 end;
@@ -716,19 +714,31 @@ var
     Node : TDOMNode;
     NodeList : TDOMNodeList;
     j : integer;
-    xmlfile : String ;
+    xmlstream : TFileStream ;
 begin
-   xmlfile := Trim(filename);
-   TRlog('File to note '+xmlfile);
+   TRlog('File to note '+filename);
 
    try
-        ReadXMLFile(Doc, xmlfile);
+      xmlstream := TFileStream.Create(trim(filename),fmOpenRead);
    except on E:Exception do
        begin
-           TRlog('File to note ERROR '+filename);
+           TRlog('File to note : Error Reading '+filename);
            TRlog(E.message);
            NoteInfo^.Error := E.message;
            NoteInfo^.Action:= SynClash;
+           exit(false);
+       end;
+   end;
+
+   try
+       ReadXMLFile(Doc,xmlstream);
+   except on E:Exception do
+       begin
+           TRlog('File to note : XML data wrong from '+filename);
+           TRlog(E.message);
+           NoteInfo^.Error := E.message;
+           NoteInfo^.Action:= SynClash;
+           xmlstream.Free;
            Doc.Free;
            exit(false);
        end;
@@ -860,11 +870,13 @@ begin
            NoteInfo^.Error := E.Message;
            NoteInfo^.Action:= SynClash;
            TRlog(E.message);
+           xmlstream.Free;
            Doc.Free;
            exit(false);
        end;
    end;
 
+   xmlstream.Free;
    Doc.Free;
    TRlog('File to note DONE '+filename);
 

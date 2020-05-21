@@ -56,7 +56,7 @@ type
         procedure CopyLastFontAttr();
 	function FontAttributes(const Ft : TFont; Ts : TKMemoTextStyle): ANSIString;
 
-        function SetFontXML(FontSize : TFontRange; s : String) : string;
+        //function SetFontXML(FontSize : TFontRange; s : String) : string;
 
         function Header() : ANSIstring;
         function Footer(Loc : TNoteUpdateRec) : string;
@@ -100,7 +100,7 @@ begin
         OutStream := Nil;
     end;
 end;
-
+         {
 function TSaveNote.SetFontXML(FontSize : TFontRange; s : String) : string;
 begin
     Result := s;
@@ -109,7 +109,7 @@ begin
     else if FontSize = TFontRange.FontBig then Result  := '<size:large>' + s + '</size:large>'
     else if FontSize = TFontRange.FontSmall then Result  := '<size:small>' + s + '</size:small>';
 end;
-
+        }
 
 function TSaveNote.AddTag(const FT : TKMemoTextBlock; var Buff : ANSIString; CloseOnly : boolean = False) : ANSIString;
 {var
