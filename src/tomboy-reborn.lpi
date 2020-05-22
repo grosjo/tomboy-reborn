@@ -840,13 +840,6 @@
         <Filename Value="TRtransportNC.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit18>
-      <Unit19>
-        <Filename Value="helpnotes.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="FormHelpNotes"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-      </Unit19>
       <Unit20>
         <Filename Value="TRtexts.pas"/>
         <IsPartOfProject Value="True"/>

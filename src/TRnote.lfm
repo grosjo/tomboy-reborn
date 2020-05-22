@@ -1,5 +1,5 @@
 object FormNote: TFormNote
-  Left = 309
+  Left = 573
   Height = 468
   Top = 263
   Width = 591
@@ -8,6 +8,7 @@ object FormNote: TFormNote
   ClientWidth = 591
   Constraints.MinHeight = 200
   Constraints.MinWidth = 200
+  OnClose = FormClose
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnDestroy = FormDestroy

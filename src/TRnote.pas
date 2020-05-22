@@ -9,13 +9,15 @@ uses
     Menus, StdCtrls, Buttons, kmemo, LazLogger, PrintersDlgs,
     clipbrd, lcltype,      // required up here for copy on selection stuff.
     fpexprpars,         // for calc stuff ;
-    TRcommon,
+    TRcommon, TRmain,
     SaveNote;      		// TO BE REMOVED
 
 
 type TFontRange = (FontHuge, FontLarge, FontNormal, FontSmall, FontTitle);
 
-type TTagType = ( TagNone, TagBold, TagItalic, TagHighLight, TagUnderline, TagStrikeout, TagMonospace, TagSizeSmall, TagSizeLarge, TagSizeHuge, TagList);
+type TTagType = ( TagNone, TagBold, TagItalic, TagHighLight, TagUnderline,
+              TagStrikeout, TagMonospace, TagSizeSmall, TagSizeLarge,
+              TagSizeHuge, TagList, TagLinkInternal, TagLinkUrl);
 
 type
 
@@ -67,8 +69,9 @@ type
     SpeedButtonText: TSpeedButton;
     SpeedButtonTools: TSpeedButton;
 
-    procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
     procedure FormCreate(Sender: TObject);
+    procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
+    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormDestroy(Sender: TObject);
 
     { gets called under a number of conditions, easy one is just a re-show,
@@ -118,6 +121,9 @@ type
     procedure TimerSaveTimer(Sender: TObject);
     procedure TimerHousekeepingTimer(Sender: TObject);
 
+    // Links inside note
+    procedure ExternalLink(sender : TObject);
+    procedure InternalLink(sender : TObject);
 
 private
     Processing : boolean;
@@ -139,7 +145,7 @@ private
 
 
     { Take a piece of text into KMemo block recursively }
-    procedure TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange);
+    procedure TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange);
 
     function ReplaceAngles(const Str : String) : String;
 
@@ -202,14 +208,13 @@ private
             Making a Hyperlink, deleting the origional text is a very slow process so we
             make heroic efforts to avoid having to do so. Index is char count, not byte.
             Its a SelectionIndex.  Note we no longer need pass this p the Link, remove ? }
-		procedure MakeLink(const Index, Len: longint);
+	procedure MakeLink(const Index, Len: longint);
 
         { Returns true if current cursor is 'near' a bullet item. That could be because we are
   		on a Para Marker thats a Bullet and/or either Leading or Trailing Para is a Bullet.
   		We return with IsFirstChar true if we are on the first visible char of a line (not
   		necessarily a bullet line). If we return FALSE, passed parameters may not be set. }
-		function NearABulletPoint(out Leading, Under, Trailing, IsFirstChar, NoBulletPara: Boolean;
-            	out BlockNo, TrailOffset, LeadOffset: longint): boolean;
+	function NearABulletPoint(out Leading, Under, Trailing, IsFirstChar, NoBulletPara: Boolean; out BlockNo, TrailOffset, LeadOffset: longint): boolean;
         { Responds when user clicks on a hyperlink }
 		procedure OnUserClickLink(sender: TObject);
         // A method called by this or other apps to get what we might have selected
@@ -224,7 +229,6 @@ private
         procedure SetPrimarySelection;
         // Cancels any indication we can do middle button paste cos nothing is selected
         procedure UnsetPrimarySelection;
-        function UpdateNote(NRec: TNoteUpdaterec): boolean;
     public
         note : PNoteInfo;
 
@@ -344,8 +348,25 @@ begin
    Result := StringReplace(s,'&amp;','&',[rfReplaceAll]);
 end;
 
+procedure TFormNote.ExternalLink(sender : TObject);
+var
+   u : String;
+begin
+   u := TKMemoHyperlink(Sender).Text;
+   showmessage('External Link ' + u);
+   OpenUrl(u);
+end;
 
-procedure TFormNote.TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange);
+procedure TFormNote.InternalLink(sender : TObject);
+var
+   u : String;
+begin
+   u := TKMemoHyperlink(Sender).Text;
+   showmessage('Internal Link ' + u);
+   TFormMain(mainWindow).OpenUrlNoteByTitle(u);
+end;
+
+procedure TFormNote.TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange);
 var
     i,j,k : integer;
     Ktext,tagtext,sub : String;
@@ -354,6 +375,7 @@ var
     par : TKMemoParagraph;
     ktb : TKMemoTextBlock;
     f : TFont;
+    hl : TKMemoHyperlink;
 begin
    i:=0; j:= length(s);
    Ktext := '';
@@ -361,11 +383,14 @@ begin
    TRlog('TFormNote.TextToMemo (j='+IntToStr(j)+')');
    TRlog('SUB "'+s+'"');
 
-   par := KMemo1.Blocks.AddParagraph;
-   if InBullet then begin
-      par.Numbering := pnuBullets;
-      par.NumberingListLevel.FirstIndent := -20;    // Note, these numbers need match SettBullet() in editbox
-      par.NumberingListLevel.LeftIndent := 30;
+   if(newpar) then begin
+      par := KMemo1.Blocks.AddParagraph;
+      if InBullet then
+      begin
+         par.Numbering := pnuBullets;
+         par.NumberingListLevel.FirstIndent := -20;    // Note, these numbers need match SettBullet() in editbox
+         par.NumberingListLevel.LeftIndent := 30;
+      end;
    end;
 
    while (i<j) do
@@ -379,7 +404,7 @@ begin
 
       if (Ch = '<') then  // new tag
       begin
-//        type TTagType = ( TagBold, TagItalic, TagHighLight, TagUnderline, TagStrikeout, TagMonospace, TagSizeSmall, TagSizeLarge, TagSizeHuge, TagList);
+//        type TTagType = ( TagBold, TagItalic, TagHighLight, TagUnderline, TagStrikeout, TagMonospace, TagSizeSmall, TagSizeLarge, TagSizeHuge, TagList, TagLinkInternal, TagLinkUrl);
 
          if(CompareStr(LowerCase(Copy(s,i,4)),'bold')=0)                    then begin tagtext := 'bold'; tagtype := TTagType.TagBold; end
           else if(CompareStr(LowerCase(Copy(s,i,6)),'italic')=0)            then begin tagtext := 'italic'; tagtype := TTagType.TagItalic; end
@@ -390,7 +415,9 @@ begin
           else if(CompareStr(LowerCase(Copy(s,i,10)),'size:small')=0)       then begin tagtext := 'size:small'; tagtype := TTagType.TagSizeSmall; end
           else if(CompareStr(LowerCase(Copy(s,i,10)),'size:large')=0)       then begin tagtext := 'size:large'; tagtype := TTagType.TagSizeLarge; end
           else if(CompareStr(LowerCase(Copy(s,i,10)),'size:huge')=0)        then begin tagtext := 'size:huge'; tagtype := TTagType.TagSizeHuge; end
-          else if(CompareStr(LowerCase(Copy(s,i,10)),'list-item')=0)        then begin tagtext := 'list-item'; tagtype := TTagType.TagList; end;
+          else if(CompareStr(LowerCase(Copy(s,i,10)),'list-item')=0)        then begin tagtext := 'list-item'; tagtype := TTagType.TagList; end
+          else if(CompareStr(LowerCase(Copy(s,i,8)),'link:url')=0)          then begin tagtext := 'link:url'; tagtype := TTagType.TagLinkUrl; end
+          else if(CompareStr(LowerCase(Copy(s,i,13)),'link:internal')=0)    then begin tagtext := 'link:internal'; tagtype := TTagType.TagLinkInternal; end;
 
           while( (i<j) and (s.Chars[i] <> '>')) do inc(i); // end of opening tag
           sub := LowerCase(Copy(s,i));
@@ -401,16 +428,18 @@ begin
           while( (i<j) and (s.Chars[i] <> '>')) do inc(i); // end of closing tag
 
           case tagtype of
-              TTagType.TagBold         : TextToMemo(sub, true, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
-              TTagType.TagItalic       : TextToMemo(sub, Bold, true,   HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
-              TTagType.TagHighlight    : TextToMemo(sub, Bold, Italic, true,      Underline, Strikeout, FixedWidth, InBullet, FontSize);
-              TTagType.TagUnderline    : TextToMemo(sub, Bold, Italic, HighLight, true,      Strikeout, FixedWidth, InBullet, FontSize);
-              TTagType.TagStrikeout    : TextToMemo(sub, Bold, Italic, HighLight, Underline, true,      FixedWidth, InBullet, FontSize);
-              TTagType.TagMonospace    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, true,       InBullet, FontSize);
-              TTagType.TagSizeSmall    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, TFontRange.FontSmall );
-              TTagType.TagSizeLarge    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, TFontRange.FontLarge );
-              TTagType.TagSizeHuge     : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, TFontRange.FontHuge );
-              TTagType.TagList         : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, true,     FontSize);
+              TTagType.TagBold         : TextToMemo(sub, true, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize);
+              TTagType.TagItalic       : TextToMemo(sub, Bold, true,   HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize);
+              TTagType.TagHighlight    : TextToMemo(sub, Bold, Italic, true,      Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize);
+              TTagType.TagUnderline    : TextToMemo(sub, Bold, Italic, HighLight, true,      Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize);
+              TTagType.TagStrikeout    : TextToMemo(sub, Bold, Italic, HighLight, Underline, true,      FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize);
+              TTagType.TagMonospace    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, true,       InBullet, false, linkinternal, linkexternal, FontSize);
+              TTagType.TagSizeSmall    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, TFontRange.FontSmall);
+              TTagType.TagSizeLarge    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, TFontRange.FontLarge);
+              TTagType.TagSizeHuge     : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, TFontRange.FontHuge);
+              TTagType.TagList         : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, true,     true,  linkinternal, linkexternal, FontSize);
+              TTagType.TagLinkInternal : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, true,         false,        FontSize);
+              TTagType.TagLinkUrl      : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, false,        true,         FontSize);
               else KText := KText + sub;
           end;
       end;
@@ -419,7 +448,8 @@ begin
 
       if((length(Ktext)>0) and ((Ch < ' ') or (tagtype <> TagNone) or (i>j-1))) then
       begin
-         ktb := KMemo1.Blocks.AddTextBlock(ReplaceAngles(Ktext));  // We have to scan InStr for &lt; and &gt;  being < and >
+         Ktext := ReplaceAngles(Ktext); // We have to scan InStr for &lt; and &gt;  being < and >
+         ktb := KMemo1.Blocks.AddTextBlock(KText);
 
          f := TFont.Create();
          f.Style := [];
@@ -428,7 +458,7 @@ begin
          if Underline then f.Style := f.Style + [fsUnderline];
          if Strikeout then f.Style := f.Style + [fsStrikeout];
          if FixedWidth then f.Name := FixedFont else f.Name := UsualFont;
-         if FixedWidth then f.Pitch := fpFixed;
+         if FixedWidth then f.Pitch := fpFixed else f.Pitch := fpVariable;
          f.Color := TextColour;
 
          case FontSize of
@@ -442,6 +472,22 @@ begin
          if HighLight then ktb.TextStyle.Brush.Color := HiColour;
 
          f.Free;
+
+         if(linkinternal) then
+         begin
+            hl := TKMemoHyperlink.Create;
+            hl.Text := KText;
+            hl.OnClick := @InternalLink;
+            KMemo1.Blocks.AddHyperlink(hl, KMemo1.Blocks.Count-1);
+         end
+         else if(linkexternal) then
+         begin
+            hl := TKMemoHyperlink.Create;
+            hl.Text := KText;
+            hl.OnClick := @ExternalLink;
+            KMemo1.Blocks.AddHyperlink(hl, KMemo1.Blocks.Count-1);
+         end;
+
          Ktext := '';
       end;
 
@@ -450,7 +496,7 @@ begin
       if (Ch<' ') then // add Paragraph
       begin
          TRlog('New par i='+IntToStr(i)+' j='+IntToStr(j)+' s="'+s+'"');
-         TextToMemo(Copy(s,i+1), Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
+         TextToMemo(Copy(s,i+1), Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, true,false,false,FontSize);
          i:=j;
       end;
    end;
@@ -462,6 +508,8 @@ begin
    Trlog('NoteToMemo');
 
    Processing := True;
+
+   Dirty := False;
 
    // DISPLAY
 
@@ -495,7 +543,7 @@ begin
    KMemo1.Clear;
    TRlog('Dealing with content3');
 
-   TextToMemo(note^.Content, false, false, false, false, false, false, false, TFontRange.FontNormal);
+   TextToMemo(note^.Content, false, false, false, false, false, false, false, false,false,false,TFontRange.FontNormal);
 
    TRlog('Dealing with content end');
 
@@ -1176,20 +1224,15 @@ begin
    KMemo1.SelEnd := Kmemo1.Text.Length;
 
    KMemo1.SetFocus;
-   Dirty := False;
 
-   if SearchedTerm <> '' then
-        FindIt(SearchedTerm, True, False)
-    else begin
-        KMemo1.executecommand(ecEditorTop);
-        KMemo1.ExecuteCommand(ecDown);          // DRB Playing
-    end;
    KMemo1.Blocks.LockUpdate;
+
    {$ifdef windows}
     Color:= TextColour;
    {$endif}
    KMemo1.Colors.BkGnd:= BackGndColour;
    Kmemo1.Blocks.DefaultTextStyle.Font.Color := TextColour;
+
    KMemo1.Blocks.UnLockUpdate;
 end;
 
@@ -1198,6 +1241,13 @@ begin
   TRlog('TFormNote.FormCloseQuery');
 
     CanClose := True;
+end;
+
+procedure TFormNote.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+begin
+  TRlog('TFormNote.FormClose');
+  note^.Display:=nil;
+
 end;
 
 procedure TFormNote.FormCreate(Sender: TObject);
@@ -1217,60 +1267,11 @@ begin
   {$endif}
 end;
 
-
-// As UpdateNote does not record Notebook membership, abandon it for now.
-// Maybe come back later and see if it can be patched, its probably quicker.
-// Was only called on a clean note ....
-function TFormNote.UpdateNote(NRec : TNoteUpdaterec) : boolean;
-var
-    InFile, OutFile: TextFile;
-    {NoteDateSt, }InString, TempName : string;
-begin
-  if not FileExistsUTF8(NRec.FFName) then exit(false);     // if its not there, the note has just been deleted
-  TempName := GetTempFile();
-  AssignFile(InFile, NRec.FFName);
-  AssignFile(OutFile, TempName);
-  try
-      try
-          Reset(InFile);
-          Rewrite(OutFile);
-          while not eof(InFile) do begin
-              readln(InFile, InString);
-              if (Pos('<cursor-position>', InString) > 0) then break;
-              writeln(OutFile, InString);
-          end;
-          // OK, we are looking atthe part we want to change, ignore infile, we know better.
-          writeln(OutFile, '  <cursor-position>' + NRec.CPos + '</cursor-position>');
-          writeln(OutFile, '  <selection-bound-position>1</selection-bound-position>');
-          writeln(OutFile, '  <width>' + NRec.Width + '</width>');
-          writeln(OutFile, '  <height>' + NRec.height + '</height>');
-          writeln(OutFile, '  <x>' + NRec.X + '</x>');
-          writeln(OutFile, '  <y>' + NRec.Y + '</y>');
-          writeln(OutFile, '  <open-on-startup>' + NRec.OOS + '</open-on-startup>');
-
-          //Must see if this note is in a notebook, if so, record here.
-
-          writeln(OutFile, '</note>');
-      finally
-          CloseFile(OutFile);
-          CloseFile(InFile);
-      end;
-  except
-    on E: EInOutError do begin
-        TRlog('File handling error occurred updating clean note location. Details: ' + E.Message);
-        exit(False);
-    end;
-  end;
-  result := CopyFile(TempName, Nrec.FFName);    // wrap this in a Try
-  if result = false then TRlog('ERROR copying [' + TempName + '] to [' + NRec.FFName + ']');
-  result := DeleteFileUTF8(TempName);
-  if result = false then TRlog('ERROR deleting [' + TempName + '] ');
-end;
-
 procedure TFormNote.FormDestroy(Sender: TObject);
 {var
     ARec : TNoteUpdateRec; }
 begin
+  TrLog('TFormNote.FormDestroy');
     UnsetPrimarySelection;                                      // tidy up copy on selection.
     //if (length(NoteFileName) = 0) and (not Dirty) then exit;    // A new, unchanged note, no need to save.
     //if not Kmemo1.ReadOnly then
@@ -1324,6 +1325,7 @@ begin
 
    ktb := KMemo1.Blocks.AddTextBlock(title,BlockNo+1);
 
+   ktb.TextStyle.Font.Name := UsualFont;
    ktb.TextStyle.Font.Size := FontSizeTitle;
    ktb.TextStyle.Font.Color := TitleColour;
    ktb.TextStyle.Font.Style := [fsUnderline];
@@ -1344,8 +1346,8 @@ begin
        Kmemo1.Blocks.Delete(0);
        dec(BlockNo);
    end;
-   {
-   BlockNo:=1;
+
+   BlockNo:=2;
    while ((BlockNo < Kmemo1.Blocks.Count)) do
    begin
       ktb := TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]);
@@ -1357,9 +1359,9 @@ begin
       end;
       inc(BlockNo);
    end;
-   }
-    KMemo1.Blocks.UnLockUpdate;
-    Processing := False;
+
+   KMemo1.Blocks.UnLockUpdate;
+   Processing := False;
 end;
 
 

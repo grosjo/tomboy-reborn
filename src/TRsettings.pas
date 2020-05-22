@@ -220,12 +220,12 @@ begin
    if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    fd := TFontDialog.Create(Self);
-   fd.Options:= fd.Options - [fdEffects] + [fdNoSizeSel] + [fdNoStyleSel] + [fdFixedPitchOnly];
    fd.Font.Name := FixedFont;
    fd.Font.Size := 10;
    fd.Title := 'Select Fixed Spacing Font';
    fd.PreviewText:= 'abcdef ABCDEF 012345';
-   fd.Options := fd.Options + [fdFixedPitchOnly];
+   //fd.Options := fd.Options + [fdFixedPitchOnly];
+   fd.Options:= [fdNoSizeSel,fdNoStyleSel,fdFixedPitchOnly,fdForceFontExist];
 
    If fd.Execute then FixedFont := fd.Font.name;
 
@@ -584,6 +584,7 @@ begin
   odd.InitialDir := ExtractFilePath(DictLibrary);
   odd.Filter := 'Library|libhunspell*';
   odd.Title := rsSelectLibrary;
+  odd.Options := [ofPathMustExist, ofFileMustExist, ofNoDereferenceLinks, ofEnableSizing, ofViewDetail];
   if odd.Execute then
   begin
         VerifyDictLibrary(odd.FileName);

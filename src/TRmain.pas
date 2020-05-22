@@ -51,6 +51,7 @@ type TFormMain = class(TForm)
         procedure MainMenuClicked(Sender : TObject);
         procedure MenuNewNotebookNote(Sender : TObject);
 
+        procedure OpenUrlNoteByTitle(t : String);
 
         procedure CheckCaseSensitiveChange(Sender: TObject);
         procedure SearchBoxChange(Sender: TObject);
@@ -95,6 +96,7 @@ private
         function SaveNote(ID: String) : boolean;
 
         function DeleteNotebook(nb : String): boolean;
+
 
 
 end;
@@ -440,6 +442,16 @@ begin
       end;
       inc(i);
    end;
+end;
+
+procedure TFormMain.OpenUrlNoteByTitle(t : String);
+var
+   i : integer;
+begin
+   TRlog('Searching Note by title : ' + t);
+
+   for i := 0 to NotesList.Count-1 do
+      if (CompareText(NotesList.Items[i]^.Title,t) = 0) then OpenNote(NotesList.Items[i]^.ID);
 end;
 
 procedure TFormMain.MenuNewNotebookNote(Sender : TObject);
