@@ -1,4 +1,4 @@
-object Settings: TSettings
+object FormSettings: TFormSettings
   Left = 367
   Height = 410
   Top = 183

@@ -5,13 +5,13 @@ program Tomboy_Reborn;
 uses
     Interfaces, Classes, Forms, SysUtils, StdCtrls, LazFileUtils, LazLogger,
     ExtCtrls,
-    TRcommon, TRtexts , TRsearchUnit, TRsettings;
+    TRcommon, TRtexts , TRmain, TRsettings;
 
 {$R *.res}
 
 var
     CmdLineErrorMsg : String;
-    s : TSettings;
+    fs : TFormSettings;
 begin
     Application.Scaled:=True;
   Application.Title:='TomboyReborn';
@@ -57,9 +57,9 @@ begin
 	     exit();
            end;
         0 : begin
-             Application.CreateForm(TSettings, s);
-             s.ShowModal;
-             FreeAndNil(s);
+             Application.CreateForm(TFormSettings, fs);
+             fs.ShowModal;
+             FreeAndNil(fs);
            end;
     end;
 
@@ -70,7 +70,7 @@ begin
         SearchAtStart := true;
     end;
 
-    Application.CreateForm(TFormSearch, mainWindow);
+    Application.CreateForm(TFormMain, mainWindow);
 
     Application.Run;
 

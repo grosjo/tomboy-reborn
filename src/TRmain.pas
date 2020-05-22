@@ -1,4 +1,4 @@
-unit TRsearchUnit;
+unit TRmain;
 
 {$mode objfpc}{$H+}
 
@@ -17,7 +17,7 @@ type TTrayTags = (ttNewNote, ttSearch, ttAbout, ttSync, ttSettings, ttQuit);
 type TMenuTags = (mtNewNote, mtNewNotebook, mtDeleteNote, mtDeleteNotebook, mtQuit, mtSync, mtExport1, mtSettings, mtAbout);
 
 
-type TFormSearch = class(TForm)
+type TFormMain = class(TForm)
 
         CheckCaseSensitive: TCheckBox;
         MenuIconList: TImageList;
@@ -113,11 +113,11 @@ uses
 
 
 
-procedure TFormSearch.FormCreate(Sender: TObject);
+procedure TFormMain.FormCreate(Sender: TObject);
 var
     m1,m2,m3 : TMenuItem;
 begin
-   TRlog('TFormSearch.FormCreate');
+   TRlog('TFormMain.FormCreate');
 
 
     NotesList := TNoteInfoList.Create;
@@ -251,7 +251,7 @@ end;
 
 { ====== TRAY WORK ====== }
 
-procedure TFormSearch.TrayIconClick(Sender: TObject);
+procedure TFormMain.TrayIconClick(Sender: TObject);
 var
     p : TPoint;
 begin
@@ -261,7 +261,7 @@ begin
 end;
 
 
-procedure TFormSearch.BuildFileMenu(Sender : TObject);
+procedure TFormMain.BuildFileMenu(Sender : TObject);
 var
     m1,m2 : TMenuItem;
     n : PNOteInfo;
@@ -347,7 +347,7 @@ begin
     FileMenu.Add(m1);
 end;
 
-procedure TFormSearch.BuildTrayMenu(Sender : TObject);
+procedure TFormMain.BuildTrayMenu(Sender : TObject);
 var
     m1,m2 : TMenuItem;
     n : PNOteInfo;
@@ -442,13 +442,13 @@ begin
    end;
 end;
 
-procedure TFormSearch.MenuNewNotebookNote(Sender : TObject);
+procedure TFormMain.MenuNewNotebookNote(Sender : TObject);
 begin
    ShowMessage('Opening new note on notebook '+SelectedNotebook);
    OpenNote('',NotebooksList.Strings[TMenuItem(Sender).Tag]);
 end;
 
-procedure TFormSearch.TrayNoteClicked(Sender : TObject);
+procedure TFormMain.TrayNoteClicked(Sender : TObject);
 var
     n : PNoteInfo;
 begin
@@ -462,9 +462,9 @@ begin
    end;
 end;
 
-procedure TFormSearch.TrayMenuClicked(Sender : TObject);
+procedure TFormMain.TrayMenuClicked(Sender : TObject);
 var
-    FormSettings : TSettings;
+    FormSettings : TFormSettings;
     FormSync : TFormSync;
     FormAbout : TFormAbout;
 begin
@@ -481,7 +481,7 @@ begin
           begin
             TRlog('TrayMenuClicked Settings');
             syncshallrun := false;
-            FormSettings := TSettings.Create(self);
+            FormSettings := TFormSettings.Create(self);
             FormSettings.ShowModal;
             FreeAndNil(FormSettings);
             syncshallrun := true;
@@ -521,9 +521,9 @@ end;
 
 { ======= MAIN MENU ====== }
 
-procedure TFormSearch.MainMenuClicked(Sender : TObject);
+procedure TFormMain.MainMenuClicked(Sender : TObject);
 var
-    FormSettings : TSettings;
+    FormSettings : TFormSettings;
     FormSync : TFormSync;
     FormAbout : TFormAbout;
     s : String;
@@ -552,7 +552,7 @@ begin
             if(not syncshallrun) then begin ShowMessage(rsOtherSyncProcess); exit(); end;
             syncshallrun := false;
             TRlog('MainMenuClicked Settings');
-            FormSettings := TSettings.Create(self);
+            FormSettings := TFormSettings.Create(self);
             FormSettings.ShowModal;
             FreeAndNil(FormSettings);
             syncshallrun := true;
@@ -583,7 +583,7 @@ end;
 
 { ======= LISTS MANAGEMENT ====== }
 
-function TFormSearch.AddLastUsed(ID : String; atend : boolean = false) : boolean;
+function TFormMain.AddLastUsed(ID : String; atend : boolean = false) : boolean;
 var
    i : integer;
 begin
@@ -612,7 +612,7 @@ begin
    Result := true;
 end;
 
-function TFormSearch.AddNewNotebook(nb : String): boolean;
+function TFormMain.AddNewNotebook(nb : String): boolean;
 var
    i : integer;
 begin
@@ -630,7 +630,7 @@ begin
    Result:=true;
 end;
 
-function TFormSearch.AddNotebook(nb : String): boolean;
+function TFormMain.AddNotebook(nb : String): boolean;
 var
    i : integer;
 begin
@@ -648,7 +648,7 @@ begin
    Result:=true;
 end;
 
-function TFormSearch.DeleteNotebook(nb : String): boolean;
+function TFormMain.DeleteNotebook(nb : String): boolean;
 var
    i,j : integer;
    deleted : boolean;
@@ -697,7 +697,7 @@ begin
    Result:=deleted;
 end;
 
-procedure TFormSearch.ScanNotes(Sender : TObject);
+procedure TFormMain.ScanNotes(Sender : TObject);
 Var
     ID : String;
     n,n2 : PNoteInfo;
@@ -782,7 +782,7 @@ begin
 
 end;
 
-procedure TFormSearch.ProcessSync(Sender : TObject);
+procedure TFormMain.ProcessSync(Sender : TObject);
 var
   m : integer;
   FormSync : TFormSync;
@@ -827,7 +827,7 @@ begin
 
 end;
 
-procedure TFormSearch.ProcessSyncUpdates(const DeletedList, DownList : TStringList);
+procedure TFormMain.ProcessSyncUpdates(const DeletedList, DownList : TStringList);
 var
     i : integer;
     n : PNoteInfo;
@@ -882,7 +882,7 @@ end;
 
 { ====== UI MANAGEMENT ====== }
 
-procedure TFormSearch.SGNotebooksPrepareCanvas(sender: TObject; aCol,
+procedure TFormMain.SGNotebooksPrepareCanvas(sender: TObject; aCol,
     aRow: Integer; aState: TGridDrawState);
 begin
    //TRlog('SGNotebooksPrepareCanvas');
@@ -896,7 +896,7 @@ begin
 
 end;
 
-procedure TFormSearch.SGNotesPrepareCanvas(sender: TObject; aCol,
+procedure TFormMain.SGNotesPrepareCanvas(sender: TObject; aCol,
     aRow: Integer; aState: TGridDrawState);
 begin
    //TRlog('SGNotesPrepareCanvas SelectedNote='+SelectedNote+' SGNITES='+SGNotes.Cells[2,aRow]);
@@ -909,14 +909,14 @@ begin
 
 end;
 
-procedure TFormSearch.SGNotebooksResize(Sender: TObject);
+procedure TFormMain.SGNotebooksResize(Sender: TObject);
 begin
     SGNotebooks.Columns[0].Width := 16;
     SGNotebooks.Columns[1].Width := SGNotebooks.width - 17;
 end;
 
 
-function TFormSearch.DeleteNote(ID: String) : boolean;
+function TFormMain.DeleteNote(ID: String) : boolean;
 var
     s,d : String;
     n : PNoteInfo;
@@ -966,7 +966,7 @@ begin
    Result := false;
 end;
 
-function TFormSearch.SaveNote(ID: String) : boolean;
+function TFormMain.SaveNote(ID: String) : boolean;
 var
     s,d : String;
     n : PNoteInfo;
@@ -1001,7 +1001,7 @@ begin
 end;
 
 
-procedure TFormSearch.ShowLists(sender: TObject);
+procedure TFormMain.ShowLists(sender: TObject);
 var
    sl : TStringList;
    s : STring;
@@ -1071,7 +1071,7 @@ begin
    sl.Free;
 end;
 
-procedure TFormSearch.SGNotesDblClick(Sender: TObject);
+procedure TFormMain.SGNotesDblClick(Sender: TObject);
 var
    r : integer;
    n : PNoteInfo;
@@ -1094,7 +1094,7 @@ begin
    end;
 end;
 
-procedure TFormSearch.SGNotesDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+procedure TFormMain.SGNotesDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
 begin
    //TRlog('SGNotesDrawCell col='+IntToStr(Acol)+' row='+IntToStr(Arow));
 
@@ -1102,7 +1102,7 @@ begin
 
 end;
 
-procedure TFormSearch.SGNotebooksDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+procedure TFormMain.SGNotebooksDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
 var
    bm : TBitmap;
 begin
@@ -1121,7 +1121,7 @@ begin
 
 end;
 
-procedure TFormSearch.SGNotebooksClick(Sender: TObject);
+procedure TFormMain.SGNotebooksClick(Sender: TObject);
 begin
    TRlog('SGNotebooksClick on row '+IntToStr(SGNotebooks.Row));
 
@@ -1149,7 +1149,7 @@ begin
    TRlog('SGNotebooksClick NB = '+SelectedNotebook);
 end;
 
-procedure TFormSearch.SearchBoxChange(Sender: TObject);
+procedure TFormMain.SearchBoxChange(Sender: TObject);
 begin
    TRlog('SearchBoxChange');
 
@@ -1165,7 +1165,7 @@ begin
    ShowTimer.Enabled := True;
 end;
 
-procedure TFormSearch.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+procedure TFormMain.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
    TRlog('FormCloseQuery');
    if(UseTrayIcon) then
@@ -1177,7 +1177,7 @@ begin
 
 end;
 
-procedure TFormSearch.FormDestroy(Sender: TObject);
+procedure TFormMain.FormDestroy(Sender: TObject);
 begin
   TRlog('FormDestroy');
 
@@ -1203,10 +1203,10 @@ begin
   FreeAndNil(NewNotebooksList);
 end;
 
-procedure TFormSearch.FormKeyDown(Sender: TObject; var Key: Word;
+procedure TFormMain.FormKeyDown(Sender: TObject; var Key: Word;
     Shift: TShiftState);
 var
-   FormSettings : TSettings;
+   FormSettings : TFormSettings;
    FormSync : TFormSync;
 begin
   TRlog('KeyDown '+IntToStr(Key));
@@ -1248,7 +1248,7 @@ begin
         begin
           TRlog('Ctrl-O');
           syncshallrun := false;
-          FormSettings := TSettings.Create(self);
+          FormSettings := TFormSettings.Create(self);
           FormSettings.ShowModal;
           FreeAndNil(FormSettings);
           syncshallrun := true;
@@ -1274,7 +1274,7 @@ begin
 
 end;
 
-procedure TFormSearch.FormShow(Sender: TObject);
+procedure TFormMain.FormShow(Sender: TObject);
 begin
     Left := random(250)+50;
     Top := random(250)+50;
@@ -1286,7 +1286,7 @@ begin
 
 end;
 
-procedure TFormSearch.CheckCaseSensitiveChange(Sender: TObject);
+procedure TFormMain.CheckCaseSensitiveChange(Sender: TObject);
 begin
     SearchCaseSensitive := CheckCaseSensitive.Checked;
 
@@ -1303,7 +1303,7 @@ begin
 end;
 
 
-procedure TFormSearch.OpenNote(ID : String = ''; Notebook : String = '');
+procedure TFormMain.OpenNote(ID : String = ''; Notebook : String = '');
 var
     EBox : PNoteEditForm;
     n : PNoteInfo;
@@ -1344,7 +1344,7 @@ begin
 end;
 
 
-procedure TFormSearch.SGNotesClick(Sender: TObject);
+procedure TFormMain.SGNotesClick(Sender: TObject);
 begin
    TRlog('SGNotesClick on row '+IntToStr(SGNotes.Row));
    if(SGNotes.Row<1)
@@ -1360,7 +1360,7 @@ begin
    TRlog('SGNotesClick ID = '+SelectedNote);
 end;
 
-procedure TFormSearch.SGNotesResize(Sender: TObject);
+procedure TFormMain.SGNotesResize(Sender: TObject);
 begin
     SGNotes.Columns[0].Width := SGNotes.Width - SGNotes.Columns[1].Width; // -15;
 end;

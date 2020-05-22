@@ -16,9 +16,9 @@ uses Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
 
 type
 
-    { TSettings }
+    { TFormSettings }
 
-    TSettings = class(TForm)
+    TFormSettings = class(TForm)
           ButtDefaultNoteDir: TButton;
           ButtonSetColours: TButton;
           ButtonNCSetup: TSpeedButton;
@@ -138,7 +138,7 @@ uses LazLogger,
     TRcolours, TRnextSetup, TRhunspell;
 
 
-procedure TSettings.ButtDefaultNoteDirClick(Sender: TObject);
+procedure TFormSettings.ButtDefaultNoteDirClick(Sender: TObject);
 begin
    TRlog('ButtDefaultNoteDirClick');
 
@@ -148,7 +148,7 @@ begin
    LabelNotespath.Caption := NotesDir;
 end;
 
-procedure TSettings.ButtonSetColoursClick(Sender: TObject);
+procedure TFormSettings.ButtonSetColoursClick(Sender: TObject);
 var
     FormColours : TFormColours;
 begin
@@ -175,7 +175,7 @@ begin
    FormColours.Free;
 end;
 
-procedure TSettings.ButtonNCSetupClick(Sender: TObject);
+procedure TFormSettings.ButtonNCSetupClick(Sender: TObject);
 var
   FormNCSetup: TFormNCSetup;
 begin
@@ -211,7 +211,7 @@ begin
 end;
 
 
-procedure TSettings.ButtonFixedFontClick(Sender: TObject);
+procedure TFormSettings.ButtonFixedFontClick(Sender: TObject);
 var
   fd : TFontDialog;
 begin
@@ -220,6 +220,7 @@ begin
    if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    fd := TFontDialog.Create(Self);
+   fd.Options:= fd.Options - [fdEffects] + [fdNoSizeSel] + [fdNoStyleSel] + [fdFixedPitchOnly];
    fd.Font.Name := FixedFont;
    fd.Font.Size := 10;
    fd.Title := 'Select Fixed Spacing Font';
@@ -233,7 +234,7 @@ begin
    FreeAndNil(fd);
 end;
 
-procedure TSettings.ButtonFontClick(Sender: TObject);
+procedure TFormSettings.ButtonFontClick(Sender: TObject);
 var
   fd : TFontDialog;
 begin
@@ -242,6 +243,7 @@ begin
    if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
 
    fd := TFontDialog.Create(Self);
+   fd.Options:= fd.Options - [fdEffects] + [fdNoSizeSel] + [fdNoStyleSel] + [fdScalableOnly];
    fd.Font.Name := UsualFont;
    fd.Font.Size := 10;
    fd.Title := 'Select Usual Font';
@@ -255,7 +257,7 @@ begin
 end;
 
 
-procedure TSettings.ButtonSetNotePathClick(Sender: TObject);
+procedure TFormSettings.ButtonSetNotePathClick(Sender: TObject);
 var
     dd : TSelectDirectoryDialog;
 begin
@@ -273,7 +275,7 @@ begin
 end;
 
 
-procedure TSettings.CheckAutostartChange(Sender: TObject);
+procedure TFormSettings.CheckAutostartChange(Sender: TObject);
 begin
    TRlog('CheckAutostartChange');
 
@@ -282,7 +284,7 @@ begin
    Autostart := CheckAutostart.Checked;
 end;
 
-procedure TSettings.CheckBoxAutoSyncChange(Sender: TObject);
+procedure TFormSettings.CheckBoxAutoSyncChange(Sender: TObject);
 begin
 
    if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
@@ -296,7 +298,7 @@ begin
    TRlog('CheckBoxAutoSyncChange');
 end;
 
-procedure TSettings.CheckManyNotebooksChange(Sender: TObject);
+procedure TFormSettings.CheckManyNotebooksChange(Sender: TObject);
 begin
    TRlog('CheckManyNotebooksChange');
 
@@ -305,7 +307,7 @@ begin
    ManyNoteBooks := CheckManyNotebooks.Checked;
 end;
 
-procedure TSettings.CheckShowExtLinksChange(Sender: TObject);
+procedure TFormSettings.CheckShowExtLinksChange(Sender: TObject);
 begin
    TRlog('CheckShowExtLinksChange');
 
@@ -314,7 +316,7 @@ begin
    ShowExtLinks := CheckShowExtLinks.Checked;
 end;
 
-procedure TSettings.CheckShowIntLinksChange(Sender: TObject);
+procedure TFormSettings.CheckShowIntLinksChange(Sender: TObject);
 begin
    TRlog('CheckShowIntLinksChange');
 
@@ -323,7 +325,7 @@ begin
    ShowIntLinks := CheckShowIntLinks.Checked;
 end;
 
-procedure TSettings.CheckShowSearchAtStartChange(Sender: TObject);
+procedure TFormSettings.CheckShowSearchAtStartChange(Sender: TObject);
 begin
    TRlog('CheckShowSearchAtStartChange');
 
@@ -336,7 +338,7 @@ begin
    end else SearchAtStart := CheckShowSearchAtStart.Checked;
 end;
 
-procedure TSettings.EditScaleChange(Sender: TObject);
+procedure TFormSettings.EditScaleChange(Sender: TObject);
 begin
   try
      FontScale := round(StrToFloat(EditScale.Caption));
@@ -349,7 +351,7 @@ begin
   EditScale.Caption:= IntToStr(FontScale);
 end;
 
-procedure TSettings.EditTimerSyncChange(Sender: TObject);
+procedure TFormSettings.EditTimerSyncChange(Sender: TObject);
 begin
    TRlog('EditTimerSyncChange');
 
@@ -366,29 +368,29 @@ begin
    end;
 end;
 
-procedure TSettings.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+procedure TFormSettings.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
   TRlog('FormClose');
   ConfigRead('FormClose');
 end;
 
-procedure TSettings.FormCreate(Sender: TObject);
+procedure TFormSettings.FormCreate(Sender: TObject);
 begin
   TRlog('FormCreate');
   settingsloading := true;
 end;
 
-procedure TSettings.FormDestroy(Sender: TObject);
+procedure TFormSettings.FormDestroy(Sender: TObject);
 begin
   TRlog('FormSettingsDestroy');
 end;
 
-procedure TSettings.FormHide(Sender: TObject);
+procedure TFormSettings.FormHide(Sender: TObject);
 begin
   TRlog('FormSettingsHide');
 end;
 
-procedure TSettings.FormShow(Sender: TObject);
+procedure TFormSettings.FormShow(Sender: TObject);
 begin
      TRlog('FormSettingsShow');
      LoadSettings();
@@ -397,7 +399,7 @@ begin
 end;
 
 
-procedure TSettings.LastUsedMaxChange(Sender: TObject);
+procedure TFormSettings.LastUsedMaxChange(Sender: TObject);
 begin
   TRlog('LastUsedMaxChange');
 
@@ -414,7 +416,7 @@ begin
    end;
 end;
 
-procedure TSettings.RadioConflictChange(Sender: TObject);
+procedure TFormSettings.RadioConflictChange(Sender: TObject);
 begin
    TRlog('RadioConflictChange');
 
@@ -427,7 +429,7 @@ begin
 end;
 
 
-procedure TSettings.SettingsOKClick(Sender: TObject);
+procedure TFormSettings.SettingsOKClick(Sender: TObject);
 begin
   TRlog('SettingsOKClick');
 
@@ -437,7 +439,7 @@ begin
   Self.Close;
 end;
 
-procedure TSettings.SettingsCancelClick(Sender: TObject);
+procedure TFormSettings.SettingsCancelClick(Sender: TObject);
 begin
   TRlog('SettingsCancelClick');
 
@@ -447,7 +449,7 @@ begin
 end;
 
 
-procedure TSettings.ButtonFileSetupClick(Sender: TObject);
+procedure TFormSettings.ButtonFileSetupClick(Sender: TObject);
 var
     dd : TSelectDirectoryDialog;
 begin
@@ -466,7 +468,7 @@ begin
    FreeAndNil(dd);
 end;
 
-procedure TSettings.RadioSyncChange(Sender: TObject);
+procedure TFormSettings.RadioSyncChange(Sender: TObject);
 var
    s : TSyncTransport;
 begin
@@ -490,7 +492,7 @@ begin
 end;
 
 
-procedure TSettings.LoadSettings();
+procedure TFormSettings.LoadSettings();
 var
    i : integer;
 begin
@@ -569,7 +571,7 @@ end;
 
     { ----------------- S P E L L I N G ----------------------}
 
-procedure TSettings.ButtonSetSpellLibraryClick(Sender: TObject);
+procedure TFormSettings.ButtonSetSpellLibraryClick(Sender: TObject);
 var
     odd: TOpenDialog;
 begin
@@ -589,7 +591,7 @@ begin
   FreeAndNil(odd);
 end;
 
-procedure TSettings.ButtonSetDictionaryClick(Sender: TObject);
+procedure TFormSettings.ButtonSetDictionaryClick(Sender: TObject);
 var
     odd: TOpenDialog;
 begin
@@ -613,7 +615,7 @@ begin
   FreeAndNil(odd);
 end;
 
-function TSettings.DictFilesSearch() : integer;
+function TFormSettings.DictFilesSearch() : integer;
 var
     Info : TSearchRec;
 begin
@@ -635,7 +637,7 @@ begin
     exit(ListBoxDic.Items.Count);
 end;
 
-function TSettings.VerifyDictFile(const FullDicName: string): boolean;
+function TFormSettings.VerifyDictFile(const FullDicName: string): boolean;
 var
     Spell : THunspell;
 begin
@@ -665,7 +667,7 @@ begin
    TRlog('CheckDictionary ' + FullDicName + ' return ' + booltostr(Result, True));
 end;
 
-procedure TSettings.ListBoxDicClick(Sender: TObject);
+procedure TFormSettings.ListBoxDicClick(Sender: TObject);
 begin
   TRlog('ListBoxDicClick');
 
@@ -675,7 +677,7 @@ begin
         VerifyDictFile(DictPath + ListBoxDic.Items.Strings[ListBoxDic.ItemIndex]);
 end;
 
-procedure TSettings.VerifyDictLibrary(const libname : String);
+procedure TFormSettings.VerifyDictLibrary(const libname : String);
 var
     Spell : THunspell;
 begin
@@ -700,7 +702,7 @@ begin
     FreeAndNil(Spell);
 end;
 
-procedure TSettings.TimerAutoSyncTimer(Sender: TObject);
+procedure TFormSettings.TimerAutoSyncTimer(Sender: TObject);
 begin
   TRlog('TimerAutoSyncTimer');
 

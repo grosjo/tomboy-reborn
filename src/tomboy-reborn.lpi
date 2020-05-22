@@ -875,9 +875,9 @@
         <ResourceBaseClass Value="Form"/>
       </Unit23>
       <Unit24>
-        <Filename Value="TRsearchUnit.pas"/>
+        <Filename Value="TRmain.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="FormSearch"/>
+        <ComponentName Value="FormMain"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit24>

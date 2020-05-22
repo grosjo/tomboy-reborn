@@ -1,4 +1,4 @@
-object FormSearch: TFormSearch
+object FormMain: TFormMain
   Left = 941
   Height = 446
   Top = 520
