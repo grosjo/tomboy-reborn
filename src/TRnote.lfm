@@ -8,7 +8,6 @@ object FormNote: TFormNote
   ClientWidth = 591
   Constraints.MinHeight = 200
   Constraints.MinWidth = 200
-  OnClose = FormClose
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -680,10 +679,10 @@ object FormNote: TFormNote
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Control = Panel1
       AnchorSideBottom.Side = asrBottom
-      Left = 6
-      Height = 403
-      Top = 6
-      Width = 569
+      Left = 1
+      Height = 413
+      Top = 1
+      Width = 579
       Anchors = [akTop, akLeft, akRight, akBottom]
       ContentPadding.Left = 5
       ContentPadding.Top = 5
@@ -840,7 +839,6 @@ object FormNote: TFormNote
     end
     object MenuItemSelectAll: TMenuItem
       Caption = 'Select All'
-      OnClick = MenuItemSelectAllClick
     end
   end
   object PrintDialog1: TPrintDialog

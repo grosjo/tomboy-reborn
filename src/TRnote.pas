@@ -67,7 +67,6 @@ type
     SpeedButtonText: TSpeedButton;
     SpeedButtonTools: TSpeedButton;
 
-    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -104,7 +103,7 @@ type
     procedure MenuItemExportRTFClick(Sender: TObject);
     procedure MenuItemPasteClick(Sender: TObject);
     procedure MenuItemPrintClick(Sender: TObject);
-    procedure MenuItemSelectAllClick(Sender: TObject);
+    //procedure MenuItemSelectAllClick(Sender: TObject);
     procedure MenuItemSpellClick(Sender: TObject);
     procedure MenuItemSyncClick(Sender: TObject);
     procedure MenuLargeClick(Sender: TObject);
@@ -135,7 +134,9 @@ private
     procedure NoteToMemo();
     procedure MemoToNote();
     procedure MarkDirty();
+    function GetTitle(): String;
     procedure Commit();
+
 
     { Take a piece of text into KMemo block recursively }
     procedure TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange);
@@ -188,8 +189,6 @@ private
 
         procedure CheckForLinks(const StartScan : longint = 1; EndScan : longint = 0);
 
-        { Returns with the title, that is the first line of note, returns False if title is empty }
-        function GetTitle(out TheTitle: ANSIString): boolean;
 
         procedure InitiateCalc();
 
@@ -217,7 +216,7 @@ private
         procedure PrimaryCopy(const RequestedFormatID: TClipboardFormat;
             Data: TStream);
         // Pastes into KMemo whatever is returned by the PrimarySelection system.
-        procedure PrimaryPaste(SelIndex: integer);
+        //procedure PrimaryPaste(SelIndex: integer);
 
         function CleanCaption() : ANSIString;
         procedure SetBullet(PB: TKMemoParagraph; Bullet: boolean);
@@ -646,7 +645,7 @@ begin
             if LinePos = eolInside then break;
             dec(Point.X);
       end;
-      PrimaryPaste(KMemo1.PointToIndex(Point, true, true, LinePos));
+      //PrimaryPaste(KMemo1.PointToIndex(Point, true, true, LinePos));
       exit();
     end;
     if KMemo1.SelAvail and
@@ -686,7 +685,7 @@ begin
         if length(S) > 0 then
             Data.Write(s[1],length(s));
 end;
-
+    {
 procedure TFormNote.PrimaryPaste(SelIndex : integer);
 var
   Buff : string;
@@ -700,6 +699,7 @@ begin
         end;
     end;
 end;
+}
 
 procedure TFormNote.InsertDate();
 var
@@ -1055,12 +1055,12 @@ begin
       FreeandNil(KPrint);
     end;
 end;
-
+              {
 procedure TFormNote.MenuItemSelectAllClick(Sender: TObject);
 begin
 	KMemo1.ExecuteCommand(ecSelectAll);
 end;
-
+             }
 procedure TFormNote.MenuItemSpellClick(Sender: TObject);
 var
     SpellBox : TFormSpell;
@@ -1163,11 +1163,6 @@ begin
 
    TRlog('TFormNote.FormShow Notetomemo done');
 
-
-   {$ifdef LINUX}
-   KMemo1.ExecuteCommand(ecPaste);         // this to deal with a "first copy" issue.
-   {$endif}
-
    MarkTitle();
 
    KMemo1.SelStart := KMemo1.Text.Length;  // set curser pos to end
@@ -1189,13 +1184,6 @@ begin
    KMemo1.Colors.BkGnd:= BackGndColour;
    Kmemo1.Blocks.DefaultTextStyle.Font.Color := TextColour;
    KMemo1.Blocks.UnLockUpdate;
-end;
-
-	{ This gets called when the TrayMenu quit entry is clicked }
-    { No it does not, only when user manually closes this form. }
-procedure TFormNote.FormClose(Sender: TObject; var CloseAction: TCloseAction);
-begin
-    Release;
 end;
 
 procedure TFormNote.FormCloseQuery(Sender: TObject; var CanClose: boolean);
@@ -1285,32 +1273,32 @@ begin
 
 end;
 
-function TFormNote.GetTitle(out TheTitle : ANSIString) : boolean;
+function TFormNote.GetTitle() : String;
 var
-    BlockNo : longint = 0;
-    //TestSt : ANSIString;
+    BlockNo : integer;
+    t : String;
 begin
-    Result := False;
-    TheTitle := '';
-    while Kmemo1.Blocks.Items[BlockNo].ClassName <> 'TKMemoParagraph' do begin
-	// while Kmemo1.Blocks.Items[BlockNo].ClassName = 'TKMemoTextBlock' do begin
-        TheTitle := TheTitle + Kmemo1.Blocks.Items[BlockNo].Text;
-       	inc(BlockNo);
-        //TestSt := Kmemo1.Blocks.Items[BlockNo].ClassName;
-        if BlockNo >= Kmemo1.Blocks.Count then break;
-    end;                            // Stopped at first TKMemoParagraph if it exists.
-    if TheTitle <> '' then Result := True;
+   BlockNo :=0;
+   t :='';
+   while ((BlockNo < Kmemo1.Blocks.Count) and (Kmemo1.Blocks.Items[BlockNo].ClassName <> 'TKMemoParagraph')) do
+   begin
+      t := t + Kmemo1.Blocks.Items[BlockNo].Text;
+      inc(BlockNo);
+   end;
+   Result := t;
 end;
 
 procedure TFormNote.MarkTitle();
 var
-    BlockNo : integer = 0;
+    BlockNo : integer;
     EndBlock, blar : integer;
 begin
    if Processing then exit();
     { if there is more than one block, and the first, [0], is a para, delete it.}
     if KMemo1.Blocks.Count <= 2 then exit();	// Don't try to mark title until more blocks.
     Processing := true;
+
+    BlockNo :=0;
     Kmemo1.Blocks.LockUpdate;
     if Kmemo1.Blocks.Items[BlockNo].ClassName = 'TKMemoParagraph' then
           Kmemo1.Blocks.DeleteEOL(0);
@@ -1680,7 +1668,7 @@ begin
     if ((BlocksInTitle + 10) > BlockNo) then begin
           // We don't check title if user is not close to it.
   	    MarkTitle();
-  	    GetTitle(TempTitle);
+  	    TempTitle := GetTitle();
         if Dirty then
             Caption := '* ' + TempTitle
         else

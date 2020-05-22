@@ -11,7 +11,7 @@ uses
     Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs,
     ExtCtrls, StdCtrls, Grids, LazFileUtils,
     LazLogger,  LCLType, Buttons, ComCtrls,
-    TRcommon, TRtexts, TRtransport, TRsyncClashUI;
+    TRcommon, TRtexts, TRtransport, TRsyncClash;
 
 type
 

@@ -1,4 +1,4 @@
-unit TRsyncClashUI;
+unit TRsyncClash;
 
 {$mode objfpc}{$H+}
 

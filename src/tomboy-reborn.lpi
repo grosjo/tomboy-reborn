@@ -739,7 +739,7 @@
         <IsPartOfProject Value="True"/>
       </Unit0>
       <Unit1>
-        <Filename Value="TRsyncClashUI.pas"/>
+        <Filename Value="TRsyncClash.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormClash"/>
         <HasResources Value="True"/>
