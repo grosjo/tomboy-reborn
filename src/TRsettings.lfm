@@ -347,7 +347,6 @@ object Settings: TSettings
           BorderSpacing.Bottom = 15
           Caption = 'Lastest used'#10'visible : '
           ParentColor = False
-          OnClick = Label11Click
         end
         object LastUsedMax: TEdit
           AnchorSideLeft.Control = Label11

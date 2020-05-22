@@ -123,7 +123,6 @@ private
     Processing : boolean;
     InitialLoaded : boolean;
 
-
     { To save us checking the title if user is well beyond it }
     BlocksInTitle : integer;
     LastFind : integer;
@@ -131,6 +130,7 @@ private
     // Set True by the delete button so we don't try and save it.
     DeletingThisNote : boolean;
 
+    procedure SetFontSizes();
     procedure NoteToMemo();
     procedure MemoToNote();
     procedure MarkDirty();
@@ -231,6 +231,7 @@ private
     private
         AlreadyLoaded : boolean;
         Dirty : boolean;
+        FontSizeHuge, FontSizeLarge, FontSizeNormal, FontSizeSmall, FontSizeTitle : integer;
 
         SearchedTerm : string;  // If not empty, opening is associated with a search, go straight there.
     end;
@@ -323,18 +324,17 @@ begin
 		end;
 	end;
 end;
-          {
-function TFormNote.GetSize() : integer;
+
+procedure TFormNote.SetFontSizes();
 begin
-    case range of
-        FontHuge : Result := round(18*FontScale/100.0);
-        FontBig  : Result := round(14*FontScale/100.0);
-        FontMedium : Result := round(11*FontScale/100.0);
-        FontSmall : Result := round(8*FontScale/100.0);
-        FontTitle : Result := round(16*FontScale/100.0);
-    end;
+    FontSizeNormal   := round(12.0*FontScale/100.0);
+
+    FontSizeLarge    := Max(round(14.0*FontScale/100.0),FontSizeNormal+1);
+    FontSizeTitle    := Max(round(16.0*FontScale/100.0),FontSizeLarge+1);
+    FontSizeHuge     := Max(round(18.0*FontScale/100.0),FontSizeTitle+1);
+    FontSizeSmall    := Min(round(10.0*FontScale/100.0),FontSizeNormal-1);
 end;
-         }
+
 function TFormNote.ReplaceAngles(const Str : String) : String;
 var
     s : String;
@@ -430,6 +430,13 @@ begin
          if FixedWidth then f.Name := FixedFont else f.Name := UsualFont;
          if FixedWidth then f.Pitch := fpFixed;
          f.Color := TextColour;
+
+         case FontSize of
+             TFontRange.FontSmall : f.Size:= FontSizeSmall;
+             TFontRange.FontLarge : f.Size:= FontSizeLarge;
+             TFontRange.FontHuge : f.Size:= FontSizeHuge;
+             else f.Size:= Self.FontSizeNormal;
+         end;
 
          ktb.TextStyle.Font := f;
          if HighLight then ktb.TextStyle.Brush.Color := HiColour;
@@ -1197,6 +1204,7 @@ procedure TFormNote.FormCreate(Sender: TObject);
 begin
   TRlog('TFormNote.FormCreate');
   AlreadyLoaded := false;
+  SetFontSizes();
   {$ifdef DARWIN}
     MenuBold.ShortCut      := KeyToShortCut(VK_B, [ssMeta]);
     MenuItalic.ShortCut    := KeyToShortCut(VK_I, [ssMeta]);
@@ -1291,44 +1299,65 @@ end;
 procedure TFormNote.MarkTitle();
 var
     BlockNo : integer;
-    EndBlock, blar : integer;
+    title : String;
+    ktb : TKMemoTextBlock;
+    needspace : boolean;
 begin
-   if Processing then exit();
-    { if there is more than one block, and the first, [0], is a para, delete it.}
-    if KMemo1.Blocks.Count <= 2 then exit();	// Don't try to mark title until more blocks.
-    Processing := true;
+   TRlog('MarkTitle FontSizeTitle='+IntToStr(FontSizeTitle));
+  if Processing then exit();
 
-    BlockNo :=0;
-    Kmemo1.Blocks.LockUpdate;
-    if Kmemo1.Blocks.Items[BlockNo].ClassName = 'TKMemoParagraph' then
-          Kmemo1.Blocks.DeleteEOL(0);
+   Processing := true;
 
-        while Kmemo1.Blocks.Items[BlockNo].ClassName <> 'TKMemoParagraph' do begin
-            if Kmemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock') then begin    // just possible its an image, ignore ....
-                //TKMemoTextBlock(Kmemo1.Blocks.Items[BlockNo]).TextStyle.Font.Size := FontSizeTitle;
-                TKMemoTextBlock(Kmemo1.Blocks.Items[BlockNo]).TextStyle.Font.Color := TitleColour;
-                TKMemoTextBlock(Kmemo1.Blocks.Items[BlockNo]).TextStyle.Font.Style := [fsUnderline];
-            end;
-           	inc(BlockNo);
-            if BlockNo >= Kmemo1.Blocks.Count then begin
-                //AtTheEnd := True;
-                break;
-            end;
-       	end;                                // Stopped at first TKMemoParagraph if it exists.
-        BlocksInTitle := BlockNo;
-        { Make sure user has not smeared Title charactistics to next line
-          Scan back from cursor to end of title, if Title font, reset. }
-        EndBlock := KMemo1.Blocks.IndexToBlockIndex(KMemo1.Selstart, Blar);
-        while EndBlock > BlocksInTitle do begin
-            //if KMemo1.Blocks.Items[EndBlock].ClassNameIs('TKMemoTextBlock') and
-            //    (TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Size = FontSizeTitle) then begin
-            //        TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Size := FontSizeNormal;
-            //        TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Color := TextColour;
-            //        TKMemoTextBlock(Kmemo1.Blocks.Items[EndBlock]).TextStyle.Font.Style := [];
-            //    end;
-            dec(EndBlock);
-        end;
+   BlockNo :=0;
+   Kmemo1.Blocks.LockUpdate;
+   title :='';
 
+   while ((BlockNo < Kmemo1.Blocks.Count) and ((length(Trim(Title))=0) or (Kmemo1.Blocks.Items[BlockNo].ClassName <> 'TKMemoParagraph'))) do
+   begin
+      if Kmemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock') then Title := Title + Kmemo1.Blocks.Items[BlockNo].Text;
+      inc(BlockNo);
+   end;
+
+   TRlog('Found title : '+title + ' with '+IntToStr(BlockNo)+' blocks');
+
+   KMemo1.Blocks.AddParagraph(BlockNo);
+
+   ktb := KMemo1.Blocks.AddTextBlock(title,BlockNo+1);
+
+   ktb.TextStyle.Font.Size := FontSizeTitle;
+   ktb.TextStyle.Font.Color := TitleColour;
+   ktb.TextStyle.Font.Style := [fsUnderline];
+
+   needspace := false;
+   if(BlockNo +4< Kmemo1.Blocks.Count) then
+   begin
+      if (not Kmemo1.Blocks.Items[BlockNo+3].ClassNameIs('TKMemoParagraph')) then
+      begin
+         if (Kmemo1.Blocks.Items[BlockNo+3].ClassNameIs('TKMemoTextBlock') and (Length(Trim(Kmemo1.Blocks.Items[BlockNo+3].Text))>0)) then needspace := true;
+      end;
+   end;
+   if(needspace) then KMemo1.Blocks.AddParagraph(BlockNo+2);
+
+   //if Kmemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock') then Title := Title + Kmemo1.Blocks.Items[BlockNo].Text;
+   while(BlockNo>=0) do
+   begin
+       Kmemo1.Blocks.Delete(0);
+       dec(BlockNo);
+   end;
+   {
+   BlockNo:=1;
+   while ((BlockNo < Kmemo1.Blocks.Count)) do
+   begin
+      ktb := TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]);
+      if ktb.ClassNameIs('TKMemoTextBlock') and (ktb.TextStyle.Font.Size = FontSizeTitle) then
+      begin
+           ktb.TextStyle.Font.Size := FontSizeNormal;
+           ktb.TextStyle.Font.Color := TextColour;
+           ktb.TextStyle.Font.Style := [];
+      end;
+      inc(BlockNo);
+   end;
+   }
     KMemo1.Blocks.UnLockUpdate;
     Processing := False;
 end;
