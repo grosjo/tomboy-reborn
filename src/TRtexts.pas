@@ -55,6 +55,7 @@ RESOURCESTRING
   rsMenuQuit = 'Quit';
   rsMenuUndo = 'Undo';
   rsMenuRedo = 'Redo';
+  rsMenuSelectAll = 'Select all';
   rsMenuCut = 'Cut';
   rsMenuCopy = 'Copy';
   rsMenuPaste = 'Paste';
@@ -179,6 +180,8 @@ RESOURCESTRING
   rsSpellNoLib = 'Spelling library not configured';
   rsSpellNoDic = 'Select dic to use';
 
+  rsCheckSel = 'Spell check selection';
+
   rsHelpDelay = 'Delay startup 2 sec to allow OS to settle';
   rsHelpLang = 'Force Language, supported es, nl';
   rsHelpDebug = 'Show debug on stdout';
@@ -193,7 +196,7 @@ RESOURCESTRING
   rsHelpSingleNote = 'Open indicated note, switch is optional';
   rsHelpSaveExit = 'After import single note, save & exit';
 
-  sLineBreak = {$IFDEF LINUX} AnsiChar(#10) {$ENDIF}
+  rsLineBreak = {$IFDEF LINUX} AnsiChar(#10) {$ENDIF}
                {$IFDEF MSWINDOWS} AnsiString(#13#10) {$ENDIF};
 implementation
 

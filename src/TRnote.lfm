@@ -3,7 +3,7 @@ object FormNote: TFormNote
   Height = 509
   Top = 263
   Width = 591
-  Caption = 'EditBoxForm'
+  Caption = 'Note Edition'
   ClientHeight = 509
   ClientWidth = 591
   Constraints.MinHeight = 200
@@ -90,7 +90,6 @@ object FormNote: TFormNote
       BorderSpacing.Right = 10
       OnChange = EditFindInNoteChange
       TabOrder = 0
-      Text = 'EditFindInNote'
     end
     object CheckboxFindInNote: TCheckBox
       AnchorSideLeft.Control = Panel2
@@ -142,45 +141,18 @@ object FormNote: TFormNote
       TabOrder = 3
     end
   end
-  object PopupMenuRightClick: TPopupMenu
-    left = 80
-    top = 200
-    object MenuItemFind: TMenuItem
-      Caption = 'Find in this Note'
-      ShortCut = 16454
-    end
-    object MenuItem1: TMenuItem
-      Caption = '-'
-    end
-    object MenuItemCut: TMenuItem
-      Caption = 'Cut'
-      OnClick = MenuItemCutClick
-    end
-    object MenuItemCopy: TMenuItem
-      Caption = 'Copy'
-      OnClick = MenuItemCopyClick
-    end
-    object MenuItemPaste: TMenuItem
-      Caption = 'Paste'
-      OnClick = MenuItemPasteClick
-    end
-    object MenuItemDelete: TMenuItem
-      Caption = 'Delete'
-      OnClick = MenuItemDeleteClick
-    end
-    object MenuItem5: TMenuItem
-      Caption = '-'
-    end
-    object MenuItemSelectAll: TMenuItem
-      Caption = 'Select All'
-    end
-  end
   object PrintDialog1: TPrintDialog
+    FromPage = 1
+    ToPage = 1
     left = 496
     top = 119
   end
   object MainMenu: TMainMenu
     left = 338
     top = 24
+  end
+  object PopMenu: TPopupMenu
+    left = 333
+    top = 209
   end
 end

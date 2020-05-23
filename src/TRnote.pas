@@ -25,11 +25,13 @@ type TTagType = ( TagNone, TagBold, TagItalic, TagHighLight, TagUnderline,
               TagStrikeout, TagMonospace, TagSizeSmall, TagSizeLarge,
               TagSizeHuge, TagList, TagLinkInternal, TagLinkUrl);
 
- type TNoteMenuTags = (ntCommit, ntClose, ntSync, ntFind, ntSearchAll, ntSettings,
+type TNoteMenuTags = (ntCommit, ntSync, ntFind, ntSearchAll, ntSettings,
       ntAbout,ntDuplicate, ntDelete, ntMarkdown, ntRTF, ntPlain, ntPrint,
       ntRedo, ntUndo, ntCopy, ntCut, ntPaste, ntLink, ntURL, ntBold, ntItalic,
       ntStrike, ntUnderlined, ntFixed, ntHighlight, ntFontPLus, ntFontMinus,
-      ntBullet, ntBulletInc, ntBulletDec,ntNoNotebook, ntNewNotebook);
+      ntBullet, ntBulletInc, ntBulletDec,ntNoNotebook, ntNewNotebook, ntSelectAll);
+
+type TNoteAction = ( ChangeSize, ToggleBold, ToggleItalic, ToggleHighlight, ToggleFont, ToggleStrikeout, ToggleUnderline);
 
 
 type
@@ -37,26 +39,19 @@ type
 { TFormNote }
 
  TFormNote = class(TForm)
-  ButtonFindPrev: TButton;
-  ButtonFindNext: TButton;
-  CheckboxFindInNote: TCheckBox;
-  EditFindInNote: TEdit;
+
+    ButtonFindPrev: TButton;
+    ButtonFindNext: TButton;
+    CheckboxFindInNote: TCheckBox;
+    EditFindInNote: TEdit;
 
     KMemo1: TKMemo;
     MainMenu: TMainMenu;
     FileMenu, EditMenu, FormatMenu, ToolsMenu, NotebooksMenu : TMenuItem;
+    PopMenu: TPopupMenu;
 
-    MenuItem1: TMenuItem;
-    MenuItemSelectAll: TMenuItem;
-    MenuItem5: TMenuItem;
-    MenuItemDelete: TMenuItem;
-    MenuItemPaste: TMenuItem;
-    MenuItemCopy: TMenuItem;
-    MenuItemFind: TMenuItem;
-    MenuItemCut: TMenuItem;
     Panel1: TPanel;
     Panel2: TPanel;
-    PopupMenuRightClick: TPopupMenu;
     PrintDialog1: TPrintDialog;
 
     procedure MainMenuClicked(Sender : TObject);
@@ -85,33 +80,13 @@ type
     procedure KMemo1KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure KMemo1MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure KMemo1MouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-    procedure MenuBoldClick(Sender: TObject);
     procedure MenuBulletClick(Sender: TObject);
-    procedure MenuFixedWidthClick(Sender: TObject);
-    procedure MenuHighLightClick(Sender: TObject);
-    procedure MenuHugeClick(Sender: TObject);
-    procedure MenuItalicClick(Sender: TObject);
     procedure MenuItemEvaluateClick(Sender: TObject);
     procedure MenuItemExportMarkdownClick(Sender: TObject);
     procedure MenuItemSettingsClick(Sender: TObject);
-    procedure MenuUnderlineClick(Sender: TObject);
-    procedure MenuStrikeoutClick(Sender: TObject);
-    procedure MenuItemCopyClick(Sender: TObject);
-    procedure MenuItemCutClick(Sender: TObject);
-    procedure MenuItemDeleteClick(Sender: TObject);
-    procedure MenuItemExportPlainTextClick(Sender: TObject);
-    procedure MenuItemExportRTFClick(Sender: TObject);
-    procedure MenuItemPasteClick(Sender: TObject);
-    procedure MenuItemPrintClick(Sender: TObject);
-    //procedure MenuItemSelectAllClick(Sender: TObject);
     procedure MenuItemSpellClick(Sender: TObject);
     procedure MenuItemSyncClick(Sender: TObject);
-    procedure MenuLargeClick(Sender: TObject);
-    procedure MenuNormalClick(Sender: TObject);
-    procedure MenuSmallClick(Sender: TObject);
     procedure SpeedButtonNotebookClick(Sender: TObject);
-    procedure TimerSaveTimer(Sender: TObject);
-    procedure TimerHousekeepingTimer(Sender: TObject);
 
     // Links inside note
     procedure ExternalLink(sender : TObject);
@@ -125,8 +100,6 @@ private
     BlocksInTitle : integer;
     LastFind : integer;
 
-    // Set True by the delete button so we don't try and save it.
-    DeletingThisNote : boolean;
 
     FontSizeNormal, FontSizeLarge, FontSizeTitle, FontSizeHuge, FontSizeSmall : integer;
     procedure SetFontSizes();
@@ -150,29 +123,27 @@ private
     function isHighlight() : boolean;
     function isFixedFont() : boolean;
 
-
+    procedure IndentDecrease();
+    procedure IndentIncrease();
 
     function GetTitle(): String;
-
+    procedure NotePrint();
 
     { Take a piece of text into KMemo block recursively }
     procedure TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
 
+    { Alters the font etc of selected area as indicated }
+    procedure AlterFont(const Command : TNoteAction; const param: integer = 0);
+    { Alters the Font of Block as indicated }
+    procedure AlterBlockFont(const FirstBlockNo, BlockNo: longint; const Command: TNoteAction; const param: integer=0);
 
 
-
-        { Alters the Font of Block as indicated }
-        procedure AlterBlockFont(const FirstBlockNo, BlockNo: longint;
-				const Command: integer; const NewFontSize: integer=0);
-        { Alters the font etc of selected area as indicated }
-        procedure AlterFont(const Command : integer; const NewFontSize: integer = 0);
         { If Toggle is true, sets bullets to what its currently no. Otherwise sets to TurnOn}
         procedure BulletControl(const Toggle, TurnOn: boolean);
         { Looks between StartS and EndS, marking any http link. Byte, not char indexes.
           A weblink has leading and trailing whitespace, starts with http:// or https://
           and has a dot and char after the dot. We expect kmemo1 is locked at this stage.}
         procedure CheckForHTTP(const PText: pchar; const StartS, EndS: longint);
-        procedure CleanUTF8();
         function ColumnCalculate(out AStr: string): boolean;
         function ComplexCalculate(out AStr: string): boolean;
         procedure ExprTan(var Result: TFPExpressionResult;
@@ -253,8 +224,7 @@ implementation
 { TFormNote }
 uses
     Spelling,
-    K_Prn,              // Custom print unit.
-    TRabout,TRmain, Markdown;
+    TRabout,TRmain, TRprint, Markdown;
 
 
 const
@@ -723,11 +693,8 @@ end;
 procedure TFormNote.KMemo1MouseDown(Sender: TObject; Button: TMouseButton;
 		Shift: TShiftState; X, Y: Integer);
 begin
-    //{$ifdef LCLCOCOA}
-    if ssCtrl in Shift then PopupMenuRightClick.popup;
-    //{$else}
-	if Button = mbRight then PopupMenuRightClick.PopUp;
-    //{$endif}
+    if ssCtrl in Shift then PopMenu.PopUp
+    else if Button = mbRight then PopMenu.PopUp;
 end;
 
 
@@ -815,180 +782,86 @@ begin
         KMemo1.ExecuteCommand(ecRight);
 end;
 
-{ -------------- U S E R   F O N T    C H A N G E S ----------------}
-
-const
- ChangeSize   = 1;     // Used by AlterFont(..) and its friends.
- ChangeBold   = 2;
- ChangeItalic = 3;
- ChangeColor  = 4;
- ChangeFixedWidth = 5;
- ChangeStrikeout = 6;
- ChangeUnderline = 7;
- //DefaultFontName = 'default';             Font names determined in Settings
- //{$ifdef LINUX}
-   //MonospaceFont = 'monospace';
- //{$else}
-   //MonospaceFont = 'Lucida Console';
-   //MonospaceFont = 'Monaco';        // might be a better choice
- //{$ifend}
-
-{ This complex function will set font size, Bold or Italic or Color depending on the
-  constant passed as first parameter. NewFontSize is ignored (and can be ommitted)
-  if Command is ChangeBold or ChangeItalic, then toggle. If the function finds
-  that the first char of selection already has that attribute it negates it,
-  ie size becomes normal or no bold, no italics.
-
-  It has to deal with several possible combinations and does so in three parts -
-  1. Dealing with what happens around the SelStart. Possibly splitting once or twice
-  2. Dealing with any complete blocks between start and end.
-  3. Dealing with the stuff around the end. If its not already been done by 1.
-
-  The actual Commands are defined above and are not used outside this unit.
-
-  Consider possible ways this function can be called -
-  a. With selstart at first char in a block, Selend at end of same block.
-  b. Selstart at other than first char, selend at end of same block.
-  c. Selstart after first char and selend before last char of same block.
-  d, e, f. as above but spanning blocks.
-  a. & d. Require no splitting.  Just apply change to block or blocks.
-  b. & e. Needs one split. Split at SelStart and Apply to new and subsquent if any.
-  c. & f. Needs two splits. Split at SelStar and SelEnd-1, then as above.
-
-  So, decide what blocks we apply to, then apply. Sounds easy.
-
-  AlterFont() is the entry point, it identifies and, if necessary splits blocks
-  and calls AlterBlockFont() to do the changes, block by block.
-  The decision as to turning [Colour,Bold,Italics] on or off SHOULD be made in
-  AlterFont based on first char of selection and passed to AlterBlockFont.
-}
-
-procedure TFormNote.AlterFont(const Command : integer; const NewFontSize : integer = 0);
+procedure TFormNote.AlterFont(const Command : TNoteAction; const param: integer = 0);
 var
-	FirstBlockNo, LastBlockNo, IntIndex, LastChar, FirstChar : longint;
-	SplitStart : boolean = false;
+   FirstBlockNo, LastBlockNo, IntIndex, LastChar, FirstChar : longint;
+   SplitStart : boolean = false;
 begin
-    if KMemo1.ReadOnly then exit();
+   if Processing then exit();
+   Processing := True;
 
-    Processing := True;
+   LastChar := Kmemo1.RealSelEnd;
+   FirstChar := KMemo1.RealSelStart;
 
-    MarkDirty();
-	LastChar := Kmemo1.RealSelEnd;			// SelEnd points to first non-selected char
-    FirstChar := KMemo1.RealSelStart;
-	FirstBlockNo := Kmemo1.Blocks.IndexToBlockIndex(FirstChar, IntIndex);
-    if IntIndex <> 0 then			// Not Starting on block boundary.
-		SplitStart := True;
-    LastBlockNo := Kmemo1.Blocks.IndexToBlockIndex(LastChar, IntIndex);
-    if IntIndex <> (length(Kmemo1.Blocks.Items[LastBlockNo].Text) -1) then 	// Not Last char in block
-        LastBlockNo := KMemo1.SplitAt(LastChar) -1;       // we want whats before the split.
-    while LastBlockNo > FirstBlockNo do begin
-        AlterBlockFont(FirstBlockNo, LastBlockNo, Command, NewFontSize);
-        dec(LastBlockNo);
-    end;
-    // Now, only First Block to deal with
-    if SplitStart then
-		FirstBlockNo := KMemo1.SplitAt(FirstChar);
-    AlterBlockFont(FirstBlockNo, FirstBlockNo, Command, NewFontSize);
-    KMemo1.SelEnd := LastChar;	// Any splitting above seems to subtly alter SelEnd, reset.
-    KMemo1.SelStart := FirstChar;
+   FirstBlockNo := Kmemo1.Blocks.IndexToBlockIndex(FirstChar, IntIndex);
+   if IntIndex <> 0 then SplitStart := True;
 
-    Processing := False;
+   LastBlockNo := Kmemo1.Blocks.IndexToBlockIndex(LastChar, IntIndex);
+   if IntIndex <> (length(Kmemo1.Blocks.Items[LastBlockNo].Text) -1) then LastBlockNo := KMemo1.SplitAt(LastChar) -1;
+
+   while LastBlockNo > FirstBlockNo do
+   begin
+      AlterBlockFont(FirstBlockNo, LastBlockNo, Command, param);
+      dec(LastBlockNo);
+   end;
+
+   if SplitStart then FirstBlockNo := KMemo1.SplitAt(FirstChar);
+   AlterBlockFont(FirstBlockNo, FirstBlockNo, Command, param);
+
+   KMemo1.SelEnd := LastChar;
+   KMemo1.SelStart := FirstChar;
+
+   MarkDirty();
+   Processing := False;
 end;
 
-
-	{  Takes a Block number and applies changes to that block }
-procedure TFormNote.AlterBlockFont(const FirstBlockNo, BlockNo : longint; const Command : integer; const NewFontSize : integer = 0);
+procedure TFormNote.AlterBlockFont(const FirstBlockNo, BlockNo : longint; const Command : TNoteAction; const param : integer = 0);
 var
-	Block, FirstBlock : TKMemoTextBlock;
-
+   Block, FirstBlock : TKMemoTextBlock;
 begin
-    FirstBlock := TKMemoTextBlock(KMemo1.Blocks.Items[FirstBlockNo]);
-	Block := TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]);
-    //if (Command = ChangeSize) and (NewFontSize = FontSizeNormal) then begin  // Don't toggle, just set to FontNormal
-    //     Block.TextStyle.Font.Size := FontSizeNormal;
-    //     exit();
-    //end;
-    case Command of
-		{ChangeSize :	if Block.TextStyle.Font.Size = NewFontSize then begin
-						Block.TextStyle.Font.Size := Sett.FontNormal;
-					end else begin
- 						Block.TextStyle.Font.Size := NewFontSize;
-					end;  }
-        ChangeSize : Block.TextStyle.Font.Size := NewFontSize;
-		ChangeBold :   	if fsBold in FirstBlock.TextStyle.Font.style then begin
-						Block.TextStyle.Font.Style := Block.TextStyle.Font.Style - [fsBold];
-					end else begin
-						Block.TextStyle.Font.Style := Block.TextStyle.Font.Style + [fsBold];
-					end;
-		ChangeItalic :
-					if fsItalic in FirstBlock.TextStyle.Font.style then begin
-						Block.TextStyle.Font.Style := Block.TextStyle.Font.Style - [fsItalic];
-					end else begin
-						Block.TextStyle.Font.Style := Block.TextStyle.Font.Style + [fsItalic];
-					end;
-        ChangeFixedWidth :
-                    if FirstBlock.TextStyle.Font.Name <> FixedFont then begin
+   FirstBlock := TKMemoTextBlock(KMemo1.Blocks.Items[FirstBlockNo]);
+   Block := TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]);
+
+   case Command of
+
+      TNoteAction.ChangeSize : Block.TextStyle.Font.Size := param;
+
+      TNoteAction.ToggleBold :
+                   if fsBold in FirstBlock.TextStyle.Font.style
+                   then Block.TextStyle.Font.Style := Block.TextStyle.Font.Style - [fsBold]
+		   else Block.TextStyle.Font.Style := Block.TextStyle.Font.Style + [fsBold];
+
+      TNoteAction.ToggleItalic :
+                   if fsItalic in FirstBlock.TextStyle.Font.style
+                   then Block.TextStyle.Font.Style := Block.TextStyle.Font.Style - [fsItalic]
+		   else Block.TextStyle.Font.Style := Block.TextStyle.Font.Style + [fsItalic];
+
+      TNoteAction.ToggleStrikeout :
+                   if fsStrikeout in FirstBlock.TextStyle.Font.style
+                   then Block.TextStyle.Font.Style := Block.TextStyle.Font.Style - [fsStrikeout]
+             	   else Block.TextStyle.Font.Style := Block.TextStyle.Font.Style + [fsStrikeout];
+
+      TNoteAction.ToggleUnderline :
+                   if fsUnderline in FirstBlock.TextStyle.Font.style
+                   then Block.TextStyle.Font.Style := Block.TextStyle.Font.Style - [fsUnderline]
+             	   else Block.TextStyle.Font.Style := Block.TextStyle.Font.Style + [fsUnderline];
+
+      TNoteAction.ToggleHighlight :
+                   if FirstBlock.TextStyle.Brush.Color <> HiColour
+                   then Block.TextStyle.Brush.Color := HiColour
+                   else Block.TextStyle.Brush.Color := BackGndColour;
+
+      TNoteAction.ToggleFont :
+                   if FirstBlock.TextStyle.Font.Name <> FixedFont then
+                   begin
                        Block.TextStyle.Font.Pitch := fpFixed;
                        Block.TextStyle.Font.Name := FixedFont;
-                    end else begin
+                   end else
+                   begin
                        Block.TextStyle.Font.Pitch := fpVariable;
-	                    Block.TextStyle.Font.Name := UsualFont;
-                    end;
-
-        ChangeStrikeout :
-					if fsStrikeout in FirstBlock.TextStyle.Font.style then begin
-						Block.TextStyle.Font.Style := Block.TextStyle.Font.Style - [fsStrikeout];
-					end else begin
-						Block.TextStyle.Font.Style := Block.TextStyle.Font.Style + [fsStrikeout];
-					end;
-        ChangeUnderline :
-					if fsUnderline in FirstBlock.TextStyle.Font.style then begin
-						Block.TextStyle.Font.Style := Block.TextStyle.Font.Style - [fsUnderline];
-					end else begin
-						Block.TextStyle.Font.Style := Block.TextStyle.Font.Style + [fsUnderline];
-					end;
-		ChangeColor :
-                    if FirstBlock.TextStyle.Brush.Color <> HiColour then begin
-                        Block.TextStyle.Brush.Color := HiColour;
-                    end else begin
-                        Block.TextStyle.Brush.Color := BackGndColour; { clDefault; }
-                    end;
-	end;
-end;
-
-procedure TFormNote.MenuHighLightClick(Sender: TObject);
-begin
-    AlterFont(ChangeColor);
-end;
-
-procedure TFormNote.MenuLargeClick(Sender: TObject);
-begin
-   //AlterFont(ChangeSize, FontSizeLarge);
-end;
-
-procedure TFormNote.MenuNormalClick(Sender: TObject);
-begin
-   //AlterFont(ChangeSize, FontSizeNormal);	// Note, this won't toggle !
-end;
-
-procedure TFormNote.MenuSmallClick(Sender: TObject);
-begin
-    //AlterFont(ChangeSize, FontSizeSmall);
-end;
-
-procedure TFormNote.MenuHugeClick(Sender: TObject);
-begin
-   //AlterFont(ChangeSize, FontSizeHuge);
-end;
-
-procedure TFormNote.MenuBoldClick(Sender: TObject);
-begin
-	AlterFont(ChangeBold);
-end;
-
-procedure TFormNote.MenuItalicClick(Sender: TObject);
-begin
-	AlterFont(ChangeItalic);
+	               Block.TextStyle.Font.Name := UsualFont;
+                   end;
+   end;
 end;
 
 procedure TFormNote.MenuItemEvaluateClick(Sender: TObject);
@@ -1025,21 +898,6 @@ end;
 procedure TFormNote.MenuItemSettingsClick(Sender: TObject);
 begin
     //FormSettings.show;
-end;
-
-procedure TFormNote.MenuUnderlineClick(Sender: TObject);
-begin
-    AlterFont(ChangeUnderline);
-end;
-
-procedure TFormNote.MenuStrikeoutClick(Sender: TObject);
-begin
-        AlterFont(ChangeStrikeout);
-end;
-
-procedure TFormNote.MenuFixedWidthClick(Sender: TObject);
-begin
-       AlterFont(ChangeFixedWidth);
 end;
 
 { ------- S T A N D A R D    E D I T I N G    F U N C T I O N S ----- }
@@ -1084,42 +942,6 @@ begin
 end;
 
 
-procedure TFormNote.MenuItemCopyClick(Sender: TObject);
-begin
-	KMemo1.ExecuteCommand(ecCopy);
-end;
-
-procedure TFormNote.MenuItemCutClick(Sender: TObject);
-begin
-    if KMemo1.ReadOnly then exit();
-    KMemo1.ExecuteCommand(ecCut);
-    MarkDirty();
-    //if not Dirty then TimerSave.Enabled := true;
-    //Dirty := true;
-    //Label1.Caption := 'd';
-end;
-
-procedure TFormNote.MenuItemDeleteClick(Sender: TObject);
-begin
-    if KMemo1.ReadOnly then exit();
-    // KMemo1.ExecuteCommand(ecClearSelection);
-    KMemo1.Blocks.ClearSelection;
-    MarkDirty();
-    //if not Dirty then TimerSave.Enabled := true;
-    //Dirty := true;
-    //Label1.Caption := 'd';
-end;
-
-procedure TFormNote.MenuItemExportPlainTextClick(Sender: TObject);
-begin
-     //SaveNoteAs('txt');
-end;
-
-procedure TFormNote.MenuItemExportRTFClick(Sender: TObject);
-begin
-   //SaveNoteAs('rtf');
-end;
-
 
 procedure TFormNote.MarkDirty();
 begin
@@ -1138,33 +960,6 @@ begin
     else Result := Caption;
 end;
 
-
-procedure TFormNote.MenuItemPasteClick(Sender: TObject);
-begin
-    if KMemo1.ReadOnly then exit();
-    Processing := True;
-    KMemo1.ExecuteCommand(ecPaste);
-    MarkDirty();
-    Processing := False;
-end;
-
-
-procedure TFormNote.MenuItemPrintClick(Sender: TObject);
-var
-    KPrint : TKprn;
-begin
-    if PrintDialog1.Execute then begin
-      KPrint := TKPrn.Create;
-      KPrint.PrintKmemo(KMemo1);
-      FreeandNil(KPrint);
-    end;
-end;
-              {
-procedure TFormNote.MenuItemSelectAllClick(Sender: TObject);
-begin
-	KMemo1.ExecuteCommand(ecSelectAll);
-end;
-             }
 procedure TFormNote.MenuItemSpellClick(Sender: TObject);
 var
     SpellBox : TFormSpell;
@@ -1185,75 +980,6 @@ begin
     if KMemo1.ReadOnly then exit();
 	//if Dirty then SaveTheNote();
     //Sett.Synchronise();
-end;
-
-{ - - - H O U S E   K E E P I N G   F U C T I O N S ----- }
-
-procedure TFormNote.TimerSaveTimer(Sender: TObject);
-begin
-    //TimerSave.Enabled:=False;
-	// showmessage('Time is up');
-    //SaveTheNote();
-end;
-
-procedure TFormNote.CleanUTF8();
-
-        function BitSet(Value : byte; TheBit : integer) : boolean;      // theBit 0-7
-        begin
-            Result := ((Value shr TheBit) and 1) = 1;
-        end;
-
-        function CleanedUTF8(var TheText : string) : boolean;
-        var cnt : integer = 1;
-            NumbBytes : integer = 0;
-            i : integer;
-        begin
-            Result := false;
-            while Cnt <= TheText.Length do begin
-                if BitSet(byte(TheText[cnt]), 7) then begin
-                    // OK, we have a utf8 code. It will need at least one extra byte, maybe 2 or 3
-                    NumbBytes := 1;
-                    if BitSet(byte(TheText[cnt]), 5) then inc(NumbBytes);
-                    if BitSet(byte(TheText[cnt]), 4) then inc(NumbBytes);
-                    if Cnt + NumbBytes > TheText.Length then begin      // enough bytes remaining ....
-                        delete(TheText, Cnt, 1);
-                        Result := true;
-                        continue;
-                    end;
-                    for i := 1 to NumbBytes do begin            // are they the right sort of bytes ?
-                        if not BitSet(byte(TheText[cnt + i]), 7) then begin
-                            delete(TheText, Cnt, 1);            //
-                            NumbBytes := -1;                    // so the dec below does not skip a char
-                            Result := true;
-                            break;
-                        end;
-                    end;
-                    Cnt := Cnt + NumbBytes;
-                end;
-                inc(cnt);
-            end;
-        end;
-
-var
-    i : integer = 0;
-    AStr : string;
-    TB : TKMemoTextBlock;
-begin
-   KMemo1.blocks.LockUpdate;
-    while i < Kmemo1.blocks.count do begin
-        AStr := Kmemo1.Blocks.Items[i].text;
-        if KMemo1.Blocks.Items[i].ClassNameis('TKMemoTextBlock')
-            or KMemo1.Blocks.Items[i].ClassNameIs('TKMemoHyperlink') then begin
-                if CleanedUTF8(AStr) then begin
-                    TB := KMemo1.Blocks.AddTextBlock(AStr, i);
-                    TB.TextStyle.Font := TKMemoTextBlock(KMemo1.blocks.Items[i+1]).TextStyle.Font;
-                    TB.TextStyle.Brush := TKMemoTextBlock(KMemo1.blocks.Items[i+1]).TextStyle.Brush;
-                    KMemo1.Blocks.Delete(i+1);
-                end;
-        end;
-        inc(i);
-    end;
-    KMemo1.blocks.UnLockUpdate;
 end;
 
 procedure TFormNote.FormShow(Sender: TObject);
@@ -1368,7 +1094,7 @@ begin
   // 'File' / Commit
   m1 := TMenuItem.Create(FileMenu);
   m1.Tag := ord(ntCommit);
-  m1.Caption := rsMenuSave + ' (Ctrl-S)';
+  m1.Caption := rsMenuSave + ' (Ctrl-W)';
   m1.OnClick := @MainMenuClicked;
   m1.ImageIndex:=14;
   FileMenu.Add(m1);
@@ -1957,10 +1683,6 @@ begin
   }
 end;
 
-procedure TFormNote.TimerHousekeepingTimer(Sender: TObject);
-begin
-    DoHouseKeeping();
-end;
 
 
 { ---------------------- C A L C U L A T E    F U N C T I O N S ---------------}
@@ -2279,187 +2001,79 @@ begin
 end;
 }
 
-{	To behave like end users expect when pressing BackSpace we have to alter KMemo's way of thinking.
+procedure TFormNote.IndentIncrease();
+var
+  BlockNo : longint;
+begin
+  TRlog('TFormNote.IndentIncrease');
+end;
 
-a	If the cursor is at the end of a Bullet Text, KMemo would remove the Bullet
-    Marker, we stop that and remove the last character of the visible string.
+procedure TFormNote.IndentDecrease();
+var
+  BlockNo : longint;
+begin
+  TRlog('TFormNote.IndentDecrease');
+end;
 
-b   If the cursor is at the begininng of a Bullet Text we must cancel the bullet (which is at the
-    end of the Text) and not merge this line with one above. We know this is the case if the
-    trailing paragraph marker is bullet AND we are the first char of the first block of the text.
-
-c   If the cursor is on next line after a bullet, on a para marker that is not a bullet and there
-	is no text on that line after the cursor, all we do is delete that para marker.
-
-d   Again, we are on first char of the line after a bullet, this line is not a bullet itself
-	and it has some text after the cursor. We merge that text up to the bullet line above,
-    retaining its bulletness. So, mark trailing para bullet, delete leading.
-
-
-x	A blank line, no bullet between two bullet lines. Use BS line should dissapear.
-    That is, delete para under cursor, move cursor to end line above. This same as c
-
-y   There is nothing after our bullet para marker. So, on an empty bulletline, user presses
-	BS to cancel bullet but that cancels bullet and moves us up to next (bulleted) line.
-    It has to, there is nowhere else to go. Verbose shows this as a case c ????
-
-     	Lead Under Trail First OnPara(not bulleted)
-    a     ?    T     ?    F        remove the last character of the visible string to left.
-    b     ?    F     T    T    F   Cursor at start, cancel bullet, don't merge
-
-    x     T    F     T    T    T   Just delete this para. if Trailing move cursor to end of line above.
-    c     T    F     F    T    T   Just delete this para. if Trailing move cursor to end of line above.
-    y     T    T     F    T    F   Like c but add a para and move down. Not happy .....
-    d     T    F     F    T    F   mark trailing para as bullet, delete leading.
-    e     T    T     T    T    F   must remove Bullet for para under cursor
-
-    Special case where curser is at end of a bullet and there is no para beyond there ?
-    So, its should act as (a) but did, once, act as (d) ?? Needs more testing ......
-}
+procedure TFormNote.NotePrint();
+var
+   p : TKPrn;
+begin
+   if PrintDialog1.Execute then
+   begin
+      p := TKPrn.Create;
+      p.PrintKmemo(KMemo1);
+      FreeandNil(p);
+   end;
+end;
 
 procedure TFormNote.KMemo1KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-var
-  TrailOffset,
-  BlockNo,              // Will hold block number cursor is under.
-  LeadOffset  : longint;
-  LeadingBullet,        // The para immediatly previous to cursor is a bullet
-  UnderBullet,          // We are under a Para and its a Bullet
-  TrailingBullet,       // We are under Text but the block behind us is a Bullet.
-  FirstChar  : boolean; // Cursor is under the first character of a line of text.
-  NoBulletPara : boolean = false;
 begin
-    if Processing then exit();                   // should we drop key on floor ????
-    // don't let any ctrl char get through the kmemo on mac
-    {$ifdef DARWIN}
-    if [ssCtrl] = Shift then begin
-        case Key of
-             VK_1 : MenuSmallClick(Sender);
-             VK_2 : MenuNormalClick(Sender);
-             VK_3 : MenuLargeClick(Sender);
-             VK_4 : MenuHugeClick(Sender);
-        end;
-        Key := 0;
-        exit;
-    end;
-    if ([ssAlt, ssShift] = Shift) and ((Key = VK_RIGHT) or (Key = VK_LEFT)) then exit; // KMemo - extend selection one word left or right
-    {$endif}
-    {$ifndef DARWIN}
-    // -------------- Shift -------------------
-    if [ssShift] = shift then begin
-        if (Key = VK_LEFT) or (Key = VK_RIGHT) then exit; // KMemo - extend selection one char left or right
-    end;
+  TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key));
 
-    {$endif}
-    // -------------- Control ------------------
-    if {$ifdef Darwin}[ssMeta] = Shift {$else}[ssCtrl] = Shift{$endif} then begin
-        case key of
-            //VK_Q : MainForm.close();
-            VK_1 : MenuSmallClick(Sender);
-            VK_2 : MenuNormalClick(Sender);
-            VK_3 : MenuLargeClick(Sender);
-            VK_4 : MenuHugeClick(Sender);
-            VK_B : MenuBoldClick(Sender);
-            VK_I : MenuItalicClick(Sender);
-            VK_S : MenuStrikeOutClick(Sender);
-            VK_T : MenuFixedWidthClick(Sender);
-            VK_H : MenuHighLightClick(Sender);
-            VK_U : MenuUnderLineClick(Sender);
-            //VK_F : MenuItemFindClick(self);
-            //VK_L : SpeedButtonLinkClick(Sender);
-            VK_D : InsertDate();
-            //VK_N : SearchForm.OpenNote();      // MainForm.MMNewNoteClick(self);    ok as long as notes dir set .....
-            VK_E : InitiateCalc();
-            VK_F4 : close;                      // close just this note, normal saving will take place
-            VK_M : begin FormMarkDown.TheKMemo := KMemo1; FormMarkDown.Show; end;
-            VK_X, VK_C, VK_V, VK_Y, VK_A, VK_HOME, VK_END, VK_UP, VK_DOWN, VK_LEFT, VK_RIGHT, VK_PRIOR, VK_NEXT, VK_RETURN, VK_INSERT :
-                exit;    // so key is not set to 0 on the way out, KMemo will handle
-        end;
-        Key := 0;    // so we don't get a ctrl key character in the text
-        exit();
-    end;
-    // ------------- Alt (or Option in Mac) ------------------
-    if [ssAlt] = Shift then begin
-        case key of
-                {$ifdef DARWIN}
-            VK_H  : begin MenuHighLightClick(Sender); Key := 0; end; {$endif}
-            VK_RIGHT : begin BulletControl(False, True); Key := 0; end;
-            VK_LEFT  : begin BulletControl(False, False); Key := 0; end;
-        end;
-        exit();
-    end;
-    //if KMemo1.ReadOnly then begin Key := 0; exit(); end;
-    // ------------------ Control and Shift ----------------
-    if [ssCtrl, ssShift] = Shift then begin
-      // if key = ord('F') then begin SpeedButtonSearchClick(self); Key := 0; exit(); end;
-       {$ifndef DARWIN}
-       if (key = VK_RIGHT) or (Key = VK_LEFT) then exit;{$endif}            // KMemo knows how to do this, select word ...
-       Key := 0;
-    end;
-    if Key = VK_TAB then begin
-      KMemo1.InsertChar(KMemo1.Blocks.RealSelStart, #09);
-      Key := 0;
-      exit;
-    end;
-    if Key <> 8 then exit();    // We are watching for a BS on a Bullet Marker
-    // Mac users don't have a del key, they use a backspace key thats labled 'delete'. Sigh...
-    if KMemo1.Blocks.RealSelEnd > KMemo1.Blocks.RealSelStart then exit();
-    if not NearABulletPoint(LeadingBullet, UnderBullet, TrailingBullet, FirstChar, NoBulletPara,
-    				BlockNo, TrailOffset, LeadOffset) then exit();
-    if (not FirstChar) and (not UnderBullet) then exit();
-    // We do have to act, don't pass key on.
-    Key := 0;
-    Processing := True;
-    MarkDirty();
+  if Processing then begin Key :=0; exit(); end;
 
-    // KMemo1.Blocks.LockUpdate;  Dont lock because we move the cursor down here.
-    	if UnderBullet and (not FirstChar) then begin   // case a
-            KMemo1.ExecuteCommand(ecDeleteLastChar);
-            TRlog('Case a');
-            Processing := false;
-            exit();
-        end;
-        // anything remaining must have FirstChar
-        if TrailingBullet and (not NoBulletPara) then begin	// case b
-            TRlog('Case b or e');
-            if UnderBullet then  						// case e
-              	TrailOffset := 0;
-            if kmemo1.blocks.Items[BlockNo+TrailOffset].ClassNameIs('TKMemoParagraph') then
-                SetBullet(TKMemoParagraph(kmemo1.blocks.Items[BlockNo+TrailOffset]), False)
-            	// TKMemoParagraph(kmemo1.blocks.Items[BlockNo+TrailOffset]).Numbering := pnuNone
-            else TRlog('ERROR - this case b block should be a para');
-            Processing := False;
-            exit();
-        end;
-        // anything remaining is outside bullet list, looking in. Except if Trailing is set...
-        if  kmemo1.blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph') then begin
-            KMemo1.Blocks.Delete(BlockNo);		// delete this blank line.
-            if TrailingBullet then begin
-            	KMemo1.ExecuteCommand(ecUp);
-            	KMemo1.ExecuteCommand(ecLineEnd);
-                TRlog('Case x');
-			end else begin
-            	if UnderBullet then begin				// this test is wrong, real test is are we at end of text ?
+  // CTRL
+  if {$ifdef DARWIN}ssMeta{$else}ssCtrl{$endif} in Shift then
+  begin
 
-                TRlog('Case y');
-                    KMemo1.Blocks.AddParagraph();		// Maybe only need add that if at end of text, NearABulletPoint() could tell us ?
-                    KMemo1.ExecuteCommand(ecDown);
-                end else
+     if key = ord('B') then begin TrLog('Ctrl-B'); AlterFont(ToggleBold); Key := 0; exit(); end;
+     if key = ord('I') then begin TrLog('Ctrl-I'); AlterFont(ToggleItalic); Key := 0; exit(); end;
+     if key = ord('S') then begin TrLog('Ctrl-S'); AlterFont(ToggleStrikeout); Key := 0; exit(); end;
+     if key = ord('U') then begin TrLog('Ctrl-U'); AlterFont(ToggleUnderline); Key := 0; exit(); end;
+     if key = ord('T') then begin TrLog('Ctrl-T'); AlterFont(ToggleFont); Key := 0; exit(); end;
+     if key = ord('H') then begin TrLog('Ctrl-H'); AlterFont(ToggleHighlight); Key := 0; exit(); end;
 
-                TRlog('Case c');
-            end;
-        end else begin				// merge the current line into bullet above.
-            if kmemo1.blocks.Items[BlockNo+TrailOffset].ClassNameIs('TKMemoParagraph') then
-                SetBullet(TKMemoParagraph(kmemo1.blocks.Items[BlockNo+TrailOffset]), True)
-            	// TKMemoParagraph(kmemo1.blocks.Items[BlockNo+TrailOffset]).Numbering := pnuBullets;
-            else TRlog('ERROR - this case d block should be a para');
-            if  kmemo1.blocks.Items[BlockNo-Leadoffset].ClassNameIs('TKMemoParagraph') then begin
-            	KMemo1.Blocks.Delete(BlockNo-LeadOffset);
+     if key = ord('A') then begin TrLog('Ctrl-A'); KMemo1.ExecuteCommand(ecSelectAll); Key := 0; exit(); end;
 
-                TRlog('Case d');
-        	end;
-    	end;
-    Processing := False;
-    // most of the intevention paths through this method take ~180mS on medium powered linux laptop
+     if key = ord('C') then begin TrLog('Ctrl-C'); KMemo1.ExecuteCommand(TKEditCommand.ecCopy); MarkDirty(); Key := 0; exit(); end;
+     if key = ord('X') then begin TrLog('Ctrl-X'); KMemo1.ExecuteCommand(TKEditCommand.ecCut); MarkDirty(); Key := 0; exit(); end;
+     if key = ord('V') then begin TrLog('Ctrl-V'); KMemo1.ExecuteCommand(TKEditCommand.ecPaste); MarkDirty(); Key := 0; exit(); end;
+
+     if key = ord('W') then begin TrLog('Ctrl-W'); Commit(); Key := 0; exit(); end;
+
+     if key = ord('O') then begin TrLog('Ctrl-O'); TFormMain(mainWIndow).ShowSettings(); Key := 0; exit(); end;
+
+     if key = ord('P') then begin TrLog('Ctrl-P'); NotePrint(); Key :=0; exit(); end;
+
+     if key = ord('Z') then begin TrLog('Ctrl-Z'); KMemo1.ExecuteCommand(TKEditCommand.ecUndo); Key := 0; exit(); end;
+     if key = ord('Y') then begin TrLog('Ctrl-Y'); KMemo1.ExecuteCommand(TKEditCommand.ecRedo); Key := 0; exit(); end;
+
+     exit();
+   end;
+
+  // SHIFT
+  if ssShift in Shift then
+  begin
+    if key = VK_TAB then begin TrLog('Tab'); IndentDecrease(); Key := 0; exit(); end;
+
+    exit();
+  end;
+
+  // OTHER
+
+  if key = VK_TAB then begin TrLog('Tab'); IndentIncrease(); Key := 0; exit(); end;
+
 end;
 
 procedure TFormNote.SetBullet(PB : TKMemoParagraph; Bullet : boolean);
@@ -2523,11 +2137,59 @@ begin
 
    case TNoteMenuTags(TMenuItem(Sender).Tag) of
 
-        ntSettings: TFormMain(mainWIndow).ShowSettings();
+      // FILE
+      ntSearchAll : mainWindow.Show();
 
-        ntSync : TFormMain(mainWIndow).SnapSync();
+      //ntFind :
 
-        ntAbout : Begin FormAbout := TFormAbout.Create(self); FormAbout.ShowModal; FreeAndNil(FormAbout); end;
+      //ntDuplicate :
+
+      ntCommit :            Commit();
+
+      //ntDelete :
+
+      // EDIT
+      ntRedo :              begin KMemo1.ExecuteCommand(TKEditCommand.ecRedo); MarkDirty(); end;
+      ntUndo :              begin KMemo1.ExecuteCommand(TKEditCommand.ecUndo); MarkDirty(); end;
+      ntSelectAll :         KMemo1.ExecuteCommand(ecSelectAll);
+      ntCopy :              begin KMemo1.ExecuteCommand(TKEditCommand.ecCopy); MarkDirty(); end;
+      ntCut :               begin KMemo1.ExecuteCommand(TKEditCommand.ecCut); MarkDirty(); end;
+      ntPaste :             begin KMemo1.ExecuteCommand(TKEditCommand.ecPaste); MarkDirty(); end;
+      //ntLink :
+      //ntURL :
+
+      // FORMAT
+      ntBold :              AlterFont(ToggleBold);
+      ntItalic :            AlterFont(ToggleItalic);
+      ntStrike :            AlterFont(ToggleStrikeout);
+      ntUnderlined :        AlterFont(ToggleUnderline);
+      ntFixed :             AlterFont(ToggleFont);
+      ntHighlight :         AlterFont(ToggleHighlight);
+
+      //ntFontPLus :
+      //ntFontMinus ;
+
+      //ntBullet :
+      //ntBulletInc :
+      //ntBulletDec :
+
+      // NOTEBOOK
+      //ntNoNotebook :
+      //ntNewNotebook :
+
+      //TOOLS
+      ntSync :              TFormMain(mainWIndow).SnapSync();
+
+      //ntMarkdown :
+      //ntRTF :
+      //ntPlain :
+
+      ntPrint :             NotePrint();
+
+      ntSettings:           TFormMain(mainWIndow).ShowSettings();
+
+
+      ntAbout :             TFormMain(mainWindow).ShowAbout();
 
    end;
 end;
@@ -2537,6 +2199,23 @@ var
     m1,m2 : TMenuItem;
     i : integer;
 begin
+
+  PopMenu.Items.Clear;
+
+  // Edit / SelectAll
+  m1 := TMenuItem.Create(PopMenu);
+  m1.Tag := ord(ntSelectAll);
+  m1.Caption := rsMenuSelectAll+' (Ctrl-A)';
+  m1.OnClick := @MainMenuClicked;
+  m1.Enabled:= (KMemo1.RealSelLength>0);
+  m1.ImageIndex:=40;
+  PopMenu.Items.Add(m1);
+
+  // POP / Check spell
+  m1 := TMenuItem.Create(PopMenu);
+  m1.Caption := rsCheckSel;
+  m1.ImageIndex:=40;
+  PopMenu.Items.Add(m1);
 
   EditMenu.Clear;
 
@@ -2558,12 +2237,23 @@ begin
 
   EditMenu.AddSeparator;
 
+  // Edit / SelectAll
+  m1 := TMenuItem.Create(EditMenu);
+  m1.Tag := ord(ntSelectAll);
+  m1.Caption := rsMenuSelectAll+' (Ctrl-A)';
+  m1.OnClick := @MainMenuClicked;
+  m1.Enabled:= (KMemo1.RealSelLength>0);
+  m1.ImageIndex:=40;
+  EditMenu.Add(m1);
+
+  EditMenu.AddSeparator;
+
   // Edit / Cut
   m1 := TMenuItem.Create(EditMenu);
   m1.Tag := ord(ntCut);
   m1.Caption := rsMenuCut+' (Ctrl-X)';
   m1.OnClick := @MainMenuClicked;
-  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.Enabled:= (KMemo1.RealSelLength>0);
   m1.ImageIndex:=23;
   EditMenu.Add(m1);
   // Edit / Copy
@@ -2571,7 +2261,7 @@ begin
   m1.Tag := ord(ntCopy);
   m1.Caption := rsMenuCopy+' (Ctrl-C)';
   m1.OnClick := @MainMenuClicked;
-  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.Enabled:= (KMemo1.RealSelLength>0);
   m1.ImageIndex:=21;
   EditMenu.Add(m1);
   // Edit / Paste
@@ -2589,7 +2279,7 @@ begin
   m1.Tag := ord(ntLink);
   m1.Caption := rsMenuLink;
   m1.OnClick := @MainMenuClicked;
-  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.Enabled:= (KMemo1.RealSelLength>0);
   m1.ImageIndex:=26;
   EditMenu.Add(m1);
   // Edit / Link to URL
@@ -2597,7 +2287,7 @@ begin
   m1.Tag := ord(ntURL);
   m1.Caption := rsMenuURL;
   m1.OnClick := @MainMenuClicked;
-  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.Enabled:= (KMemo1.RealSelLength>0);
   m1.ImageIndex:=27;
   EditMenu.Add(m1);
 
@@ -2607,7 +2297,7 @@ begin
   m1 := TMenuItem.Create(FormatMenu);
   m1.Tag := ord(ntBold);
   m1.Caption := rsMenuBold+' (Ctrl-B)';
-  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.Enabled:= (KMemo1.RealSelLength>0);
   m1.OnClick := @MainMenuClicked;
   m1.Checked := isBold();
   m1.ImageIndex:=32;
@@ -2616,7 +2306,7 @@ begin
   m1 := TMenuItem.Create(FormatMenu);
   m1.Tag := ord(ntItalic);
   m1.Caption := rsMenuItalic+' (Ctrl-I)';
-  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.Enabled:= (KMemo1.RealSelLength>0);
   m1.OnClick := @MainMenuClicked;
   m1.Checked := isItalic();
   m1.ImageIndex:=33;
@@ -2625,7 +2315,7 @@ begin
   m1 := TMenuItem.Create(FormatMenu);
   m1.Tag := ord(ntStrike);
   m1.Caption := rsMenuStrikeout +' (Ctrl-S)';
-  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.Enabled:= (KMemo1.RealSelLength>0);
   m1.OnClick := @MainMenuClicked;
   m1.Checked := isStriked();
   m1.ImageIndex:=29;
@@ -2634,7 +2324,7 @@ begin
   m1 := TMenuItem.Create(FormatMenu);
   m1.Tag := ord(ntUnderlined);
   m1.Caption := rsMenuUnderlined+' (Ctrl-U)';
-  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.Enabled:= (KMemo1.RealSelLength>0);
   m1.OnClick := @MainMenuClicked;
   m1.Checked := isUnderlined();
   m1.ImageIndex:=28;
@@ -2643,7 +2333,7 @@ begin
   m1 := TMenuItem.Create(FormatMenu);
   m1.Tag := ord(ntHighlight);
   m1.Caption := rsMenuHighlight+' (Ctrl-H)';
-  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.Enabled:= (KMemo1.RealSelLength>0);
   m1.OnClick := @MainMenuClicked;
   m1.Checked := isHighlight();
   m1.ImageIndex:=30;
@@ -2652,7 +2342,7 @@ begin
   m1 := TMenuItem.Create(FormatMenu);
   m1.Tag := ord(ntFixed);
   m1.Caption := rsMenuFixed+' (Ctrl-T)';
-  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.Enabled:= (KMemo1.RealSelLength>0);
   m1.OnClick := @MainMenuClicked;
   m1.Checked := isFixedFont();
   m1.ImageIndex:=31;
@@ -2664,7 +2354,7 @@ begin
   m1 := TMenuItem.Create(FormatMenu);
   m1.Tag := ord(ntFontPlus);
   m1.Caption := rsMenuFontPlus+' (Ctrl-+)';
-  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.Enabled:= (KMemo1.RealSelLength>0);
   m1.OnClick := @MainMenuClicked;
   m1.ImageIndex:=35;
   FormatMenu.Add(m1);
@@ -2672,7 +2362,7 @@ begin
   m1 := TMenuItem.Create(FormatMenu);
   m1.Tag := ord(ntFontMinus);
   m1.Caption := rsMenuFontMinus+' (Ctrl--)';
-  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.Enabled:= (KMemo1.RealSelLength>0);
   m1.OnClick := @MainMenuClicked;
   m1.ImageIndex:=34;
   FormatMenu.Add(m1);

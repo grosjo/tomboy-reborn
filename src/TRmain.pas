@@ -1200,8 +1200,7 @@ begin
   FreeAndNil(NewNotebooksList);
 end;
 
-procedure TFormMain.FormKeyDown(Sender: TObject; var Key: Word;
-    Shift: TShiftState);
+procedure TFormMain.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   TRlog('KeyDown '+IntToStr(Key));
 
