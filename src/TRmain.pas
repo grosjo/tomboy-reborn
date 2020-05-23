@@ -7,8 +7,8 @@ interface
 uses
     Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
     Buttons, Menus, ComCtrls, ExtCtrls, FileUtil, ActnList,
-    Grids, lazLogger, Math, LCLType,
-    TRcommon, TRtexts;
+    Grids, lazLogger, Math, LCLType, LazFileUtils, process,
+    TRcommon, TRtexts, TRsettings, TRsync, TRnote, TRabout;
 
 
 type TTrayTags = (ttNewNote, ttSearch, ttAbout, ttSync, ttSettings, ttQuit);
@@ -68,13 +68,13 @@ type TFormMain = class(TForm)
 	procedure SGNotebooksDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
 private
         NotesList : TNoteInfoList;
-        NotebooksList : TStringList;
         NewNotebooksList : TStringList;
 
         LastSync : TDateTime;
         SyncTimer : TTimer;
         ScanTimer : TTimer;
         ShowTimer : TTimer;
+        fsett,fabout : TForm;
 
         SearchCaseSensitive : boolean;      // Flag linked to the checkbox
         SelectedNotebook : String;         // Notebook selected
@@ -98,6 +98,12 @@ private
         function DeleteNotebook(nb : String): boolean;
 
 
+public
+        NotebooksList : TStringList;
+
+        procedure SnapSync();
+        procedure ShowSettings();
+        procedure ShowAbout();
 
 end;
 
@@ -105,14 +111,6 @@ end;
 implementation
 
 {$R *.lfm}
-
-
-
-uses
-    LazFileUtils,
-    TRsettings, TRsync, TRnote, TRabout,
-    process;
-
 
 
 procedure TFormMain.FormCreate(Sender: TObject);
@@ -284,7 +282,7 @@ begin
     // Notebooks menu
     m1 := TMenuItem.Create(FileMenu);
     m1.Caption := rsNotebooks;
-    m1.ImageIndex:=3;
+    m1.ImageIndex:=39;
     FileMenu.Add(m1);
 
     // Notebooks submenu
@@ -381,7 +379,7 @@ begin
    // Notebooks
    m1 := TMenuItem.Create(TrayMenu);
    m1.Caption := rsTrayNotebooks;
-   m1.ImageIndex:=1;
+   m1.ImageIndex:=39;
    TrayMenu.Items.Add(m1);
 
    // List notebooks
@@ -474,11 +472,50 @@ begin
    end;
 end;
 
-procedure TFormMain.TrayMenuClicked(Sender : TObject);
+procedure TFormMain.ShowAbout();
+begin
+   if(assigned(fabout)) then begin fabout.Hide; fabout.Show; exit(); end;
+
+   fabout := TFormAbout.Create(self);
+   fabout.ShowModal;
+   FreeAndNil(fabout);
+end;
+
+procedure TFormMain.ShowSettings();
+begin
+   if(assigned(fsett)) then begin fsett.Hide; fsett.Show; exit(); end;
+
+   syncshallrun := false;
+   fsett := TFormSettings.Create(self);
+   fsett.ShowModal;
+   FreeAndNil(fsett);
+   syncshallrun := true;
+end;
+
+procedure TFormMain.SnapSync();
 var
-    FormSettings : TFormSettings;
     FormSync : TFormSync;
-    FormAbout : TFormAbout;
+begin
+    if(not syncshallrun) then begin ShowMessage(rsOtherSyncProcess); exit(); end;
+    syncshallrun := false;
+
+    TRlog('DoSync');
+    if(isSyncConfigured()) then
+    begin
+       try
+          FormSync := TFormSync.Create(Self);
+          FormSync.SyncVisible();
+          ProcessSyncUpdates(FormSync.DeletedList, FormSync.DownloadList);
+          FreeAndNil(FormSync);
+          LastSync := now;
+       except on E:Exception do TRlog(E.message);
+       end;
+    end
+    else ShowMessage(rsSetupSyncFirst);
+    syncshallrun := true;
+end;
+
+procedure TFormMain.TrayMenuClicked(Sender : TObject);
 begin
 
    TRlog('TrayMenuClicked');
@@ -489,37 +526,11 @@ begin
                   then ShowMessage(rsSetupNotesDirFirst)
                   else OpenNote();
 
-        ttSettings:
-          begin
-            TRlog('TrayMenuClicked Settings');
-            syncshallrun := false;
-            FormSettings := TFormSettings.Create(self);
-            FormSettings.ShowModal;
-            FreeAndNil(FormSettings);
-            syncshallrun := true;
-          end;
+        ttSettings: ShowSettings();
 
-        ttSync :
-          begin
-            if(not syncshallrun) then begin ShowMessage(rsOtherSyncProcess); exit(); end;
-            syncshallrun := false;
-            TRlog('TrayMenuClicked Sync');
-            if(isSyncConfigured()) then
-            begin
-               try
-                  FormSync := TFormSync.Create(Self);
-                  FormSync.SyncVisible();
-                  ProcessSyncUpdates(FormSync.DeletedList, FormSync.DownloadList);
-                  FreeAndNil(FormSync);
-                  LastSync := now;
-               except on E:Exception do TRlog(E.message);
-               end;
-            end
-            else ShowMessage(rsSetupSyncFirst);
-            syncshallrun := true;
-          end;
+        ttSync : SnapSync();
 
-        ttAbout : Begin FormAbout := TFormAbout.Create(self); FormAbout.ShowModal; FreeAndNil(FormAbout); end;
+        ttAbout : ShowAbout();
 
         ttSearch : begin Show(); end;
 
@@ -535,9 +546,6 @@ end;
 
 procedure TFormMain.MainMenuClicked(Sender : TObject);
 var
-    FormSettings : TFormSettings;
-    FormSync : TFormSync;
-    FormAbout : TFormAbout;
     s : String;
 begin
 
@@ -560,34 +568,11 @@ begin
             end;
           end;
 
-        mtSettings: begin
-            if(not syncshallrun) then begin ShowMessage(rsOtherSyncProcess); exit(); end;
-            syncshallrun := false;
-            TRlog('MainMenuClicked Settings');
-            FormSettings := TFormSettings.Create(self);
-            FormSettings.ShowModal;
-            FreeAndNil(FormSettings);
-            syncshallrun := true;
-          end;
+        mtSettings: ShowSettings();
 
-        mtSync : begin
-            TRlog('MainMenuClicked Sync');
-            if(isSyncConfigured()) then
-            begin
-               syncshallrun := false;
-               try
-                  FormSync := TFormSync.Create(Self);
-                  FormSync.SyncVisible();
-                  TRlog('menu click mtSync done');
-                  FreeAndNil(FormSync);
-               except on E:Exception do TRlog(E.message);
-               end;
-               syncshallrun := true;
-            end
-            else ShowMessage(rsSetupSyncFirst);
-            end;
+        mtSync : SnapSync();
 
-        mtAbout : Begin FormAbout := TFormAbout.Create(self); FormAbout.ShowModal; FreeAndNil(FormAbout); end;
+        mtAbout : ShowAbout();
 
         mtQuit : begin ConfigWrite('MainMenu QUit'); Application.terminate; end;
    end;
@@ -1217,9 +1202,6 @@ end;
 
 procedure TFormMain.FormKeyDown(Sender: TObject; var Key: Word;
     Shift: TShiftState);
-var
-   FormSettings : TFormSettings;
-   FormSync : TFormSync;
 begin
   TRlog('KeyDown '+IntToStr(Key));
 
@@ -1237,36 +1219,14 @@ begin
      if key = ord('S') then
      begin
         TRlog('Ctrl-S');
-        syncshallrun := false;
-        if(isSyncConfigured()) then
-          begin
-             try
-                FormSync := TFormSync.Create(Self);
-                FormSync.SyncVisible();
-                ProcessSyncUpdates(FormSync.DeletedList, FormSync.DownloadList);
-                FreeAndNil(FormSync);
-                LastSync := now;
-             except on E:Exception do TRlog(E.message);
-             end;
-          end
-        else ShowMessage(rsSetupSyncFirst);
-
-        syncshallrun := true;
+        SnapSync();
         exit();
      end;
 
      // Settings
-     if key = ord('O') then
-        begin
-          TRlog('Ctrl-O');
-          syncshallrun := false;
-          FormSettings := TFormSettings.Create(self);
-          FormSettings.ShowModal;
-          FreeAndNil(FormSettings);
-          syncshallrun := true;
-          exit();
-        end;
-        exit();
+     if key = ord('O') then ShowSettings();
+
+     exit();
    end;
 
   // SHIFT

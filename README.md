@@ -14,6 +14,7 @@ This is a fork from tomboy-ng, after obvious mis-alignement of users need and so
 
 ![alt text](https://github.com/grosjo/tomboy-reborn/blob/master/Screenshot%20from%202020-05-19%2008-09-13.png)
 
+![alt text](https://github.com/grosjo/tomboy-reborn/blob/master/Screenshot%20from%202020-05-23%2020-02-18.png)
 
 Prerequisites
 -------------

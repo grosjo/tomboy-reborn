@@ -8,8 +8,14 @@ uses
     Classes, SysUtils, { FileUtil,} Forms, Controls, Graphics, Dialogs, ExtCtrls,
     Menus, StdCtrls, Buttons, kmemo, LazLogger, PrintersDlgs,
     clipbrd, lcltype,      // required up here for copy on selection stuff.
-    fpexprpars,         // for calc stuff ;
-    TRcommon, TRmain,
+    fpexprpars, LazUTF8,        // for calc stuff ;
+    keditcommon,        // Holds some editing defines
+    LazFileUtils,		// For ExtractFileName()
+    math,
+    FileUtil, strutils,         // just for ExtractSimplePath ... ~#1620
+    LCLIntf,
+
+    TRcommon, TrTexts,
     SaveNote;      		// TO BE REMOVED
 
 
@@ -19,56 +25,47 @@ type TTagType = ( TagNone, TagBold, TagItalic, TagHighLight, TagUnderline,
               TagStrikeout, TagMonospace, TagSizeSmall, TagSizeLarge,
               TagSizeHuge, TagList, TagLinkInternal, TagLinkUrl);
 
+ type TNoteMenuTags = (ntCommit, ntClose, ntSync, ntFind, ntSearchAll, ntSettings,
+      ntAbout,ntDuplicate, ntDelete, ntMarkdown, ntRTF, ntPlain, ntPrint,
+      ntRedo, ntUndo, ntCopy, ntCut, ntPaste, ntLink, ntURL, ntBold, ntItalic,
+      ntStrike, ntUnderlined, ntFixed, ntHighlight, ntFontPLus, ntFontMinus,
+      ntBullet, ntBulletInc, ntBulletDec,ntNoNotebook, ntNewNotebook);
+
+
 type
 
 { TFormNote }
 
  TFormNote = class(TForm)
+  ButtonFindPrev: TButton;
+  ButtonFindNext: TButton;
+  CheckboxFindInNote: TCheckBox;
+  EditFindInNote: TEdit;
+
     KMemo1: TKMemo;
-    MenuBold: TMenuItem;
-    MenuItalic: TMenuItem;
-    MenuHighLight: TMenuItem;
-    MenuHuge: TMenuItem;
-    MenuBullet: TMenuItem;
+    MainMenu: TMainMenu;
+    FileMenu, EditMenu, FormatMenu, ToolsMenu, NotebooksMenu : TMenuItem;
+
     MenuItem1: TMenuItem;
-    MenuItem4: TMenuItem;
-    MenuItemSettings: TMenuItem;
-    MenuItemEvaluate: TMenuItem;
-    MenuItemIndex: TMenuItem;
-    MenuItemExportMarkdown: TMenuItem;
-    MenuItemSpell: TMenuItem;
-    MenuItemExportRTF: TMenuItem;
-    MenuItemExportPlainText: TMenuItem;
-    MenuItemPrint: TMenuItem;
     MenuItemSelectAll: TMenuItem;
     MenuItem5: TMenuItem;
     MenuItemDelete: TMenuItem;
     MenuItemPaste: TMenuItem;
     MenuItemCopy: TMenuItem;
     MenuItemFind: TMenuItem;
-    MenuItem3: TMenuItem;
     MenuItemCut: TMenuItem;
-    MenuItemSync: TMenuItem;
-    MenuItemExport: TMenuItem;
-    MenuSmall: TMenuItem;
-    MenuItem2: TMenuItem;
-    MenuNormal: TMenuItem;
-    MenuLarge: TMenuItem;
-    MenuFixedWidth: TMenuItem;
-    MenuUnderline: TMenuItem;
-    MenuStrikeout: TMenuItem;
     Panel1: TPanel;
+    Panel2: TPanel;
     PopupMenuRightClick: TPopupMenu;
-    PopupMenuTools: TPopupMenu;
-    PopupMenuText: TPopupMenu;
     PrintDialog1: TPrintDialog;
-    SpeedButtonDelete: TSpeedButton;
-    SpeedButtonLink: TSpeedButton;
-    SpeedButtonNotebook: TSpeedButton;
-    SpeedButtonSearch: TSpeedButton;
-    SpeedButtonText: TSpeedButton;
-    SpeedButtonTools: TSpeedButton;
 
+    procedure MainMenuClicked(Sender : TObject);
+    procedure ToggleNotebook(Sender : TObject);
+
+    procedure ButtonFindNextClick(Sender: TObject);
+    procedure ButtonFindPrevClick(Sender: TObject);
+    procedure CheckboxFindInNoteChange(Sender: TObject);
+    procedure EditFindInNoteChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -112,12 +109,7 @@ type
     procedure MenuLargeClick(Sender: TObject);
     procedure MenuNormalClick(Sender: TObject);
     procedure MenuSmallClick(Sender: TObject);
-    procedure SpeedButtonDeleteClick(Sender: TObject);
-    procedure SpeedButtonLinkClick(Sender: TObject);
     procedure SpeedButtonNotebookClick(Sender: TObject);
-    procedure SpeedButtonSearchClick(Sender: TObject);
-    procedure SpeedButtonTextClick(Sender: TObject);
-    procedure SpeedButtonToolsClick(Sender: TObject);
     procedure TimerSaveTimer(Sender: TObject);
     procedure TimerHousekeepingTimer(Sender: TObject);
 
@@ -136,24 +128,37 @@ private
     // Set True by the delete button so we don't try and save it.
     DeletingThisNote : boolean;
 
+    FontSizeNormal, FontSizeLarge, FontSizeTitle, FontSizeHuge, FontSizeSmall : integer;
     procedure SetFontSizes();
-    procedure NoteToMemo();
-    procedure MemoToNote();
-    procedure MarkDirty();
-    function GetTitle(): String;
-    procedure Commit();
-
-
-    { Take a piece of text into KMemo block recursively }
-    procedure TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange);
 
     function ReplaceAngles(const Str : String) : String;
 
-    { Makes sure the first (and only the first) line is marked as Title
-          Title should be Blue, Underlined and FontTitle big.
-          Note that when a new note is loaded from disk, this function is not called,
-          the Load unit knows how to do it itself. Saves 200ms with a big (20K) note. }
+    procedure NoteToMemo();
+    procedure MemoToNote();
     procedure MarkTitle();
+    procedure MarkDirty();
+    procedure Commit();
+
+    procedure ShowSearchPanel(s : boolean);
+    procedure UpdateMenu(Sender: TObject);
+
+    function isInBullet() : boolean;
+    function isBold() : boolean;
+    function isItalic() : boolean;
+    function isUnderlined() : boolean;
+    function isStriked() : boolean;
+    function isHighlight() : boolean;
+    function isFixedFont() : boolean;
+
+
+
+    function GetTitle(): String;
+
+
+    { Take a piece of text into KMemo block recursively }
+    procedure TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
+
+
 
 
         { Alters the Font of Block as indicated }
@@ -229,15 +234,14 @@ private
         procedure SetPrimarySelection;
         // Cancels any indication we can do middle button paste cos nothing is selected
         procedure UnsetPrimarySelection;
-    public
-        note : PNoteInfo;
-
     private
         AlreadyLoaded : boolean;
         Dirty : boolean;
-        FontSizeHuge, FontSizeLarge, FontSizeNormal, FontSizeSmall, FontSizeTitle : integer;
+    public
+          note : PNoteInfo;
 
-        SearchedTerm : string;  // If not empty, opening is associated with a search, go straight there.
+
+
     end;
 
 type PNoteEditForm = ^TFormNote;
@@ -247,87 +251,16 @@ implementation
 {$R *.lfm}
 
 { TFormNote }
-uses LazUTF8,
-    keditcommon,        // Holds some editing defines
-    LazFileUtils,		// For ExtractFileName()
-    math,
-    FileUtil, strutils,         // just for ExtractSimplePath ... ~#1620
-    LCLIntf,
-
+uses
     Spelling,
     K_Prn,              // Custom print unit.
-    Markdown;
+    TRabout,TRmain, Markdown;
 
 
 const
         LinkScanRange = 100;	// when the user changes a Note, we search +/- around
      							// this value for any links that need adjusting.
 
-{  ---- U S E R   C L I C K   F U N C T I O N S ----- }
-
-
-
-procedure TFormNote.SpeedButtonTextClick(Sender: TObject);
-begin
-   PopupMenuText.PopUp;
-end;
-
-procedure TFormNote.SpeedButtonToolsClick(Sender: TObject);
-begin
-   PopupMenuTools.PopUp;
-end;
-
-procedure TFormNote.SpeedButtonSearchClick(Sender: TObject);
-begin
-    //SearchForm.Show;
-end;
-
-procedure TFormNote.SpeedButtonDeleteClick(Sender: TObject);
-var
-    St : string;
-begin
-    if KMemo1.ReadOnly then exit();
-    St := CleanCaption();
-   if IDYES = Application.MessageBox('Delete this Note', PChar(St), MB_ICONQUESTION + MB_YESNO) then begin
-        //if SingleNoteMode then
-        //    DeleteFileUTF8(NoteFileName)
-   	//	else if NoteFileName <> '' then
-	   		    //SearchForm.DeleteNote(NoteFileName);
-        Dirty := False;
-        //DeletingThisNote := True;
-		Close;
-   end;
-end;
-
-procedure TFormNote.SpeedButtonLinkClick(Sender: TObject);
-var
-    ThisTitle : ANSIString;
-    Index : integer;
-    SL : TStringList;
-begin
-   if KMemo1.ReadOnly then exit();
-	if KMemo1.Blocks.RealSelLength > 1 then begin
-         ThisTitle := KMemo1.SelText;
-        // Titles must not start or end with space or contain low characters
-        while ThisTitle[1] = ' ' do UTF8Delete(ThisTitle, 1, 1);
-        while ThisTitle[UTF8Length(ThisTitle)] = ' ' do UTF8Delete(ThisTitle, UTF8Length(ThisTitle), 1);
-        Index := Length(ThisTitle);
-        While Index > 0 do begin
-            if ThisTitle[Index] < ' ' then delete(ThisTitle, Index, 1);
-            dec(Index);
-		end;
-		// showmessage('[' + KMemo1.SelText +']' + LineEnding + '[' + ThisTitle + ']' );
-        if UTF8Length(ThisTitle) > 1 then begin
-            SL := TStringList.Create;
-            //SearchForm.NoteLister.GetNotebooks(SL, ExtractFileNameOnly(NoteFileName));      // that should be just ID
-            //if SL.Count > 0 then
-            //    SearchForm.OpenNote(ThisTitle, '', SL.Strings[0])
-        //	else SearchForm.OpenNote(ThisTitle);
-            KMemo1Change(self);
-            SL.Free;
-		end;
-	end;
-end;
 
 procedure TFormNote.SetFontSizes();
 begin
@@ -345,6 +278,7 @@ var
 begin
    s := StringReplace(Str,'&lt;','<',[rfReplaceAll]);
    s := StringReplace(s,'&gt;','>',[rfReplaceAll]);
+   s := StringReplace(s,'&#x9;',#9,[rfReplaceAll]);
    Result := StringReplace(s,'&amp;','&',[rfReplaceAll]);
 end;
 
@@ -366,24 +300,26 @@ begin
    TFormMain(mainWindow).OpenUrlNoteByTitle(u);
 end;
 
-procedure TFormNote.TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange);
+procedure TFormNote.TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
 var
-    i,j,k : integer;
-    Ktext,tagtext,sub : String;
+    i,j,k,m : integer;
+    Ktext,tagtext,sub,chr : String;
     tagtype : TTagType;
-    ch : Char;
     par : TKMemoParagraph;
     ktb : TKMemoTextBlock;
     f : TFont;
     hl : TKMemoHyperlink;
+    ch : Char;
 begin
-   i:=0; j:= length(s);
+   i:=1; j:= length(s);
+
    Ktext := '';
 
-   TRlog('TFormNote.TextToMemo (j='+IntToStr(j)+')');
-   TRlog('SUB "'+s+'"');
+   TRlog('TFormNote.TextToMemo (j='+IntToStr(j)+') LEVEL='+IntToStr(Level));
+   TRlog('SUB "'+Copy(s,0,50)+'"');
 
    if(newpar) then begin
+      TRlog('NEWPAR');
       par := KMemo1.Blocks.AddParagraph;
       if InBullet then
       begin
@@ -393,63 +329,27 @@ begin
       end;
    end;
 
-   while (i<j) do
+   while (i<=j) do
    begin
-      ch := s.Chars[i];
+      chr := Copy(s,i,1);
+      ch := chr.Chars[0];
       if Ch = #13 then begin inc(i); continue; end; // Micro$ bug
-      if Ch = #9 then Ch := ' ';    // dont care tabs
+      if Ch = #9 then begin Ch := ' ';  Chr := '   '; end; // Tabs
 
       tagtext :='';
       tagtype := TTagType.TagNone;
 
-      if (Ch = '<') then  // new tag
+      if ((Ch >= ' ') and (Ch <> '<') ) then
       begin
-//        type TTagType = ( TagBold, TagItalic, TagHighLight, TagUnderline, TagStrikeout, TagMonospace, TagSizeSmall, TagSizeLarge, TagSizeHuge, TagList, TagLinkInternal, TagLinkUrl);
-
-         if(CompareStr(LowerCase(Copy(s,i,4)),'bold')=0)                    then begin tagtext := 'bold'; tagtype := TTagType.TagBold; end
-          else if(CompareStr(LowerCase(Copy(s,i,6)),'italic')=0)            then begin tagtext := 'italic'; tagtype := TTagType.TagItalic; end
-          else if(CompareStr(LowerCase(Copy(s,i,9)),'highlight')=0)         then begin tagtext := 'highLight'; tagtype := TTagType.TagHighLight; end
-          else if(CompareStr(LowerCase(Copy(s,i,9)),'underline')=0)         then begin tagtext := 'underline'; tagtype := TTagType.TagUnderline; end
-          else if(CompareStr(LowerCase(Copy(s,i,9)),'strikeout')=0)         then begin tagtext := 'strikeout'; tagtype := TTagType.TagStrikeout; end
-          else if(CompareStr(LowerCase(Copy(s,i,9)),'monospace')=0)         then begin tagtext := 'monospace'; tagtype := TTagType.TagMonospace; end
-          else if(CompareStr(LowerCase(Copy(s,i,10)),'size:small')=0)       then begin tagtext := 'size:small'; tagtype := TTagType.TagSizeSmall; end
-          else if(CompareStr(LowerCase(Copy(s,i,10)),'size:large')=0)       then begin tagtext := 'size:large'; tagtype := TTagType.TagSizeLarge; end
-          else if(CompareStr(LowerCase(Copy(s,i,10)),'size:huge')=0)        then begin tagtext := 'size:huge'; tagtype := TTagType.TagSizeHuge; end
-          else if(CompareStr(LowerCase(Copy(s,i,10)),'list-item')=0)        then begin tagtext := 'list-item'; tagtype := TTagType.TagList; end
-          else if(CompareStr(LowerCase(Copy(s,i,8)),'link:url')=0)          then begin tagtext := 'link:url'; tagtype := TTagType.TagLinkUrl; end
-          else if(CompareStr(LowerCase(Copy(s,i,13)),'link:internal')=0)    then begin tagtext := 'link:internal'; tagtype := TTagType.TagLinkInternal; end;
-
-          while( (i<j) and (s.Chars[i] <> '>')) do inc(i); // end of opening tag
-          sub := LowerCase(Copy(s,i));
-          k:= Pos('</'+tagtext,sub);
-          if(k<1) then k:=length(sub);
-          sub:=Copy(s,i,k-1);
-          i:= i+k;
-          while( (i<j) and (s.Chars[i] <> '>')) do inc(i); // end of closing tag
-
-          case tagtype of
-              TTagType.TagBold         : TextToMemo(sub, true, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize);
-              TTagType.TagItalic       : TextToMemo(sub, Bold, true,   HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize);
-              TTagType.TagHighlight    : TextToMemo(sub, Bold, Italic, true,      Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize);
-              TTagType.TagUnderline    : TextToMemo(sub, Bold, Italic, HighLight, true,      Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize);
-              TTagType.TagStrikeout    : TextToMemo(sub, Bold, Italic, HighLight, Underline, true,      FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize);
-              TTagType.TagMonospace    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, true,       InBullet, false, linkinternal, linkexternal, FontSize);
-              TTagType.TagSizeSmall    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, TFontRange.FontSmall);
-              TTagType.TagSizeLarge    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, TFontRange.FontLarge);
-              TTagType.TagSizeHuge     : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, TFontRange.FontHuge);
-              TTagType.TagList         : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, true,     true,  linkinternal, linkexternal, FontSize);
-              TTagType.TagLinkInternal : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, true,         false,        FontSize);
-              TTagType.TagLinkUrl      : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, false,        true,         FontSize);
-              else KText := KText + sub;
-          end;
+          TRlog('Adding CHR = "'+Chr+'" ; Ch = "'+Ch+'")');
+          Ktext := Ktext + Chr;
+          inc(i);
       end;
 
-      if(Ch >= ' ') then Ktext := Ktext + ch;
-
-      if((length(Ktext)>0) and ((Ch < ' ') or (tagtype <> TagNone) or (i>j-1))) then
+      if((length(Ktext)>0) and ((Ch < ' ') or (Ch = '<') or (i>j))) then
       begin
+         Trlog('Pushing block (current blocks ='+IntToStr(KMemo1.Blocks.Count)+')');
          Ktext := ReplaceAngles(Ktext); // We have to scan InStr for &lt; and &gt;  being < and >
-         ktb := KMemo1.Blocks.AddTextBlock(KText);
 
          f := TFont.Create();
          f.Style := [];
@@ -468,37 +368,115 @@ begin
              else f.Size:= Self.FontSizeNormal;
          end;
 
-         ktb.TextStyle.Font := f;
-         if HighLight then ktb.TextStyle.Brush.Color := HiColour;
-
-         f.Free;
 
          if(linkinternal) then
          begin
+            Trlog('Internal link on block '+ IntToStr(KMemo1.Blocks.Count-1)+' : ' + Ktext);
             hl := TKMemoHyperlink.Create;
             hl.Text := KText;
+            KMemo1.Blocks.AddHyperlink(hl);
+            hl.URL := 'note://'+KText;
             hl.OnClick := @InternalLink;
-            KMemo1.Blocks.AddHyperlink(hl, KMemo1.Blocks.Count-1);
+            f.Color := clBlue;
+            f.Style := f.Style + [fsUnderline];
+            hl.TextStyle.Font := f;
+            if HighLight then hl.TextStyle.Brush.Color := HiColour;
          end
          else if(linkexternal) then
          begin
+            Trlog('External link on block '+ IntToStr(KMemo1.Blocks.Count-1)+' : ' + Ktext);
             hl := TKMemoHyperlink.Create;
             hl.Text := KText;
+            KMemo1.Blocks.AddHyperlink(hl);
+            hl.URL := KText;
             hl.OnClick := @ExternalLink;
-            KMemo1.Blocks.AddHyperlink(hl, KMemo1.Blocks.Count-1);
+            f.Color := clBlue;
+            f.Style := f.Style + [fsUnderline];
+            hl.TextStyle.Font := f;
+            if HighLight then hl.TextStyle.Brush.Color := HiColour;
+         end
+         else begin
+            ktb := KMemo1.Blocks.AddTextBlock(KText);
+            ktb.TextStyle.Font := f;
+            if HighLight then ktb.TextStyle.Brush.Color := HiColour;
          end;
+
+         Trlog('Pushing block (after blocks ='+IntToStr(KMemo1.Blocks.Count)+')');
+
+         f.Free;
+
 
          Ktext := '';
       end;
 
-      inc(i);
-
       if (Ch<' ') then // add Paragraph
       begin
-         TRlog('New par i='+IntToStr(i)+' j='+IntToStr(j)+' s="'+s+'"');
-         TextToMemo(Copy(s,i+1), Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, true,false,false,FontSize);
-         i:=j;
+         TRlog('NEWPAR2');
+         par := KMemo1.Blocks.AddParagraph;
+         if InBullet then
+         begin
+            par.Numbering := pnuBullets;
+            par.NumberingListLevel.FirstIndent := -20;    // Note, these numbers need match SettBullet() in editbox
+            par.NumberingListLevel.LeftIndent := 30;
+         end;
+         inc(i);
       end;
+
+      if (Ch = '<') then  // new tag
+      begin
+         tagtext:= LowerCase(Trim(Copy(s,i+1,20)));
+         TRlog('Testing tag : '+tagtext+' ...');
+         k:=Pos('>',tagtext); if(k<1) then k := length(tagtext)+1;
+         tagtext := Copy(tagtext,0,k-1);
+         k:=Pos(' ',tagtext); if(k<1) then k := length(tagtext)+1;
+         tagtext := Copy(tagtext,0,k-1);
+         TRlog('Testing tag2 : '+tagtext);
+
+         if(CompareStr(tagtext,'bold')=0)                    then      tagtype := TTagType.TagBold
+          else if(CompareStr(tagtext,'italic')=0)            then      tagtype := TTagType.TagItalic
+          else if(CompareStr(tagtext,'highlight')=0)         then      tagtype := TTagType.TagHighLight
+          else if(CompareStr(tagtext,'underline')=0)         then      tagtype := TTagType.TagUnderline
+          else if(CompareStr(tagtext,'strikeout')=0)         then      tagtype := TTagType.TagStrikeout
+          else if(CompareStr(tagtext,'monospace')=0)         then      tagtype := TTagType.TagMonospace
+          else if(CompareStr(tagtext,'size:small')=0)        then      tagtype := TTagType.TagSizeSmall
+          else if(CompareStr(tagtext,'size:large')=0)        then      tagtype := TTagType.TagSizeLarge
+          else if(CompareStr(tagtext,'size:huge')=0)         then      tagtype := TTagType.TagSizeHuge
+          else if(CompareStr(tagtext,'list-item')=0)         then      tagtype := TTagType.TagList
+          else if(CompareStr(tagtext,'link:url')=0)          then      tagtype := TTagType.TagLinkUrl
+          else if(CompareStr(tagtext,'link:internal')=0)     then      tagtype := TTagType.TagLinkInternal;
+
+         sub := Copy(s,i+1);
+         k:= Pos('>', sub); if(k<1) then k := length(sub)+1;
+         sub := LowerCase(Copy(s,i+k+1));
+         m:= Pos('</'+tagtext,sub); if(m<1) then m:=length(sub)+1;
+         sub:=Copy(s,i+k+1,m-1);
+
+         TRlog('Inside tag (length='+IntToStr(length(sub))+') : '+Copy(sub,0,30)+' ...');
+
+         case tagtype of
+            TTagType.TagBold         : TextToMemo(sub, true, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
+            TTagType.TagItalic       : TextToMemo(sub, Bold, true,   HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
+            TTagType.TagHighlight    : TextToMemo(sub, Bold, Italic, true,      Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
+            TTagType.TagUnderline    : TextToMemo(sub, Bold, Italic, HighLight, true,      Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
+            TTagType.TagStrikeout    : TextToMemo(sub, Bold, Italic, HighLight, Underline, true,      FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
+            TTagType.TagMonospace    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, true,       InBullet, false, linkinternal, linkexternal, FontSize, level+1);
+            TTagType.TagSizeSmall    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, TFontRange.FontSmall, level+1);
+            TTagType.TagSizeLarge    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, TFontRange.FontLarge, level+1);
+            TTagType.TagSizeHuge     : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, TFontRange.FontHuge, level+1);
+            TTagType.TagList         : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, true,     true,  linkinternal, linkexternal, FontSize, level+1);
+            TTagType.TagLinkInternal : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, true,         false,        FontSize, level+1);
+            TTagType.TagLinkUrl      : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, false,        true,         FontSize, level+1);
+            else TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
+         end;
+
+         i:=i+k+m;
+         sub := Copy(s,i+1);
+         k:= Pos('>', sub); if(k<1) then k := length(sub)+1;
+         i:=i+k+1;
+         TRlog('After tag : '+Copy(s,i,30)+' ...');
+      end;
+
+      TRlog('New loop LEVEL='+IntToStr(level)+' i='+IntToStr(i)+' j='+IntToStr(j) );
    end;
 end;
 
@@ -543,7 +521,12 @@ begin
    KMemo1.Clear;
    TRlog('Dealing with content3');
 
-   TextToMemo(note^.Content, false, false, false, false, false, false, false, false,false,false,TFontRange.FontNormal);
+   TextToMemo(note^.Content, false, false, false, false, false, false, false, false,false,false,TFontRange.FontNormal,0);
+
+   TRlog('Cursor position '+IntToStr(note^.CursorPosition));
+
+   KMemo1.SelStart := note^.CursorPosition;
+   KMemo1.SelEnd   := note^.CursorPosition+1;
 
    TRlog('Dealing with content end');
 
@@ -627,6 +610,72 @@ begin
             // TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).Numbering := pnuBullets;
         end;
     until (BlockNo > LastBlock) and KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph');
+end;
+
+function TFormNote.isBold() : boolean;
+var
+   BlockNo, PosInBlock: longint;
+begin
+   BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
+   if(not KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
+   exit(fsBold in TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]).TextStyle.Font.Style);
+end;
+
+function TFormNote.isItalic() : boolean;
+var
+   BlockNo, PosInBlock: longint;
+begin
+   BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
+   if(not KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
+   exit(fsItalic in TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]).TextStyle.Font.Style);
+end;
+
+function TFormNote.isUnderlined() : boolean;
+var
+   BlockNo, PosInBlock: longint;
+begin
+   BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
+   if(not KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
+   exit(fsUnderline in TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]).TextStyle.Font.Style);
+end;
+
+function TFormNote.isStriked() : boolean;
+var
+   BlockNo, PosInBlock: longint;
+begin
+   BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
+   if(not KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
+   exit(fsStrikeOut in TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]).TextStyle.Font.Style);
+end;
+
+function TFormNote.isHighlight() : boolean;
+var
+   BlockNo, PosInBlock: longint;
+begin
+   BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
+   if(not KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
+   exit(TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]).TextStyle.Brush.Color = HiColour);
+end;
+
+function TFormNote.isFixedFont() : boolean;
+var
+   BlockNo, PosInBlock: longint;
+begin
+   BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
+   if(not KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
+   exit(CompareText(TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]).TextStyle.Font.Name,FixedFont) = 0);
+end;
+
+function TFormNote.isInBullet() : boolean;
+var
+   BlockNo, PosInBlock: longint;
+begin
+   BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
+   while((BlockNo>=0) and (not kmemo1.blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph')))
+   do dec(BlockNo);
+   if(BlockNo<0) then exit(false);
+
+   exit(TKMemoParagraph(kmemo1.blocks.Items[BlockNo]).Numbering = pnuBullets);
 end;
 
 procedure TFormNote.MenuBulletClick(Sender: TObject);
@@ -1210,6 +1259,7 @@ end;
 procedure TFormNote.FormShow(Sender: TObject);
 begin
    TRlog('TFormNote.FormShow');
+
    if Processing then exit();				// its a "re-show" event. Already have a note loaded.
 
    TRlog('TFormNote.FormShow Testing loaded');
@@ -1226,14 +1276,16 @@ begin
    KMemo1.SetFocus;
 
    KMemo1.Blocks.LockUpdate;
-
    {$ifdef windows}
     Color:= TextColour;
    {$endif}
    KMemo1.Colors.BkGnd:= BackGndColour;
    Kmemo1.Blocks.DefaultTextStyle.Font.Color := TextColour;
-
    KMemo1.Blocks.UnLockUpdate;
+
+   ShowSearchPanel(false);
+
+   UpdateMenu(nil);
 end;
 
 procedure TFormNote.FormCloseQuery(Sender: TObject; var CanClose: boolean);
@@ -1250,7 +1302,25 @@ begin
 
 end;
 
+procedure TFormNote.ShowSearchPanel(s : boolean);
+begin
+  if(s) then
+  begin
+     TRlog('Showing Search panel');
+     Panel2.Visible:=true;
+     //Panel1.AnchorSideBottom.Control := Panel2;
+  end
+  else
+  begin
+     TRlog('Hidding Search panel');
+     //Panel1.AnchorSideBottom.Control := Self;
+     Panel2.Visible:=false;
+  end;
+end;
+
 procedure TFormNote.FormCreate(Sender: TObject);
+var
+    m1,m2 : TMenuItem;
 begin
   TRlog('TFormNote.FormCreate');
   AlreadyLoaded := false;
@@ -1265,6 +1335,159 @@ begin
     MenuItemFind.ShortCut  := KeyToShortCut(VK_F, [ssMeta]);
     MenuItemEvaluate.ShortCut := KeyToShortCut(VK_E, [ssMeta]);
   {$endif}
+
+  MainMenu.Items.Clear;
+  MainMenu.Images := TFormMain(mainWindow).MenuIconList;
+
+  // 'File'
+  FileMenu := TMenuItem.Create(MainMenu);
+  FileMenu.Caption := rsMenuNotes;
+  MainMenu.Items.Add(FileMenu);
+  // 'File' / Search All
+  m1 := TMenuItem.Create(FileMenu);
+  m1.Tag := ord(ntSearchAll);
+  m1.Caption := rsTraySearchNote;
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=5;
+  FileMenu.Add(m1);
+  // 'File' / Search This
+  m1 := TMenuItem.Create(FileMenu);
+  m1.Tag := ord(ntFind);
+  m1.Caption := rsMenuFind + ' (Ctrl-F)';
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=15;
+  FileMenu.Add(m1);
+  // 'File' / Duplicate
+  FileMenu.AddSeparator;
+  m1 := TMenuItem.Create(FileMenu);
+  m1.Tag := ord(ntDuplicate);
+  m1.Caption := rsMenuDuplicate;
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=13;
+  FileMenu.Add(m1);
+  // 'File' / Commit
+  m1 := TMenuItem.Create(FileMenu);
+  m1.Tag := ord(ntCommit);
+  m1.Caption := rsMenuSave + ' (Ctrl-S)';
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=14;
+  FileMenu.Add(m1);
+  // 'File' / Delete
+  FileMenu.AddSeparator;
+  m1 := TMenuItem.Create(FileMenu);
+  m1.Tag := ord(ntDelete);
+  m1.Caption := rsMenuDelete;
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=11;
+  FileMenu.Add(m1);
+
+  // 'Edit'
+  EditMenu := TMenuItem.Create(MainMenu);
+  EditMenu.Caption := rsMenuEdit;
+  MainMenu.Items.Add(EditMenu);
+
+  // 'Format'
+  FormatMenu := TMenuItem.Create(MainMenu);
+  FormatMenu.Caption := rsMenuFormat;
+  MainMenu.Items.Add(FormatMenu);
+
+  // 'Notebooks'
+  NotebooksMenu := TMenuItem.Create(MainMenu);
+  NotebooksMenu.Caption := rsTrayNotebooks;
+  MainMenu.Items.Add(NotebooksMenu);
+
+  // 'Tools'
+  ToolsMenu := TMenuItem.Create(MainMenu);
+  ToolsMenu.Caption := rsMenuTools;
+  MainMenu.Items.Add(ToolsMenu);
+
+  // 'Tools' / Sync
+  m1 := TMenuItem.Create(ToolsMenu);
+  m1.Tag := ord(ntSync);
+  m1.Caption := rsMenuSync;
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=10;
+  ToolsMenu.Add(m1);
+
+  // Tools / Export
+  m1 := TMenuItem.Create(ToolsMenu);
+  m1.Caption := rsMenuExport;
+  m1.ImageIndex:=16;
+  ToolsMenu.Add(m1);
+  // Tools / Export / Markdown
+  m2 := TMenuItem.Create(m1);
+  m2.Tag := ord(ntMarkdown);
+  m2.Caption := rsMenuExportMarkdown;
+  m2.OnClick := @MainMenuClicked;
+  m2.ImageIndex:=18;
+  m1.Add(m2);
+  // Tools / Export / RTF
+  m2 := TMenuItem.Create(m1);
+  m2.Tag := ord(ntRTF);
+  m2.Caption := rsMenuExportRTF;
+  m2.OnClick := @MainMenuClicked;
+  m2.ImageIndex:=17;
+  m1.Add(m2);
+  // Tools / Export / Plain
+  m2 := TMenuItem.Create(m1);
+  m2.Tag := ord(ntPlain);
+  m2.Caption := rsMenuExportPlain;
+  m2.OnClick := @MainMenuClicked;
+  m2.ImageIndex:=19;
+  m1.Add(m2);
+
+  // 'Tools' / Print
+  m1 := TMenuItem.Create(ToolsMenu);
+  m1.Tag := ord(ntPrint);
+  m1.Caption := rsMenuPrint+' (Ctrl-P)';
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=20;
+  ToolsMenu.Add(m1);
+
+
+  // Tools / Settings
+  ToolsMenu.AddSeparator;
+  m1 := TMenuItem.Create(ToolsMenu);
+  m1.Tag := ord(ntSettings);
+  m1.Caption := rsMenuSettings + '(Ctrl-O)';
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=8;
+  ToolsMenu.Add(m1);
+
+  // 'Help'
+  m1 := TMenuItem.Create(MainMenu);
+  m1.Caption := rsMenuHelp;
+  MainMenu.Items.Add(m1);
+
+  // Help / About
+  m2 := TMenuItem.Create(m1);
+  m2.Caption := rsMenuAbout;
+  m2.Tag := ord(ntAbout);
+  m2.OnClick := @MainMenuClicked;
+  m2.ImageIndex:=9;
+  m1.Add(m2);
+
+
+end;
+
+procedure TFormNote.ButtonFindPrevClick(Sender: TObject);
+begin
+
+end;
+
+procedure TFormNote.CheckboxFindInNoteChange(Sender: TObject);
+begin
+
+end;
+
+procedure TFormNote.EditFindInNoteChange(Sender: TObject);
+begin
+
+end;
+
+procedure TFormNote.ButtonFindNextClick(Sender: TObject);
+begin
+
 end;
 
 procedure TFormNote.FormDestroy(Sender: TObject);
@@ -1272,13 +1495,6 @@ procedure TFormNote.FormDestroy(Sender: TObject);
     ARec : TNoteUpdateRec; }
 begin
   TrLog('TFormNote.FormDestroy');
-    UnsetPrimarySelection;                                      // tidy up copy on selection.
-    //if (length(NoteFileName) = 0) and (not Dirty) then exit;    // A new, unchanged note, no need to save.
-    //if not Kmemo1.ReadOnly then
-        //if not DeletingThisNote then
-            //if (not SingleNoteMode) or Dirty then       // We always save, except in SingleNoteMode (where we save only if dirty)
-            //    SaveTheNote(Sett.AreClosing);           // Jan 2020, just call SaveTheNote, it knows how to record the notebook state
-    //SearchForm.NoteClosing(NoteFileName);
 
 end;
 
@@ -1358,6 +1574,13 @@ begin
            ktb.TextStyle.Font.Style := [];
       end;
       inc(BlockNo);
+   end;
+
+   // Update title
+   if(CompareStr(title, note^.Title) <>0) then
+   begin
+      note^.Title := Title;
+      MarkDirty();
    end;
 
    KMemo1.Blocks.UnLockUpdate;
@@ -2142,7 +2365,7 @@ begin
             VK_H : MenuHighLightClick(Sender);
             VK_U : MenuUnderLineClick(Sender);
             //VK_F : MenuItemFindClick(self);
-            VK_L : SpeedButtonLinkClick(Sender);
+            //VK_L : SpeedButtonLinkClick(Sender);
             VK_D : InsertDate();
             //VK_N : SearchForm.OpenNote();      // MainForm.MMNewNoteClick(self);    ok as long as notes dir set .....
             VK_E : InitiateCalc();
@@ -2167,7 +2390,7 @@ begin
     //if KMemo1.ReadOnly then begin Key := 0; exit(); end;
     // ------------------ Control and Shift ----------------
     if [ssCtrl, ssShift] = Shift then begin
-       if key = ord('F') then begin SpeedButtonSearchClick(self); Key := 0; exit(); end;
+      // if key = ord('F') then begin SpeedButtonSearchClick(self); Key := 0; exit(); end;
        {$ifndef DARWIN}
        if (key = VK_RIGHT) or (Key = VK_LEFT) then exit;{$endif}            // KMemo knows how to do this, select word ...
        Key := 0;
@@ -2280,5 +2503,242 @@ begin
     end;
 end;
 
+{ ======= MAIN MENU ====== }
+
+procedure TFormNote.ToggleNotebook(Sender : TObject);
+begin
+
+   TRlog('TFormNote.ToggleNotebook');
+
+
+end;
+
+procedure TFormNote.MainMenuClicked(Sender : TObject);
+var
+    FormAbout : TFormAbout;
+    s : String;
+begin
+
+   TRlog('MainMenuClicked');
+
+   case TNoteMenuTags(TMenuItem(Sender).Tag) of
+
+        ntSettings: TFormMain(mainWIndow).ShowSettings();
+
+        ntSync : TFormMain(mainWIndow).SnapSync();
+
+        ntAbout : Begin FormAbout := TFormAbout.Create(self); FormAbout.ShowModal; FreeAndNil(FormAbout); end;
+
+   end;
+end;
+
+procedure TFormNote.UpdateMenu(Sender: TObject);
+var
+    m1,m2 : TMenuItem;
+    i : integer;
+begin
+
+  EditMenu.Clear;
+
+  // Edit / Undo
+  m1 := TMenuItem.Create(EditMenu);
+  m1.Tag := ord(ntUndo);
+  m1.Caption := rsMenuUndo+' (Ctrl-Z)';
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=24;
+  EditMenu.Add(m1);
+
+  // Edit / Redo
+  m1 := TMenuItem.Create(EditMenu);
+  m1.Tag := ord(ntRedo);
+  m1.Caption := rsMenuRedo+' (Ctrl-Y)';
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=25;
+  EditMenu.Add(m1);
+
+  EditMenu.AddSeparator;
+
+  // Edit / Cut
+  m1 := TMenuItem.Create(EditMenu);
+  m1.Tag := ord(ntCut);
+  m1.Caption := rsMenuCut+' (Ctrl-X)';
+  m1.OnClick := @MainMenuClicked;
+  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.ImageIndex:=23;
+  EditMenu.Add(m1);
+  // Edit / Copy
+  m1 := TMenuItem.Create(EditMenu);
+  m1.Tag := ord(ntCopy);
+  m1.Caption := rsMenuCopy+' (Ctrl-C)';
+  m1.OnClick := @MainMenuClicked;
+  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.ImageIndex:=21;
+  EditMenu.Add(m1);
+  // Edit / Paste
+  m1 := TMenuItem.Create(EditMenu);
+  m1.Tag := ord(ntPaste);
+  m1.Caption := rsMenuPaste+' (Ctrl-V)';
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=22;
+  EditMenu.Add(m1);
+
+  EditMenu.AddSeparator;
+
+  // Edit / Link to Note
+  m1 := TMenuItem.Create(EditMenu);
+  m1.Tag := ord(ntLink);
+  m1.Caption := rsMenuLink;
+  m1.OnClick := @MainMenuClicked;
+  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.ImageIndex:=26;
+  EditMenu.Add(m1);
+  // Edit / Link to URL
+  m1 := TMenuItem.Create(EditMenu);
+  m1.Tag := ord(ntURL);
+  m1.Caption := rsMenuURL;
+  m1.OnClick := @MainMenuClicked;
+  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.ImageIndex:=27;
+  EditMenu.Add(m1);
+
+  FormatMenu.Clear;
+
+  // Format / Bold
+  m1 := TMenuItem.Create(FormatMenu);
+  m1.Tag := ord(ntBold);
+  m1.Caption := rsMenuBold+' (Ctrl-B)';
+  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.OnClick := @MainMenuClicked;
+  m1.Checked := isBold();
+  m1.ImageIndex:=32;
+  FormatMenu.Add(m1);
+  // Format / Italic
+  m1 := TMenuItem.Create(FormatMenu);
+  m1.Tag := ord(ntItalic);
+  m1.Caption := rsMenuItalic+' (Ctrl-I)';
+  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.OnClick := @MainMenuClicked;
+  m1.Checked := isItalic();
+  m1.ImageIndex:=33;
+  FormatMenu.Add(m1);
+  // Format / Striekout
+  m1 := TMenuItem.Create(FormatMenu);
+  m1.Tag := ord(ntStrike);
+  m1.Caption := rsMenuStrikeout +' (Ctrl-S)';
+  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.OnClick := @MainMenuClicked;
+  m1.Checked := isStriked();
+  m1.ImageIndex:=29;
+  FormatMenu.Add(m1);
+  // Format / Underlined
+  m1 := TMenuItem.Create(FormatMenu);
+  m1.Tag := ord(ntUnderlined);
+  m1.Caption := rsMenuUnderlined+' (Ctrl-U)';
+  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.OnClick := @MainMenuClicked;
+  m1.Checked := isUnderlined();
+  m1.ImageIndex:=28;
+  FormatMenu.Add(m1);
+  // Format / Highlight
+  m1 := TMenuItem.Create(FormatMenu);
+  m1.Tag := ord(ntHighlight);
+  m1.Caption := rsMenuHighlight+' (Ctrl-H)';
+  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.OnClick := @MainMenuClicked;
+  m1.Checked := isHighlight();
+  m1.ImageIndex:=30;
+  FormatMenu.Add(m1);
+  // Format / FixedFont
+  m1 := TMenuItem.Create(FormatMenu);
+  m1.Tag := ord(ntFixed);
+  m1.Caption := rsMenuFixed+' (Ctrl-T)';
+  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.OnClick := @MainMenuClicked;
+  m1.Checked := isFixedFont();
+  m1.ImageIndex:=31;
+  FormatMenu.Add(m1);
+
+  FormatMenu.AddSeparator;
+
+  // Format / Font+
+  m1 := TMenuItem.Create(FormatMenu);
+  m1.Tag := ord(ntFontPlus);
+  m1.Caption := rsMenuFontPlus+' (Ctrl-+)';
+  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=35;
+  FormatMenu.Add(m1);
+  // Format / Font-
+  m1 := TMenuItem.Create(FormatMenu);
+  m1.Tag := ord(ntFontMinus);
+  m1.Caption := rsMenuFontMinus+' (Ctrl--)';
+  m1.Enabled:= (Length(KMemo1.SelText)>0);
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=34;
+  FormatMenu.Add(m1);
+
+  FormatMenu.AddSeparator;
+
+  // Format / Bullet Enable/Disable
+  m1 := TMenuItem.Create(FormatMenu);
+  m1.Tag := ord(ntBullet);
+  m1.Caption := rsMenuBullet;
+  m1.OnClick := @MainMenuClicked;
+  m1.Checked:= isInBullet();
+  m1.ImageIndex:=38;
+  FormatMenu.Add(m1);
+  // Format / Bullet increase
+  m1 := TMenuItem.Create(FormatMenu);
+  m1.Tag := ord(ntBulletInc);
+  m1.Caption := rsMenuBulletInc +' (Tab)';
+  m1.Enabled:= isInBullet();;
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=37;
+  FormatMenu.Add(m1);
+  // Format / Bullet decrease
+  m1 := TMenuItem.Create(FormatMenu);
+  m1.Tag := ord(ntBulletDec);
+  m1.Caption := rsMenuBulletDec +' (Shift-Tab)';
+  m1.Enabled:= isInBullet();;
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=36;
+  FormatMenu.Add(m1);
+
+  NotebooksMenu.Clear;
+
+  // Notebooks / None
+  m1 := TMenuItem.Create(NotebooksMenu);
+  m1.Tag := ord(ntNoNotebook);
+  m1.Caption := rsNoNotebook;
+  m1.OnClick := @MainMenuClicked;
+  m1.Checked := NoteBelongs('-',note);
+  m1.ImageIndex:=39;
+  NotebooksMenu.Add(m1);
+
+  // Notebooks / List
+  i:=0;
+  while(i< TFormMain(mainWindow).NotebooksList.Count)
+  do begin
+     m1 := TMenuItem.Create(NotebooksMenu);
+     m1.Tag := i;
+     m1.Caption := TFormMain(mainWindow).NotebooksList.Strings[i];
+     m1.OnClick := @ToggleNotebook;
+     m1.Checked := NoteBelongs(TFormMain(mainWindow).NotebooksList.Strings[i],note);
+     NotebooksMenu.Add(m1);
+     inc(i);
+  end;
+
+  NotebooksMenu.AddSeparator;
+
+  // Notebooks / New
+  m1 := TMenuItem.Create(NotebooksMenu);
+  m1.Tag := ord(ntNewNotebook);
+  m1.Caption := rsMenuNewNotebook;
+  m1.OnClick := @MainMenuClicked;
+  m1.ImageIndex:=1;
+  m1.Enabled:=true;
+  NotebooksMenu.Add(m1);
+
+end;
 
 end.

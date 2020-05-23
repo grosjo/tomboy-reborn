@@ -4,7 +4,7 @@ interface
 
 uses
     Classes, Forms, SysUtils, Dialogs, StdCtrls, LazFileUtils, laz2_DOM,
-    ExtCtrls, laz2_XMLRead, DateUtils, fphttpclient, ssockets, sslsockets,
+    ExtCtrls, laz2_XMLRead, laz2_XMLWrite,DateUtils, fphttpclient, ssockets, sslsockets,
     fpopenssl, openssl, hmac, strutils, IniFiles, LazLogger, Graphics,
     {$ifdef LINUX} Unix, {$endif} LazUTF8,
     FileInfo, TRAutoStartCtrl, Trtexts;
@@ -711,10 +711,11 @@ end;
 function FileToNote(filename : String; NoteInfo : PNoteInfo) : boolean;
 var
     Doc : TXMLDocument;
-    Node : TDOMNode;
+    Node,Child : TDOMNode;
     NodeList : TDOMNodeList;
     j : integer;
     xmlstream : TFileStream ;
+    ts : TStringStream;
 begin
    TRlog('File to note '+filename);
 
@@ -745,118 +746,135 @@ begin
    end;
 
    try
-       Node := Doc.DocumentElement.FindNode('create-date');
-        NoteInfo^.CreateDate := '';
-        if(assigned(Node)) then NoteInfo^.CreateDate := Node.FirstChild.NodeValue;
-        if NoteInfo^.CreateDate = '' then NoteInfo^.CreateDate := GetCurrentTimeStr();
-        NoteInfo^.CreateDateGMT := GetGMTFromStr(NoteInfo^.CreateDate);
-        if(assigned(Node)) then Node.Free;
 
-        //TRlog('Looking for last-change-date');
+     TRlog('Looking for last-change-date');
+     Node := Doc.DocumentElement.FindNode('create-date');
+     NoteInfo^.CreateDate := '';
+     if(assigned(Node)) then NoteInfo^.CreateDate := Node.FirstChild.NodeValue;
+     if NoteInfo^.CreateDate = '' then NoteInfo^.CreateDate := GetCurrentTimeStr();
+     NoteInfo^.CreateDateGMT := GetGMTFromStr(NoteInfo^.CreateDate);
+     if(assigned(Node)) then Node.Free;
+     TRlog('Found ' + NoteInfo^.CreateDate);
+
+        TRlog('Looking for last-change-date');
         Node := Doc.DocumentElement.FindNode('last-change-date');
         NoteInfo^.LastChange := '';
         if(assigned(Node)) then NoteInfo^.LastChange := Node.FirstChild.NodeValue;
         if NoteInfo^.LastChange = '' then NoteInfo^.LastChange := GetCurrentTimeStr();
         NoteInfo^.LastChangeGMT := GetGMTFromStr(NoteInfo^.LastChange);
-        //TRlog('Found ' + NoteInfo^.LastChange);
+        TRlog('Found ' + NoteInfo^.LastChange);
         if(assigned(Node)) then Node.Free;
 
-        //TRlog('Looking for last-metadata-change-date');
+        TRlog('Looking for last-metadata-change-date');
         Node := Doc.DocumentElement.FindNode('last-metadata-change-date');
         NoteInfo^.LastMetaChange := '';
         if(assigned(Node)) then NoteInfo^.LastMetaChange := Node.FirstChild.NodeValue;
         if NoteInfo^.LastMetaChange = '' then NoteInfo^.LastMetaChange := GetCurrentTimeStr();
         NoteInfo^.LastMetaChangeGMT := GetGMTFromStr(NoteInfo^.LastMetaChange);
-        //TRlog('Found ' + NoteInfo^.LastMetaChange);
+        TRlog('Found ' + NoteInfo^.LastMetaChange);
         if(assigned(Node)) then Node.Free;
 
-        //TRlog('Looking for title');
+        TRlog('Looking for title');
         Node := Doc.DocumentElement.FindNode('title');
         if(assigned(Node)) then NoteInfo^.Title := Node.FirstChild.NodeValue
         else NoteInfo^.Title := 'Note ' + NoteInfo^.ID;
-        //TRlog('Found ' + NoteInfo^.Title);
+        TRlog('Found ' + NoteInfo^.Title);
         if(assigned(Node)) then Node.Free;
 
-        //TRlog('Looking for cursor-position');
+        TRlog('Looking for cursor-position');
         Node := Doc.DocumentElement.FindNode('cursor-position');
         NoteInfo^.CursorPosition := 0;
         if(assigned(Node)) then NoteInfo^.CursorPosition := StrToInt(Node.FirstChild.NodeValue);
-        //TRlog('Found '+ IntToStr(NoteInfo^.CursorPosition));
+        TRlog('Found '+ IntToStr(NoteInfo^.CursorPosition));
         if(assigned(Node)) then Node.Free;
 
-        //TRlog('Looking for selection-bound-position');
+        TRlog('Looking for selection-bound-position');
         Node := Doc.DocumentElement.FindNode('selection-bound-position');
         NoteInfo^.SelectBoundPosition := 0;
         if(assigned(Node)) then NoteInfo^.SelectBoundPosition := StrToInt(Node.FirstChild.NodeValue);
-        //TRlog('Found '+ IntToStr(NoteInfo^.SelectBoundPosition));
+        TRlog('Found '+ IntToStr(NoteInfo^.SelectBoundPosition));
         if(assigned(Node)) then Node.Free;
 
-        //TRlog('Looking for width');
+        TRlog('Looking for width');
         Node := Doc.DocumentElement.FindNode('width');
         NoteInfo^.Width := 0;
         if(assigned(Node)) then NoteInfo^.Width := StrToInt(Node.FirstChild.NodeValue);
-        //TRlog('Found '+ IntToStr(NoteInfo^.Width));
+        TRlog('Found '+ IntToStr(NoteInfo^.Width));
         if(assigned(Node)) then Node.Free;
 
-        //TRlog('Looking for height');
+        TRlog('Looking for height');
         Node := Doc.DocumentElement.FindNode('height');
-        NoteInfo^.Width := 0;
-        if(assigned(Node)) then NoteInfo^.Width := StrToInt(Node.FirstChild.NodeValue);
-        //TRlog('Found '+ IntToStr(NoteInfo^.Height));
+        NoteInfo^.Height := 0;
+        if(assigned(Node)) then NoteInfo^.Height := StrToInt(Node.FirstChild.NodeValue);
+        TRlog('Found '+ IntToStr(NoteInfo^.Height));
         if(assigned(Node)) then Node.Free;
 
-        //TRlog('Looking for X');
+        TRlog('Looking for X');
         Node := Doc.DocumentElement.FindNode('x');
         NoteInfo^.X := 0;
         if(assigned(Node)) then NoteInfo^.X := StrToInt(Node.FirstChild.NodeValue);
-        //TRlog('Found '+ IntToStr(NoteInfo^.X));
+        TRlog('Found '+ IntToStr(NoteInfo^.X));
         if(assigned(Node)) then Node.Free;
 
-        //TRlog('Looking for Y');
+        TRlog('Looking for Y');
         Node := Doc.DocumentElement.FindNode('y');
         NoteInfo^.Y := 0;
         if(assigned(Node)) then NoteInfo^.Y := StrToInt(Node.FirstChild.NodeValue);
-        //TRlog('Found '+ IntToStr(NoteInfo^.Y));
+        TRlog('Found '+ IntToStr(NoteInfo^.Y));
         if(assigned(Node)) then Node.Free;
 
-        //TRlog('Looking for open-on-startup');
+        TRlog('Looking for open-on-startup');
         Node := Doc.DocumentElement.FindNode('open-on-startup');
         NoteInfo^.OpenOnStartup := false;
         if(assigned(Node)) then NoteInfo^.OpenOnStartup := StrToBool(Node.FirstChild.NodeValue);
-        //TRlog('Found '+ BoolToStr(NoteInfo^.OpenOnStartup, true));
+        TRlog('Found '+ BoolToStr(NoteInfo^.OpenOnStartup, true));
         if(assigned(Node)) then Node.Free;
 
-        //TRlog('Looking for pinned');
+        TRlog('Looking for pinned');
         Node := Doc.DocumentElement.FindNode('pinned');
         NoteInfo^.Pinned := false;
         if(assigned(Node)) then NoteInfo^.Pinned := StrToBool(Node.FirstChild.NodeValue);
-        //TRlog('Found '+ BoolToStr(NoteInfo^.Pinned, true));
+        TRlog('Found '+ BoolToStr(NoteInfo^.Pinned, true));
         if(assigned(Node)) then Node.Free;
 
-        //TRlog('Looking for text');
+        TRlog('Looking for text');
         Node := Doc.DocumentElement.FindNode('text');
-        NoteInfo^.Content := 'empty';
+        NoteInfo^.Content := '';
         NoteInfo^.Version := '0.3';
         if(assigned(Node)) then
         begin
-             NoteInfo^.Content := Node.FindNode('note-content').TextContent;
-             Node := Node.FindNode('note-content').Attributes.GetNamedItem('version');
-             if(Assigned(Node)) then NoteInfo^.Version := Node.NodeValue;
+           Node := Node.FindNode('note-content');
+           if(assigned(Node)) then begin
+              Child := Node.Attributes.GetNamedItem('version');
+              if(Assigned(Child)) then NoteInfo^.Version := Child.NodeValue;
+              //Child := Node.FirstChild;
+              //while(assigned(Child)) do
+              //begin
+                 ts := TStringStream.Create('');
+                 writeXML(Node,ts);
+                 NoteInfo^.Content := NoteInfo^.Content + Trim(ts.DataString);
+                 //Child := Child.NextSibling;
+                 ts.Free;
+              //end;
+              TRlog('Found : '+NoteInfo^.Content);
+           end;
         end
         else TRlog('No text');
         if(assigned(Node)) then Node.Free;
 
-        //TRlog('Looking for tags');
+        TRlog('Looking for tags');
         NoteInfo^.Tags.Clear;
         Node := Doc.DocumentElement.FindNode('tags');
         if(assigned(Node)) then
         begin
            NodeList := Node.ChildNodes;
            for j := 0 to NodeList.Count-1 do
-                NoteInfo^.Tags.Add(NodeList.Item[j].TextContent);
+           begin
+             Trlog('Found : '+NodeList.Item[j].TextContent);
+             NoteInfo^.Tags.Add(NodeList.Item[j].TextContent);
+           end;
         end
-        //else TRlog('No tags')
-        ;
+        else TRlog('No tags');
 
        if(assigned(Node)) then Node.Free;
 

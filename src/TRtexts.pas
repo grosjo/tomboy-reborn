@@ -34,24 +34,54 @@ RESOURCESTRING
 // SearchForm
   // these are main menu items and string grid headings -
   rsMenuNotes = 'File';
+  rsMenuEdit = 'Edit';
+  rsMenuFormat = 'Format';
   rsMenuTools = 'Tools';
   rsMenuHelp = 'Help';
   rsMenuDeleteNote = 'Delete Note';
   rsMenuDeleteNotebook = 'Delete Notebook';
 
   rsMenuNewNote = 'New Note';
+  rsMenuFind = 'Find';
+  rsMenuSave = 'Save';
+  rsMenuDelete = 'Delete note';
   rsMenuNewNotebook = 'New notebook';
   rsMenuSearch = 'Search';
   rsMenuAbout = 'About';
+  rsMenuDuplicate = 'Duplicate';
   rsMenuSync = 'Synchronise';
   rsMenuExport = 'Export';
   rsMenuSettings = 'Settings';
   rsMenuQuit = 'Quit';
+  rsMenuUndo = 'Undo';
+  rsMenuRedo = 'Redo';
+  rsMenuCut = 'Cut';
+  rsMenuCopy = 'Copy';
+  rsMenuPaste = 'Paste';
+  rsMenuBold = 'Bold';
+  rsMenuItalic = 'Italic';
+  rsMenuStrikeout = 'Strikethrough';
+  rsMenuUnderlined = 'Underlined';
+  rsMenuHighlight = 'Highlight';
+  rsMenuFixed = 'FixedFont';
+  rsMenuLink = 'Insert Link to Note';
+  rsMenuURL = 'Insert Link to URL';
   rsNotebooks = 'Notebooks';
+  rsMenuFontPlus = 'Increase font size';
+  rsMenuFontMinus = 'Decrease font size';
+  rsMenuBullet = 'Bullet';
+  rsMenuBulletInc = 'Increase indent';
+  rsMenuBulletDec = 'Decrease indent';
   rsAnyNotebook = 'Any notebook';
   rsNoNotebook = 'Without notebook';
   rsName = 'Name';
   rsLastChange = 'Last Change';
+
+  rsMenuExportRTF = 'as RTF';
+  rsMenuExportMarkdown = 'Markdown format';
+  rsMenuExportPlain = 'Plain text';
+
+  rsMenuPrint = 'Print';
 
   // Tray Menu
   rsTrayNewNote = 'New note';
