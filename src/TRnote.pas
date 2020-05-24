@@ -15,8 +15,7 @@ uses
     FileUtil, strutils,         // just for ExtractSimplePath ... ~#1620
     LCLIntf,
 
-    TRcommon, TrTexts,
-    SaveNote;      		// TO BE REMOVED
+    TRcommon, TrTexts;
 
 
 type TFontRange = (FontHuge, FontLarge, FontNormal, FontSmall, FontTitle);
@@ -86,7 +85,6 @@ type
     procedure MenuItemSettingsClick(Sender: TObject);
     procedure MenuItemSpellClick(Sender: TObject);
     procedure MenuItemSyncClick(Sender: TObject);
-    procedure SpeedButtonNotebookClick(Sender: TObject);
 
     // Links inside note
     procedure ExternalLink(sender : TObject);
@@ -103,8 +101,6 @@ private
 
     FontSizeNormal, FontSizeLarge, FontSizeTitle, FontSizeHuge, FontSizeSmall : integer;
     procedure SetFontSizes();
-
-    function ReplaceAngles(const Str : String) : String;
 
     procedure NoteToMemo();
     procedure MemoToNote();
@@ -240,16 +236,6 @@ begin
     FontSizeTitle    := Max(round(16.0*FontScale/100.0),FontSizeLarge+1);
     FontSizeHuge     := Max(round(18.0*FontScale/100.0),FontSizeTitle+1);
     FontSizeSmall    := Min(round(10.0*FontScale/100.0),FontSizeNormal-1);
-end;
-
-function TFormNote.ReplaceAngles(const Str : String) : String;
-var
-    s : String;
-begin
-   s := StringReplace(Str,'&lt;','<',[rfReplaceAll]);
-   s := StringReplace(s,'&gt;','>',[rfReplaceAll]);
-   s := StringReplace(s,'&#x9;',#9,[rfReplaceAll]);
-   Result := StringReplace(s,'&amp;','&',[rfReplaceAll]);
 end;
 
 procedure TFormNote.ExternalLink(sender : TObject);
@@ -496,7 +482,7 @@ begin
    TRlog('Cursor position '+IntToStr(note^.CursorPosition));
 
    KMemo1.SelStart := note^.CursorPosition;
-   KMemo1.SelEnd   := note^.CursorPosition+1;
+   KMemo1.SelEnd   := note^.CursorPosition;
 
    TRlog('Dealing with content end');
 
@@ -511,31 +497,108 @@ begin
    Processing := false;
 end;
 
-
 procedure TFormNote.MemoToNote();
-begin
+var
+   i,j : integer;
+   Block : TKMemoBlock;
+   FT : TKMemoTextBlock;
+   s,s2,partext : String;
+   bul : boolean;
+ begin
+   // Processing := True;
+
+   //Dirty := False;
+   //KMemo1.Blocks.LockUpdate;
+   //KMemo1.Blocks.UnlockUpdate;
+
+   MarkTitle();
+
+   i:=2;
+   s:='';
+
+   while(i<KMemo1.Blocks.Count) do
+   begin
+      Block := KMemo1.Blocks.Items[i];
+
+      // Search paragraph interval : [i;j[
+      if Block.ClassNameIs('TKMemoParagraph') then
+      begin
+         bul := (TKMemoParagraph(Block).Numbering = pnuBullets);
+         j:=i+1;
+      end
+      else j:=i;
+
+      while( (j<KMemo1.Blocks.Count) and (not KMemo1.Blocks.Items[j].ClassNameIs('TKMemoParagraph')) )
+         do inc(j);
+
+      partext:='';
+
+      while(i<j) do
+      begin
+         if(not KMemo1.Blocks.Items[i].ClassNameIs('TKMemoTextBlock'))
+         then begin
+            inc(i);
+            continue;
+         end;
+
+         FT := TKMemoTextBlock(KMemo1.Blocks.Items[i]);
+         s2 := EncodeAngles(FT.Text);
+
+         if(fsBold in FT.TextStyle.Font.Style) then s2:= '<bold>'+s2+'</bold>';
+         if(fsItalic in FT.TextStyle.Font.Style) then s2:= '<italic>'+s2+'</italic>';
+         if(fsUnderline in FT.TextStyle.Font.Style) then s2:= '<underline>'+s2+'</underline>';
+         if(fsStrikeout in FT.TextStyle.Font.Style) then s2:= '<strikeout>'+s2+'</strikeout>';
+         if(CompareText(FT.TextStyle.Font.Name,FixedFont)=0) then s2:= '<monospace>'+s2+'</monospace>';
+         if(FT.TextStyle.Brush.Color = HiColour) then s2:='<highlight>'+s2+'</highlight>';
+         if(FT.TextStyle.Font.Size = FontSizeLarge) then s2:='<size:large>'+s2+'</size:large>';
+         if(FT.TextStyle.Font.Size = FontSizeHuge) then s2:='<size:huge>'+s2+'</size:huge>';
+         if(FT.TextStyle.Font.Size = FontSizeSmall) then s2:='<size:small>'+s2+'</size:small>';
+
+         partext := partext + s2;
+         inc(i);
+      end;
+      if(bul) then s := '<list><list-item dir="ltr">' + partext + '</list-item dir="ltr"></list>'
+      else s := #10 + partext;
+   end;
+
+   // Delete opposite tags
+   s2:='';
+   while(CompareStr(s,s2)<>0) do
+   begin
+      s2:=s;
+      s := StringReplace(s,'</list><list>','',[rfReplaceAll]);
+      s := StringReplace(s,'</size:small><size:small>','',[rfReplaceAll]);
+      s := StringReplace(s,'</size:huge><size:huge>','',[rfReplaceAll]);
+      s := StringReplace(s,'</size:large><size:large>','',[rfReplaceAll]);
+      s := StringReplace(s,'</highlight><highlight>','',[rfReplaceAll]);
+      s := StringReplace(s,'</monospace><monospace>','',[rfReplaceAll]);
+      s := StringReplace(s,'</strikeout><strikeout>','',[rfReplaceAll]);
+      s := StringReplace(s,'</underline><underline>','',[rfReplaceAll]);
+      s := StringReplace(s,'</italic><italic>','',[rfReplaceAll]);
+      s := StringReplace(s,'</bold><bold>','',[rfReplaceAll]);
+
+      s := StringReplace(s,'</list>'+#10+'<list>',#10,[rfReplaceAll]);
+      s := StringReplace(s,'</size:small>'+#10+'<size:small>',#10,[rfReplaceAll]);
+      s := StringReplace(s,'</size:huge>'+#10+'<size:huge>',#10,[rfReplaceAll]);
+      s := StringReplace(s,'</size:large>'+#10+'<size:large>',#10,[rfReplaceAll]);
+      s := StringReplace(s,'</highlight>'+#10+'<highlight>',#10,[rfReplaceAll]);
+      s := StringReplace(s,'</monospace>'+#10+'<monospace>',#10,[rfReplaceAll]);
+      s := StringReplace(s,'</strikeout>'+#10+'<strikeout>',#10,[rfReplaceAll]);
+      s := StringReplace(s,'</underline>'+#10+'<underline>',#10,[rfReplaceAll]);
+      s := StringReplace(s,'</italic>'+#10+'<italic>',#10,[rfReplaceAll]);
+      s := StringReplace(s,'</bold>'+#10+'<bold>',#10,[rfReplaceAll]);
+   end;
+   note^.Content := s;
+
+   // Le reste
+   note^.Title := EncodeAngles(KMemo1.Blocks.Items[1].Text);
+
 
 end;
 
 procedure TFormNote.Commit();
 begin
 
-end;
-
-procedure TFormNote.SpeedButtonNotebookClick(Sender: TObject);
-//var
-    //NotebookPick : TNotebookPick;
-begin
-    {
-    NotebookPick := TNotebookPick.Create(Application);
-    NotebookPick.FullFileName := NoteFileName;
-    NotebookPick.Title := NoteTitle;
-    NotebookPick.ChangeMode := False;
-    NotebookPick.Top := Top;
-    NotebookPick.Left := Left;
-    if mrOK = NotebookPick.ShowModal then MarkDirty();
-    NotebookPick.Free;
-    }
 end;
 
 procedure TFormNote.BulletControl(const Toggle, TurnOn : boolean);

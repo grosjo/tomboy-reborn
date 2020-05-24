@@ -117,6 +117,8 @@ function GetNewID() : String;
 function NoteIDLooksOK(const ID : string) : boolean;
 function FileToNote(filename : String; NoteInfo : PNoteInfo) : boolean;
 function NoteToFile(note : PNoteInfo; filename : String) : boolean;
+function ReplaceAngles(const Str : String) : String;
+function EncodeAngles(const Str : String) : String;
 function RemoveBadXMLCharacters(const InStr : String; DoQuotes : boolean = false) : String;
 function RemoveXml(const St : String) : String;
 procedure CopyNote(A : PNoteInfo; c : PNoteInfo);
@@ -667,6 +669,26 @@ begin
    Result := n;
 end;
 
+function ReplaceAngles(const Str : String) : String;
+var
+    s : String;
+begin
+   s := StringReplace(Str,'&lt;','<',[rfReplaceAll]);
+   s := StringReplace(s,'&gt;','>',[rfReplaceAll]);
+   s := StringReplace(s,'&#x9;',#9,[rfReplaceAll]);
+   Result := StringReplace(s,'&amp;','&',[rfReplaceAll]);
+end;
+
+function EncodeAngles(const Str : String) : String;
+var
+    s : String;
+begin
+   s := StringReplace(Str,'<','&lt;',[rfReplaceAll]);
+   s := StringReplace(s,'>','&gt;',[rfReplaceAll]);
+   s := StringReplace(s,#9,'&#x9;',[rfReplaceAll]);
+   Result := StringReplace(s,'&','&amp;',[rfReplaceAll]);
+end;
+
 function NoteToFile(note : PNoteInfo; filename : String) : boolean;
 var
    f : TStringList;
@@ -680,7 +702,7 @@ begin
 
    f.Add('<?xml version="1.0" encoding="utf-8"?>');
    f.Add('<note version="' + note^.Version + '">');
-   f.Add('<title>' + RemoveBadXMLCharacters(note^.Title) + '</title>');
+   f.Add('<title>' + EncodeAngles(note^.Title) + '</title>');
    f.Add('<create-date>' + note^.CreateDate + '</create-date>');
    f.Add('<last-change-date>' + note^.LastChange + '</last-change-date>');
    f.Add('<last-metadata-change-date>' + note^.LastMetaChange + '</last-metadata-change-date>');
