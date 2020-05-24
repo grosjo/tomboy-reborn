@@ -80,11 +80,6 @@ type
     procedure KMemo1MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure KMemo1MouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure MenuBulletClick(Sender: TObject);
-    procedure MenuItemEvaluateClick(Sender: TObject);
-    procedure MenuItemExportMarkdownClick(Sender: TObject);
-    procedure MenuItemSettingsClick(Sender: TObject);
-    procedure MenuItemSpellClick(Sender: TObject);
-    procedure MenuItemSyncClick(Sender: TObject);
 
     // Links inside note
     procedure ExternalLink(sender : TObject);
@@ -121,6 +116,10 @@ private
 
     procedure IndentDecrease();
     procedure IndentIncrease();
+
+    function exportRTF() : boolean;
+    function exportTXT() : boolean;
+    function exportMarkDown() : boolean;
 
     function GetTitle(): String;
     procedure NotePrint();
@@ -220,7 +219,7 @@ implementation
 { TFormNote }
 uses
     Spelling,
-    TRabout,TRmain, TRprint, Markdown;
+    TRabout,TRmain, TRprint;
 
 
 const
@@ -254,6 +253,128 @@ begin
    u := TKMemoHyperlink(Sender).Text;
    showmessage('Internal Link ' + u);
    TFormMain(mainWindow).OpenUrlNoteByTitle(u);
+end;
+
+function TFormNote.ExportMarkDown() : boolean;
+var
+   i,j : integer;
+   Block : TKMemoBlock;
+   FT : TKMemoTextBlock;
+   s2,partext : String;
+   tfs : TStringList;
+   dd : TSelectDirectoryDialog;
+   filename : String;
+ begin
+   TRlog('exportMarkDown');
+
+   dd := TSelectDirectoryDialog.Create(Self);
+   if dd.Execute then begin FreeAndNil(dd); exit(false); end;
+
+   filename := AppendPathDelim(ChompPathDelim(dd.FileName)) + note^.ID + '.md';
+   TRlog('exportMarkdown to ' + filename);
+   FreeAndNil(dd);
+
+   MarkTitle();
+
+   i:=2;
+
+   tfs := TStringList.Create;
+   Block := KMemo1.Blocks.Items[1];
+   tfs.Add(Trim(Block.Text));
+   tfs.Add('');
+
+   while(i<KMemo1.Blocks.Count) do
+   begin
+      Block := KMemo1.Blocks.Items[i];
+
+      // Search paragraph interval : [i;j[
+      if Block.ClassNameIs('TKMemoParagraph')
+          then j:=i+1
+          else j:=i;
+
+      while( (j<KMemo1.Blocks.Count) and (not KMemo1.Blocks.Items[j].ClassNameIs('TKMemoParagraph')) )
+         do inc(j);
+
+      partext:='';
+
+      while(i<j) do
+      begin
+         if(KMemo1.Blocks.Items[i].ClassNameIs('TKMemoTextBlock') or KMemo1.Blocks.Items[i].ClassNameIs('TKMemoHyperlink'))
+         then begin
+              FT := TKMemoTextBlock(KMemo1.Blocks.Items[i]);
+              s2 := EncodeAngles(FT.Text);
+         end else begin
+            inc(i);
+            continue;
+         end;
+
+         if(fsBold in FT.TextStyle.Font.Style) then s2:= '**'+s2+'**';
+         if(fsItalic in FT.TextStyle.Font.Style) then s2:= '_'+s2+'_';
+         if(fsUnderline in FT.TextStyle.Font.Style) then s2:= '++'+s2+'++';
+         if(fsStrikeout in FT.TextStyle.Font.Style) then s2:= '~~'+s2+'~~';
+         if(CompareText(FT.TextStyle.Font.Name,FixedFont)=0) then s2:= '`'+s2+'`';
+         if(FT.TextStyle.Brush.Color = HiColour) then s2:='=='+s2+'==';
+         if(FT.TextStyle.Font.Size = FontSizeLarge) then s2:='<size:large>'+s2+'</size:large>';
+         if(FT.TextStyle.Font.Size = FontSizeHuge) then s2:='<size:huge>'+s2+'</size:huge>';
+         if(FT.TextStyle.Font.Size = FontSizeSmall) then s2:='<sub>'+s2+'</sub>';
+
+         partext := partext + s2;
+         inc(i);
+      end;
+      tfs.Add(partext);
+   end;
+
+   tfs.LineBreak := rsLineBreak;
+
+   try
+      tfs.SaveToFile(filename);
+   except on E:Exception do begin TRlog(E.message); ShowMessage(E.message); exit(false); end;
+   end;
+
+   Result := true;
+end;
+
+
+function TFormNote.exportRTF(): boolean;
+var
+   dd : TSelectDirectoryDialog;
+   filename : String;
+begin
+   TRlog('exportRFT');
+
+   dd := TSelectDirectoryDialog.Create(Self);
+   if dd.Execute then
+   begin
+     try
+        filename := AppendPathDelim(ChompPathDelim(dd.FileName)) + note^.ID + '.rtf';
+        TRlog('exportRFT to ' + filename);
+        KMemo1.SaveToRTF(filename);
+     except on E:Exception do begin TRlog(E.message); ShowMessage(E.message); exit(false); end;
+     end;
+   end;
+   FreeAndNil(dd);
+   Result := true;
+end;
+
+function TFormNote.exportTXT(): boolean;
+var
+   dd : TSelectDirectoryDialog;
+   filename : String;
+begin
+   TRlog('exportTXT');
+
+   dd := TSelectDirectoryDialog.Create(Self);
+   if dd.Execute then
+   begin
+     try
+        filename := AppendPathDelim(ChompPathDelim(dd.FileName)) + note^.ID + '.txt';
+        TRlog('exportTXT to ' + filename);
+        KMemo1.SaveToTXT(filename);
+     except on E:Exception do begin TRlog(E.message); ShowMessage(E.message); exit(false); end;
+        end;
+   end;
+   FreeAndNil(dd);
+   Result := true;
 end;
 
 procedure TFormNote.TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
@@ -535,14 +656,21 @@ var
 
       while(i<j) do
       begin
-         if(not KMemo1.Blocks.Items[i].ClassNameIs('TKMemoTextBlock'))
+         if(KMemo1.Blocks.Items[i].ClassNameIs('TKMemoTextBlock'))
          then begin
+              FT := TKMemoTextBlock(KMemo1.Blocks.Items[i]);
+              s2 := EncodeAngles(FT.Text);
+         end else
+         if(KMemo1.Blocks.Items[i].ClassNameIs('TKMemoHyperlink'))
+         then begin
+              FT := TKMemoTextBlock(KMemo1.Blocks.Items[i]);
+              if(isURL(FT.Text))
+                  then s2 := '<link:url>'+EncodeAngles(FT.Text)+'</link:url>'
+                  else s2 := '<link:internal>'+EncodeAngles(FT.Text)+'</link:internal>';
+         end else begin
             inc(i);
             continue;
          end;
-
-         FT := TKMemoTextBlock(KMemo1.Blocks.Items[i]);
-         s2 := EncodeAngles(FT.Text);
 
          if(fsBold in FT.TextStyle.Font.Style) then s2:= '<bold>'+s2+'</bold>';
          if(fsItalic in FT.TextStyle.Font.Style) then s2:= '<italic>'+s2+'</italic>';
@@ -588,12 +716,34 @@ var
       s := StringReplace(s,'</italic>'+#10+'<italic>',#10,[rfReplaceAll]);
       s := StringReplace(s,'</bold>'+#10+'<bold>',#10,[rfReplaceAll]);
    end;
-   note^.Content := s;
 
-   // Le reste
-   note^.Title := EncodeAngles(KMemo1.Blocks.Items[1].Text);
+   if(CompareStr(s, note^.Content) <> 0) then
+   begin
+     note^.Content := s;
+     note^.LastChange:= GetCurrentTimeStr();
+     note^.LastChangeGMT:= GetGMTFromStr(note^.LastChange);
+   end;
 
+   s := Trim(KMemo1.Blocks.Items[1].Text);
+   if(CompareStr(s, note^.Title) <> 0) then
+   begin
+     note^.Title := s;
+     note^.LastChange:= GetCurrentTimeStr();
+     note^.LastChangeGMT:= GetGMTFromStr(note^.LastChange);
+   end;
 
+   if((Left <> note^.X) or (Top <> note^.Y) or (KMemo1.RealSelStart <> note^.SelectBoundPosition)
+            or (not note^.OpenOnStartup) or (Height <> note^.Height) or (Width <> note^.Width))
+   then begin
+      note^.X := Left;
+      note^.Y := Top;
+      note^.SelectBoundPosition := KMemo1.RealSelStart;
+      note^.OpenOnStartup := true;
+      note^.Height := Height;
+      note^.Width := Width;
+      note^.LastMetaChange := GetCurrentTimeStr();
+      note^.LastMetaChangeGMT := GetGMTFromStr(note^.LastMetaChange);
+   end;
 end;
 
 procedure TFormNote.Commit();
@@ -927,42 +1077,6 @@ begin
    end;
 end;
 
-procedure TFormNote.MenuItemEvaluateClick(Sender: TObject);
-begin
-   InitiateCalc();
-end;
-
-procedure TFormNote.MenuItemExportMarkdownClick(Sender: TObject);
-begin
-  FormMarkDown.TheKMemo := KMemo1;
-  FormMarkDown.Caption:= CleanCaption();
-  FormMarkDown.Show;
-end;
-
-{
-procedure TFormNote.MenuItemIndexClick(Sender: TObject);
-var
-    IForm : TFormIndex;
-begin
-    IForm := TFormIndex.Create(Self);
-    IForm.TheKMemo := KMemo1;
-    IForm.Left := Left;
-    IForm.Top := Top;
-    IForm.ShowModal;
-    if IForm.SelectedBlock >= 0 then begin
-        KMemo1.SelStart := KMemo1.Blocks.BlockToIndex(KMemo1.Blocks.Items[IForm.SelectedBlock]);
-        KMemo1.SelLength := 0;
-    end;
-    IForm.Free;
-    KMemo1.SetFocus;
-end;
-}
-
-procedure TFormNote.MenuItemSettingsClick(Sender: TObject);
-begin
-    //FormSettings.show;
-end;
-
 { ------- S T A N D A R D    E D I T I N G    F U N C T I O N S ----- }
 
     // Locates if it can Term and selects it. Ret False if not found.
@@ -1021,28 +1135,6 @@ begin
     if Caption[1] = '*' then
         Result := Copy(Caption, 3, 256)
     else Result := Caption;
-end;
-
-procedure TFormNote.MenuItemSpellClick(Sender: TObject);
-var
-    SpellBox : TFormSpell;
-begin
-    if KMemo1.ReadOnly then exit();
-    //if Sett.SpellConfig then begin
-        SpellBox := TFormSpell.Create(Application);
-        // SpellBox.Top := Placement + random(Placement*2);
-        // SpellBox.Left := Placement + random(Placement*2);
-        SpellBox.TextToCheck:= KMemo1.Blocks.Text;
-        SpellBox.TheKMemo := KMemo1;
-        SpellBox.ShowModal;
-    //end else showmessage('Sorry, spelling not configured');
-end;
-
-procedure TFormNote.MenuItemSyncClick(Sender: TObject);
-begin
-    if KMemo1.ReadOnly then exit();
-	//if Dirty then SaveTheNote();
-    //Sett.Synchronise();
 end;
 
 procedure TFormNote.FormShow(Sender: TObject);
@@ -2243,9 +2335,9 @@ begin
       //TOOLS
       ntSync :              TFormMain(mainWIndow).SnapSync();
 
-      //ntMarkdown :
-      //ntRTF :
-      //ntPlain :
+      ntMarkdown :          exportMarkdown();
+      ntRTF :               exportRTF();
+      ntPlain :             exportTXT();
 
       ntPrint :             NotePrint();
 

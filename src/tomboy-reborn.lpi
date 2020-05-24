@@ -779,36 +779,6 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Spelling"/>
       </Unit6>
-      <Unit7>
-        <Filename Value="backupview.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="FormBackupView"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <UnitName Value="BackupView"/>
-      </Unit7>
-      <Unit8>
-        <Filename Value="recover.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="FormRecover"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-      </Unit8>
-      <Unit9>
-        <Filename Value="markdown.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="FormMarkdown"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-      </Unit9>
-      <Unit10>
-        <Filename Value="index.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="FormIndex"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <UnitName Value="Index"/>
-      </Unit10>
       <Unit11>
         <Filename Value="TRAutoStartCtrl.pas"/>
         <IsPartOfProject Value="True"/>

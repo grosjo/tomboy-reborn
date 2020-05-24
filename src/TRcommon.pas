@@ -117,15 +117,18 @@ function GetNewID() : String;
 function NoteIDLooksOK(const ID : string) : boolean;
 function FileToNote(filename : String; NoteInfo : PNoteInfo) : boolean;
 function NoteToFile(note : PNoteInfo; filename : String) : boolean;
-function ReplaceAngles(const Str : String) : String;
-function EncodeAngles(const Str : String) : String;
-function RemoveBadXMLCharacters(const InStr : String; DoQuotes : boolean = false) : String;
 function RemoveXml(const St : String) : String;
 procedure CopyNote(A : PNoteInfo; c : PNoteInfo);
 function EmptyNote() : PNoteInfo;
 function NoteContains(const TermList: TStringList; N : PNoteInfo ; CaseSensitive : boolean = false): boolean;
 function NoteBelongs(const notebook : String ; N : PNoteInfo ): boolean;
 function NoteTimeOrder(Item1: Pointer;Item2: Pointer):Integer;
+
+// String function
+function ReplaceAngles(const Str : String) : String;
+function EncodeAngles(const Str : String) : String;
+function RemoveBadXMLCharacters(const InStr : String; DoQuotes : boolean = false) : String;
+function isURL(u : String) : boolean;
 
 // Font
 function GetDefaultFixedFont() : string;
@@ -714,7 +717,7 @@ begin
    f.Add('<cursor-position>' + IntToStr(note^.CursorPosition) + '</cursor-position>');
    f.Add('<pinned>' + BoolToStr(note^.Pinned) + '</pinned>');
    f.Add('<open-on-startup>' + BoolToStr(note^.OpenOnStartup) + '</open-on-startup>');
-   f.Add('<text xml:space="preserve"><note-content version="' + note^.Version + '">' + RemoveBadXMLCharacters(note^.Content) + '</note-content></text>');
+   f.Add('<text xml:space="preserve"><note-content version="' + note^.Version + '">' + note^.Content + '</note-content></text>');
    f.Add('</note>');
 
    f.LineBreak := sLineBreak;
@@ -798,7 +801,7 @@ begin
 
         TRlog('Looking for title');
         Node := Doc.DocumentElement.FindNode('title');
-        if(assigned(Node)) then NoteInfo^.Title := Node.FirstChild.NodeValue
+        if(assigned(Node)) then NoteInfo^.Title := ReplaceAngles(Node.FirstChild.NodeValue)
         else NoteInfo^.Title := 'Note ' + NoteInfo^.ID;
         TRlog('Found ' + NoteInfo^.Title);
         if(assigned(Node)) then Node.Free;
@@ -1024,6 +1027,15 @@ begin
    Result := Result + Copy(InStr, Start, Index - Start);
 end;
 
+
+function isURL(u : String) : boolean;
+begin
+  if(CompareText('http://',Copy(u,1,7))=0) then exit(true);
+  if(CompareText('https://',Copy(u,1,8))=0) then exit(true);
+  if(CompareText('ftp://',Copy(u,1,6))=0) then exit(true);
+  if(CompareText('mailto://',Copy(u,1,9))=0) then exit(true);
+  Result := false;
+end;
 
 { ===== DATETIME ==== }
 
