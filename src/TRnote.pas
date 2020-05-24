@@ -28,7 +28,8 @@ type TNoteMenuTags = (ntCommit, ntSync, ntFind, ntSearchAll, ntSettings,
       ntAbout,ntDuplicate, ntDelete, ntMarkdown, ntRTF, ntPlain, ntPrint,
       ntRedo, ntUndo, ntCopy, ntCut, ntPaste, ntLink, ntURL, ntBold, ntItalic,
       ntStrike, ntUnderlined, ntFixed, ntHighlight, ntFontPLus, ntFontMinus,
-      ntBullet, ntBulletInc, ntBulletDec,ntNoNotebook, ntNewNotebook, ntSelectAll);
+      ntBullet, ntBulletInc, ntBulletDec,ntNoNotebook, ntNewNotebook,
+      ntSpelling, ntSelectAll      );
 
 type TNoteAction = ( ChangeSize, ToggleBold, ToggleItalic, ToggleHighlight, ToggleFont, ToggleStrikeout, ToggleUnderline);
 
@@ -104,7 +105,7 @@ private
     procedure Commit();
 
     procedure ShowSearchPanel(s : boolean);
-    procedure UpdateMenu(Sender: TObject);
+    procedure BuildMenus(Sender: TObject);
 
     function isInBullet() : boolean;
     function isBold() : boolean;
@@ -123,6 +124,9 @@ private
 
     function GetTitle(): String;
     procedure NotePrint();
+
+    procedure SpellSuggest(word : String; suggestions : TStrings);
+    procedure ReplaceSel(s : String);
 
     { Take a piece of text into KMemo block recursively }
     procedure TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
@@ -218,9 +222,7 @@ implementation
 
 { TFormNote }
 uses
-    Spelling,
-    TRabout,TRmain, TRprint;
-
+    TRabout,TRmain, TRprint, TRhunspell;
 
 const
         LinkScanRange = 100;	// when the user changes a Note, we search +/- around
@@ -375,6 +377,42 @@ begin
    end;
    FreeAndNil(dd);
    Result := true;
+end;
+
+procedure TFormNote.ReplaceSel(s : String);
+var
+  i,j,k : integer;
+begin
+  j := KMemo1.RealSelLength;
+  i:=0;
+  k := KMemo1.RealSelStart;
+
+  while i < j do
+  begin
+  	KMemo1.Blocks.DeleteChar(k);
+  	inc(i);
+  end;
+  KMemo1.Blocks.InsertPlainText(k,s);
+end;
+
+procedure TFormNote.SpellSuggest(word : String; suggestions : TStrings);
+var
+    spell : THunspell;
+begin
+   TRlog('TFormNote.SpellSuggest');
+
+   suggestions.Clear;
+
+   if(length(DictLibrary)=0) then begin suggestions.Add('Spelling libray not setup (found : "'+DictLibrary+'")'); exit(); end;
+   if(length(DictFile)=0) then begin suggestions.Add('Spelling dictionnary file incorrect (found : "'+DictFile+'")'); exit(); end;
+   spell :=  THunspell.Create(DictLibrary);
+   if (Spell.ErrorMessage <> '') then begin suggestions.Add(Spell.ErrorMessage); exit(); end;
+   if not Spell.SetDictionary(DictFile) then begin suggestions.Add(Spell.ErrorMessage); exit(); end;
+
+   if not Spell.Spell(word) then begin suggestions.Add('Word "'+word+'" can not be processed'); exit(); end;
+
+   spell.Suggest(word, suggestions);
+   suggestions.Add(word);
 end;
 
 procedure TFormNote.TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
@@ -602,8 +640,7 @@ begin
 
    TRlog('Cursor position '+IntToStr(note^.CursorPosition));
 
-   KMemo1.SelStart := note^.CursorPosition;
-   KMemo1.SelEnd   := note^.CursorPosition;
+   KMemo1.Select(note^.CursorPosition,0);
 
    TRlog('Dealing with content end');
 
@@ -906,8 +943,11 @@ end;
 procedure TFormNote.KMemo1MouseDown(Sender: TObject; Button: TMouseButton;
 		Shift: TShiftState; X, Y: Integer);
 begin
-    if ssCtrl in Shift then PopMenu.PopUp
-    else if Button = mbRight then PopMenu.PopUp;
+   if ((ssCtrl in Shift) or (Button = mbRight)) then
+   begin
+      BuildMenus(Sender);
+      PopMenu.PopUp;
+   end;
 end;
 
 
@@ -1166,7 +1206,7 @@ begin
 
    ShowSearchPanel(false);
 
-   UpdateMenu(nil);
+   BuildMenus(Sender);
 end;
 
 procedure TFormNote.FormCloseQuery(Sender: TObject; var CanClose: boolean);
@@ -2313,6 +2353,9 @@ begin
       //ntLink :
       //ntURL :
 
+      // SPELLING
+      ntSpelling :          ReplaceSel(TMenuItem(Sender).Caption);
+
       // FORMAT
       ntBold :              AlterFont(ToggleBold);
       ntItalic :            AlterFont(ToggleItalic);
@@ -2349,10 +2392,11 @@ begin
    end;
 end;
 
-procedure TFormNote.UpdateMenu(Sender: TObject);
+procedure TFormNote.BuildMenus(Sender: TObject);
 var
     m1,m2 : TMenuItem;
     i : integer;
+    s : TStringList;
 begin
 
   PopMenu.Items.Clear;
@@ -2368,9 +2412,28 @@ begin
 
   // POP / Check spell
   m1 := TMenuItem.Create(PopMenu);
-  m1.Caption := rsCheckSel;
   m1.ImageIndex:=40;
+  m1.Tag := ord(ntSpelling);
   PopMenu.Items.Add(m1);
+
+  if(KMemo1.RealSelLength>0)
+  then begin
+    m1.Caption := rsCheckSel;
+    s := TStringList.Create;
+    SpellSuggest(KMemo1.SelText,s);
+    i:=0;
+    while(i<s.Count) do
+    begin
+         m2 := TMenuItem.Create(PopMenu);
+         m2.Caption := s.Strings[i];
+         m2.OnClick := @MainMenuClicked;
+         m1.Add(m2);
+         inc(i);
+    end;
+  end else begin
+      m1.Caption := rsCheckSelNop ;
+      m1.Enabled := false;
+  end;
 
   EditMenu.Clear;
 

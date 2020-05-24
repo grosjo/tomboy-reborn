@@ -180,7 +180,8 @@ RESOURCESTRING
   rsSpellNoLib = 'Spelling library not configured';
   rsSpellNoDic = 'Select dic to use';
 
-  rsCheckSel = 'Spell check selection';
+  rsCheckSel = 'Spelling';
+  rsCheckSelNop = 'No text selected';
 
   rsHelpDelay = 'Delay startup 2 sec to allow OS to settle';
   rsHelpLang = 'Force Language, supported es, nl';

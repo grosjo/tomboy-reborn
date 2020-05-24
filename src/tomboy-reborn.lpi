@@ -771,14 +771,6 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit5>
-      <Unit6>
-        <Filename Value="spelling.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="FormSpell"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <UnitName Value="Spelling"/>
-      </Unit6>
       <Unit11>
         <Filename Value="TRAutoStartCtrl.pas"/>
         <IsPartOfProject Value="True"/>
