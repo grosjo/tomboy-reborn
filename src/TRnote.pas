@@ -1409,23 +1409,60 @@ begin
 end;
 
 procedure TFormNote.ButtonFindPrevClick(Sender: TObject);
+var
+   s, lo: String;
+   i,j,k : integer;
 begin
+   s := LowerCase(Trim(EditFindInNote.Caption));
+   lo := LowerCase( KMemo1.Text);
 
+   if(Length(s)>0) then
+   begin
+     i :=0;
+     k :=-1;
+     while(i<KMemo1.RealSelStart) do
+     begin
+        k:= i;
+        j:=Pos(s,Copy(lo,i+2));
+        if(j>0) then
+        begin
+          i := i +j +1;
+        end;
+     end;
+     if(k>=0) then
+     begin
+       KMemo1.SelStart:=k;
+       KMemo1.SelEnd:=KMemo1.SelStart+Length(s);
+     end ;
+   end;
 end;
 
 procedure TFormNote.CheckboxFindInNoteChange(Sender: TObject);
 begin
-
+  if(not CheckboxFindInNote.Checked) then ShowSearchPanel(false);
 end;
 
 procedure TFormNote.EditFindInNoteChange(Sender: TObject);
 begin
-
+   ButtonFindNextClick(Sender)
 end;
 
 procedure TFormNote.ButtonFindNextClick(Sender: TObject);
+var
+    s,lo: String;
+    i : integer;
 begin
-
+   s := LowerCase(Trim(EditFindInNote.Caption));
+   lo := Lowercase(KMemo1.Text);
+   if(Length(s)>0) then
+   begin
+     i := Pos(s,Copy(lo,KMemo1.RealSelStart+2));
+     if(i>0) then
+     begin
+       KMemo1.SelStart:=KMemo1.RealSelStart + i+1;
+       KMemo1.SelEnd:=KMemo1.SelStart+Length(s);
+     end ;
+   end;
 end;
 
 procedure TFormNote.FormDestroy(Sender: TObject);
@@ -2203,6 +2240,9 @@ begin
      if key = ord('Z') then begin TrLog('Ctrl-Z'); KMemo1.ExecuteCommand(TKEditCommand.ecUndo); Key := 0; exit(); end;
      if key = ord('Y') then begin TrLog('Ctrl-Y'); KMemo1.ExecuteCommand(TKEditCommand.ecRedo); Key := 0; exit(); end;
 
+     if key = ord('F') then begin TrLog('Ctrl-F'); CheckboxFindInNote.Checked := true; ShowSearchPanel(true); EditFindInNote.SetFocus; Key :=0; exit(); end;
+
+
      exit();
    end;
 
@@ -2286,7 +2326,7 @@ begin
       // FILE
       ntSearchAll : mainWindow.Show();
 
-      //ntFind :
+      ntFind : begin CheckboxFindInNote.Checked := true; ShowSearchPanel(true); EditFindInNote.SetFocus; end;
 
       //ntDuplicate :
 

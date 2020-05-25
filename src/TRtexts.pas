@@ -157,6 +157,9 @@ RESOURCESTRING
   rsNotRecommend = 'Generally not recommended.';
   //rsNextBitSlow = 'Next bit can be a bit slow, please wait';
 
+  // Find
+  rsSearchNotFound = 'Text not found';
+
 
 // Settings
   rsErrorCreateDir = 'Unable to Create Directory';
