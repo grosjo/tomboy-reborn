@@ -93,7 +93,7 @@ RESOURCESTRING
   rsTrayAbout = 'About';
   rsTrayQuit = 'Quit';
 
-
+  rsInsertDate = 'Insert date';
 
 
   rsSetupNotesDirFirst = 'Please setup a notes directory first';
