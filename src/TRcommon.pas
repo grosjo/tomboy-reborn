@@ -720,7 +720,7 @@ begin
    f.Add('<text xml:space="preserve"><note-content version="' + note^.Version + '">' + note^.Content + '</note-content></text>');
    f.Add('</note>');
 
-   f.LineBreak := sLineBreak;
+   f.LineBreak := rsLineBreak;
 
    try
       f.SaveToFile(filename);

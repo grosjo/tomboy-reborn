@@ -28,7 +28,7 @@ type TNoteMenuTags = (ntCommit, ntSync, ntFind, ntSearchAll, ntSettings,
       ntAbout,ntDuplicate, ntDelete, ntMarkdown, ntRTF, ntPlain, ntPrint,
       ntRedo, ntUndo, ntCopy, ntCut, ntPaste, ntLink, ntURL, ntBold, ntItalic,
       ntStrike, ntUnderlined, ntFixed, ntHighlight, ntFontPLus, ntFontMinus,
-      ntBullet, ntBulletInc, ntBulletDec,ntNoNotebook, ntNewNotebook,
+      ntBullet, ntNoNotebook, ntNewNotebook,
       ntSpelling, ntSelectAll, ntInsertDate    );
 
 type TNoteAction = ( ChangeSize, ToggleBold, ToggleItalic, ToggleHighlight, ToggleFont, ToggleStrikeout, ToggleUnderline);
@@ -69,13 +69,9 @@ type
     procedure onMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure onMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure onKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure onKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure onChange(Sender: TObject);
 
-    { gets called under a number of conditions, easy one is just a re-show,
-              or for a new note or a new note with a title from Link button
-              or for an existing note where we get note file name
-              or a new note from template where we have a note filename but IsTemplate
-              also set, here we discard file name and make a new one. }
     procedure FormShow(Sender: TObject);
 
     // Links inside note
@@ -85,7 +81,6 @@ type
 private
     AlreadyLoaded : boolean;
     Dirty : boolean;
-    Processing : boolean;
 
     HouseKeeper : TTimer;
 
@@ -96,6 +91,7 @@ private
     procedure MemoToNote();
     procedure MarkTitle(force : boolean);
     procedure MarkDirty();
+    procedure MarkClean();
     procedure Commit();
 
     procedure ShowSearchPanel(s : boolean);
@@ -110,8 +106,6 @@ private
     function isFixedFont() : boolean;
 
     procedure ToggleBullet();
-    procedure IndentDecrease();
-    procedure IndentIncrease();
 
     procedure InsertDate();
 
@@ -414,18 +408,6 @@ begin
    Ktext := '';
 
    TRlog('TFormNote.TextToMemo (j='+IntToStr(j)+') LEVEL='+IntToStr(Level));
-   TRlog('SUB "'+Copy(s,0,50)+'"');
-
-   if(newpar) then begin
-      TRlog('NEWPAR');
-      par := KMemo1.Blocks.AddParagraph;
-      if InBullet then
-      begin
-         par.Numbering := pnuBullets;
-         par.NumberingListLevel.FirstIndent := -20;    // Note, these numbers need match SettBullet() in editbox
-         par.NumberingListLevel.LeftIndent := 30;
-      end;
-   end;
 
    while (i<=j) do
    begin
@@ -439,14 +421,14 @@ begin
 
       if ((Ch >= ' ') and (Ch <> '<') ) then
       begin
-          TRlog('Adding CHR = "'+Chr+'" ; Ch = "'+Ch+'")');
+          //TRlog('Adding CHR = "'+Chr+'" ; Ch = "'+Ch+'")');
           Ktext := Ktext + Chr;
           inc(i);
       end;
 
       if((length(Ktext)>0) and ((Ch < ' ') or (Ch = '<') or (i>j))) then
       begin
-         Trlog('Pushing block (current blocks ='+IntToStr(KMemo1.Blocks.Count)+')');
+         //Trlog('Pushing block (current blocks ='+IntToStr(KMemo1.Blocks.Count)+')');
          Ktext := ReplaceAngles(Ktext); // We have to scan InStr for &lt; and &gt;  being < and >
 
          f := TFont.Create();
@@ -469,7 +451,7 @@ begin
 
          if(linkinternal) then
          begin
-            Trlog('Internal link on block '+ IntToStr(KMemo1.Blocks.Count-1)+' : ' + Ktext);
+            //Trlog('Internal link on block '+ IntToStr(KMemo1.Blocks.Count-1)+' : ' + Ktext);
             hl := TKMemoHyperlink.Create;
             hl.Text := KText;
             KMemo1.Blocks.AddHyperlink(hl);
@@ -482,7 +464,7 @@ begin
          end
          else if(linkexternal) then
          begin
-            Trlog('External link on block '+ IntToStr(KMemo1.Blocks.Count-1)+' : ' + Ktext);
+            //Trlog('External link on block '+ IntToStr(KMemo1.Blocks.Count-1)+' : ' + Ktext);
             hl := TKMemoHyperlink.Create;
             hl.Text := KText;
             KMemo1.Blocks.AddHyperlink(hl);
@@ -499,7 +481,7 @@ begin
             if HighLight then ktb.TextStyle.Brush.Color := HiColour;
          end;
 
-         Trlog('Pushing block (after blocks ='+IntToStr(KMemo1.Blocks.Count)+')');
+         //Trlog('Pushing block (after blocks ='+IntToStr(KMemo1.Blocks.Count)+')');
 
          f.Free;
 
@@ -509,7 +491,6 @@ begin
 
       if (Ch<' ') then // add Paragraph
       begin
-         TRlog('NEWPAR2');
          par := KMemo1.Blocks.AddParagraph;
          if InBullet then
          begin
@@ -523,12 +504,10 @@ begin
       if (Ch = '<') then  // new tag
       begin
          tagtext:= LowerCase(Trim(Copy(s,i+1,20)));
-         TRlog('Testing tag : '+tagtext+' ...');
          k:=Pos('>',tagtext); if(k<1) then k := length(tagtext)+1;
          tagtext := Copy(tagtext,0,k-1);
          k:=Pos(' ',tagtext); if(k<1) then k := length(tagtext)+1;
          tagtext := Copy(tagtext,0,k-1);
-         TRlog('Testing tag2 : '+tagtext);
 
          if(CompareStr(tagtext,'bold')=0)                    then      tagtype := TTagType.TagBold
           else if(CompareStr(tagtext,'italic')=0)            then      tagtype := TTagType.TagItalic
@@ -548,8 +527,6 @@ begin
          sub := LowerCase(Copy(s,i+k+1));
          m:= Pos('</'+tagtext,sub); if(m<1) then m:=length(sub)+1;
          sub:=Copy(s,i+k+1,m-1);
-
-         TRlog('Inside tag (length='+IntToStr(length(sub))+') : '+Copy(sub,0,30)+' ...');
 
          case tagtype of
             TTagType.TagBold         : TextToMemo(sub, true, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
@@ -574,7 +551,17 @@ begin
          TRlog('After tag : '+Copy(s,i,30)+' ...');
       end;
 
-      TRlog('New loop LEVEL='+IntToStr(level)+' i='+IntToStr(i)+' j='+IntToStr(j) );
+      //TRlog('New loop LEVEL='+IntToStr(level)+' i='+IntToStr(i)+' j='+IntToStr(j) );
+   end;
+   if(newpar) then begin
+      //TRlog('NEWPAR');
+      par := KMemo1.Blocks.AddParagraph;
+      if InBullet then
+      begin
+         par.Numbering := pnuBullets;
+         par.NumberingListLevel.FirstIndent := -20;    // Note, these numbers need match SettBullet() in editbox
+         par.NumberingListLevel.LeftIndent := 30;
+      end;
    end;
 end;
 
@@ -582,10 +569,6 @@ procedure TFormNote.NoteToMemo();
 begin
 
    Trlog('NoteToMemo');
-
-   Processing := True;
-
-   AlreadyLoaded := true;
 
    Dirty := False;
 
@@ -617,9 +600,7 @@ begin
    // KMEMO
    TRlog('Dealing with content');
    KMemo1.Blocks.LockUpdate;
-   TRlog('Dealing with content2');
    KMemo1.Clear;
-   TRlog('Dealing with content3');
 
    TextToMemo(note^.Content, false, false, false, false, false, false, false, false,false,false,TFontRange.FontNormal,0);
 
@@ -636,9 +617,9 @@ begin
 
    if (ShowIntLinks or ShowExtLinks) then CheckForLinks();
 
-   TRlog('Done !');
+   AlreadyLoaded := true;
 
-   Processing := false;
+   TRlog('Done !');
 end;
 
 procedure TFormNote.MemoToNote();
@@ -647,31 +628,23 @@ var
    Block : TKMemoBlock;
    FT : TKMemoTextBlock;
    s,s2,partext : String;
-   bul : boolean;
+   lines : TStringList;
  begin
-   // Processing := True;
 
-   //Dirty := False;
-   //KMemo1.Blocks.LockUpdate;
-   //KMemo1.Blocks.UnlockUpdate;
+   lines := TStringList.Create;
 
    MarkTitle(false);
+
+   lines.Add(note^.Title);
+   lines.Add('');
 
    i:=2;
    s:='';
 
    while(i<KMemo1.Blocks.Count) do
    begin
-      Block := KMemo1.Blocks.Items[i];
-
-      // Search paragraph interval : [i;j[
-      if Block.ClassNameIs('TKMemoParagraph') then
-      begin
-         bul := (TKMemoParagraph(Block).Numbering = pnuBullets);
-         j:=i+1;
-      end
-      else j:=i;
-
+      j:=i;
+      // Seraching Paragraph
       while( (j<KMemo1.Blocks.Count) and (not KMemo1.Blocks.Items[j].ClassNameIs('TKMemoParagraph')) )
          do inc(j);
 
@@ -708,9 +681,16 @@ var
          partext := partext + s2;
          inc(i);
       end;
-      if(bul) then s := '<list><list-item dir="ltr">' + partext + '</list-item dir="ltr"></list>'
-      else s := #10 + partext;
+
+      if((j<KMemo1.Blocks.Count) and (TKMemoParagraph(KMemo1.Blocks.Items[j]).Numbering = pnuBullets) )
+             then lines.Add( '<list><list-item dir="ltr">' + partext + '</list-item dir="ltr"></list>')
+             else lines.Add(partext);
+      i:=j+1;
    end;
+
+   lines.LineBreak := rsLineBreak;
+
+   s := lines.Text;
 
    // Delete opposite tags
    s2:='';
@@ -739,6 +719,7 @@ var
       s := StringReplace(s,'</italic>'+#10+'<italic>',#10,[rfReplaceAll]);
       s := StringReplace(s,'</bold>'+#10+'<bold>',#10,[rfReplaceAll]);
    end;
+   TRlog('NOTE ='+s);
 
    if(CompareStr(s, note^.Content) <> 0) then
    begin
@@ -767,7 +748,8 @@ var
       note^.LastMetaChange := GetCurrentTimeStr();
       note^.LastMetaChangeGMT := GetGMTFromStr(note^.LastMetaChange);
    end;
-   Dirty := false;
+
+   MarkClean();
 end;
 
 procedure TFormNote.Commit();
@@ -777,7 +759,7 @@ begin
   if(Dirty) then
   begin
     MemoToNote();
-    filename := GetLocalNoteFile(note^.ID)+'.txt';
+    filename := GetLocalNoteFile(note^.ID);
 
     NoteToFile(note,filename);
     TFormMain(mainWindow).ForceScan();
@@ -840,53 +822,63 @@ end;
 
 procedure TFormNote.ToggleBullet();
 var
-   BlockNo, LastBlock, PosInBlock : integer;
+   BlockNo, LastBlock, PosInBlock,i : integer;
    state : boolean;
 begin
   TRlog('TFormNote.ToggleBullet');
-  if Processing then exit;
 
   BlockNo := Kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
   LastBlock := Kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelEnd, PosInBlock);
 
-  TRlog('yo1 '+IntToStr(BlockNo) + ' / '+IntToStr(LastBlock));
   while( (LastBlock<KMemo1.Blocks.Count) and (not KMemo1.Blocks.Items[LastBlock].ClassNameIs('TKMemoParagraph'))) do inc(LastBlock);
   if(LastBlock = KMemo1.Blocks.Count) then Kmemo1.Blocks.AddParagraph();
 
-  TRlog('yo2');
   state := false;
   while((BlockNo<=LastBlock) and (not KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph'))) do inc(BlockNo);
   TRlog('yo22');
   state := (TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).Numbering <> pnuBullets) ;
 
-  TRlog('yo3');
-  while(BlockNo<=LastBlock) do
-  begin
-     TRlog('yoset '+IntToStr(BlockNo) + ' / '+IntToStr(LastBlock));
+  i:=BlockNo;
 
-     if(KMemo1.Blocks.Items[BLockNo].ClassNameIs('TKMemoParagraph')) then
+  while(i<=LastBlock) do
+  begin
+     TRlog('yoset '+IntToStr(i) + ' / '+IntToStr(LastBlock));
+
+     if(KMemo1.Blocks.Items[i].ClassNameIs('TKMemoParagraph')) then
      begin
        if(state) then
        begin
           TrLog('set bullet');
-          if(TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).Numbering <> pnuBullets) then
+          if(TKMemoParagraph(KMemo1.Blocks.Items[i]).Numbering <> pnuBullets) then
           begin
-            TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).Numbering:=pnuBullets;
-            TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).NumberingListLevel.FirstIndent:=-20;
-            TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).NumberingListLevel.LeftIndent:=30;
+            TKMemoParagraph(KMemo1.Blocks.Items[i]).Numbering:=pnuBullets;
+            TKMemoParagraph(KMemo1.Blocks.Items[i]).NumberingListLevel.FirstIndent:=-20;
+            TKMemoParagraph(KMemo1.Blocks.Items[i]).NumberingListLevel.LeftIndent:=30;
           end;
        end
        else begin
           TrLog('rm bullet');
-          if(TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).Numbering=pnuBullets) then
+          if(TKMemoParagraph(KMemo1.Blocks.Items[i]).Numbering=pnuBullets) then
           begin
-            TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).NumberingListLevel.FirstIndent:=0;
-            TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).NumberingListLevel.LeftIndent:=0;
-            TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).Numbering:=pnuNone;
+            TKMemoParagraph(KMemo1.Blocks.Items[i]).NumberingListLevel.FirstIndent:=0;
+            TKMemoParagraph(KMemo1.Blocks.Items[i]).NumberingListLevel.LeftIndent:=0;
+            TKMemoParagraph(KMemo1.Blocks.Items[i]).Numbering:=pnuNone;
           end;
        end;
      end;
-     inc(BLockNo);
+     inc(i);
+  end;
+
+  for i :=0 to KMemo1.Blocks.count-1 do
+  begin
+       if(((i<BlockNo) or (i>LastBlock)) and (KMemo1.Blocks.Items[i].ClassNameIs('TKMemoParagraph')))
+       then begin
+         if(TKMemoParagraph(KMemo1.Blocks.Items[i]).Numbering=pnuBullets) then
+          begin
+            TKMemoParagraph(KMemo1.Blocks.Items[i]).NumberingListLevel.FirstIndent:=-20;
+            if(TKMemoParagraph(KMemo1.Blocks.Items[i]).NumberingListLevel.LeftIndent<30) then TKMemoParagraph(KMemo1.Blocks.Items[i]).NumberingListLevel.LeftIndent := 30;
+          end;
+       end;
   end;
   TRlog('done');
 end;
@@ -914,6 +906,7 @@ end;
 
 // ------------------  COPY ON SELECTION METHODS for LINUX and Windows ------
 
+
 procedure TFormNote.onMouseUp(Sender: TObject; Button: TMouseButton;
     Shift: TShiftState; X, Y: Integer);
 {$IFNDEF DARWIN}    // Mac cannot do Primary Paste, ie XWindows Paste
@@ -939,6 +932,7 @@ begin
         else
             UnsetPrimarySelection();
     {$endif}
+    MarkTitle(false);
     BuildMenus(Sender);
 end;
 
@@ -1001,8 +995,7 @@ var
    FirstBlockNo, LastBlockNo, IntIndex, LastChar, FirstChar : longint;
    SplitStart : boolean = false;
 begin
-   if Processing then exit();
-   Processing := True;
+   TrLog('TFormNote.AlterFont');
 
    LastChar := Kmemo1.RealSelEnd;
    FirstChar := KMemo1.RealSelStart;
@@ -1026,7 +1019,6 @@ begin
    KMemo1.SelStart := FirstChar;
 
    MarkDirty();
-   Processing := False;
 end;
 
 procedure TFormNote.AlterBlockFont(const FirstBlockNo, BlockNo : longint; const Command : TNoteAction; const param : integer = 0);
@@ -1084,11 +1076,15 @@ begin
     Caption := '* ' + note^.Title;
 end;
 
+procedure TFormNote.MarkClean();
+begin
+    Dirty := false;
+    Caption := note^.Title;
+end;
+
 procedure TFormNote.FormShow(Sender: TObject);
 begin
    TRlog('TFormNote.FormShow');
-
-   if Processing then exit();				// its a "re-show" event. Already have a note loaded.
 
    if not AlreadyLoaded then
    begin
@@ -1389,12 +1385,8 @@ var
     needspace : boolean;
 begin
    TRlog('MarkTitle FontSizeTitle='+IntToStr(FontSizeTitle));
-  if Processing then exit();
-
-   Processing := true;
 
    BlockNo :=0;
-   Kmemo1.Blocks.LockUpdate;
    title :='';
 
    while ((BlockNo < Kmemo1.Blocks.Count) and ((length(Trim(Title))=0) or (Kmemo1.Blocks.Items[BlockNo].ClassName <> 'TKMemoParagraph'))) do
@@ -1405,6 +1397,7 @@ begin
 
    TRlog('Found title : '+title + ' with '+IntToStr(BlockNo)+' blocks');
 
+   KMemo1.Blocks.AddParagraph(BlockNo);
    KMemo1.Blocks.AddParagraph(BlockNo);
 
    if(force) then title := note^.Title;
@@ -1446,15 +1439,17 @@ begin
       inc(BlockNo);
    end;
 
+   while((Kmemo1.Blocks.Count>3) and Kmemo1.Blocks.Items[3].ClassNameIs('TKMemoParagraph'))
+   do Kmemo1.Blocks.Delete(3);
+
    // Update title
    if(CompareStr(title, note^.Title) <>0) then
    begin
+      TRlog('NOTE TITLE NOT EQUAL');
       note^.Title := Title;
       MarkDirty();
    end;
 
-   KMemo1.Blocks.UnLockUpdate;
-   Processing := False;
 end;
 
 
@@ -1612,7 +1607,6 @@ var
     end;
 
 begin
-    Processing := True;
     StartBlock := KMemo1.Blocks.IndexToBlockIndex(StartS, Blar);
     EndBlock := KMemo1.Blocks.IndexToBlockIndex(EndS, Blar);
     if StartBlock < 2 then StartBlock := 2;
@@ -1645,7 +1639,6 @@ begin
     end;
     finally
         KMemo1.Blocks.UnlockUpdate;
-        Processing := False;
     end;
 
 (*          remove all this after a testing cycle.
@@ -1692,7 +1685,6 @@ var
       BlockNo, EndBlock, Blar : longint;
       LinkText : ANSIString;
 begin
-    Processing := True;
     BlockNo := KMemo1.Blocks.IndexToBlockIndex(StartScan, Blar); // DANGER, we must adjust StartScan to block boundary
     EndBlock := KMemo1.Blocks.IndexToBlockIndex(EndScan, Blar);	 // DANGER, we must adjust EndScan to block boundary
     KMemo1.Blocks.LockUpdate;
@@ -1705,7 +1697,6 @@ begin
         inc(BlockNo);
 	end;
     KMemo1.Blocks.UnLockUpdate;
-    Processing := False;
 end;
 
 procedure TFormNote.OnUserClickLink(sender : TObject);
@@ -1952,10 +1943,9 @@ end;
 	{ Any change to the note text and this gets called. So, vital it be quick }
 procedure TFormNote.onChange(Sender: TObject);
 begin
-    if Processing then exit();           // don't do any of this while starting up.
-
-    MarkTitle(false);
+    //MarkTitle(false);
     MarkDirty();
+    BuildMenus(Sender);
 end;
 
 function TFormNote.NearABulletPoint(out Leading, Under, Trailing, IsFirstChar, NoBulletPara : Boolean;
@@ -2018,74 +2008,6 @@ begin
 
 end;
 
-
-procedure TFormNote.IndentIncrease();
-var
-   BlockNo, LastBlock, PosInBlock : integer;
-   n : integer;
-begin
-  if Processing then exit;
-
-  TRlog('TFormNote.IndentIncrease');
-
-  BlockNo := Kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
-  LastBlock := Kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelEnd, PosInBlock);
-
-  while( (LastBlock<KMemo1.Blocks.Count) and (not KMemo1.Blocks.Items[LastBlock].ClassNameIs('TKMemoParagraph'))) do inc(LastBlock);
-  if(LastBlock = KMemo1.Blocks.Count) then Kmemo1.Blocks.AddParagraph();
-
-  n := 0;
-  while((BlockNo<=LastBlock) and (not KMemo1.Blocks.Items[LastBlock].ClassNameIs('TKMemoParagraph'))) do inc(BlockNo);
-  if(TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).Numbering = pnuBullets)
-  then n := 1 + TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).NumberingListLevel.LeftIndent div 30;
-
-  if(n<1) then n:=1;
-
-  while(BlockNo<=LastBlock) do
-  begin
-     if(KMemo1.Blocks.Items[LastBlock].ClassNameIs('TKMemoParagraph')) then
-     begin
-       TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).Numbering:=pnuBullets;
-       TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).NumberingListLevel.FirstIndent:=-20;
-       TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).NumberingListLevel.LeftIndent:=30 *n;
-     end;
-  end;
-
-end;
-
-procedure TFormNote.IndentDecrease();
-var
-   BlockNo, LastBlock, PosInBlock : integer;
-   n : integer;
-begin
-  if Processing then exit;
-
-  TRlog('TFormNote.IndentDecrease');
-
-  BlockNo := Kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
-  LastBlock := Kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelEnd, PosInBlock);
-
-  while( (LastBlock<KMemo1.Blocks.Count) and (not KMemo1.Blocks.Items[LastBlock].ClassNameIs('TKMemoParagraph'))) do inc(LastBlock);
-  if(LastBlock = KMemo1.Blocks.Count) then Kmemo1.Blocks.AddParagraph();
-
-  n := 0;
-  while((BlockNo<=LastBlock) and (not KMemo1.Blocks.Items[LastBlock].ClassNameIs('TKMemoParagraph'))) do inc(BlockNo);
-  if(TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).Numbering = pnuBullets)
-  then n := (TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).NumberingListLevel.LeftIndent div 30) -1;
-
-  if(n<1) then n:=1;
-
-  while(BlockNo<=LastBlock) do
-  begin
-     if(KMemo1.Blocks.Items[LastBlock].ClassNameIs('TKMemoParagraph')) then
-     begin
-       TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).Numbering:=pnuBullets;
-       TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).NumberingListLevel.FirstIndent:=-20;
-       TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).NumberingListLevel.LeftIndent:=30 *n;
-     end;
-  end;
-end;
-
 procedure TFormNote.NotePrint();
 var
    p : TKPrn;
@@ -2101,8 +2023,6 @@ end;
 procedure TFormNote.onKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key));
-
-  if Processing then begin Key :=0; exit(); end;
 
   // CTRL
   if {$ifdef DARWIN}ssMeta{$else}ssCtrl{$endif} in Shift then
@@ -2141,18 +2061,22 @@ begin
   // SHIFT
   if ssShift in Shift then
   begin
-    if key = VK_TAB then begin TrLog('ShiftTab'); IndentDecrease(); Key := 0; exit(); end;
+    ///if key = VK_TAB then begin TrLog('ShiftTab'); IndentDecrease(); Key := 0; exit(); end;
 
     exit();
   end;
 
   // OTHER
 
-  if key = VK_TAB then begin TrLog('Tab'); IndentIncrease(); Key := 0; exit(); end;
-
-  MarkTitle(false);
-
+  //if key = VK_TAB then begin TrLog('Tab'); IndentIncrease(); Key := 0; exit(); end;
 end;
+
+procedure TFormNote.onKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+     TRlog('TFormNote.KMemo1KeyUp '+IntToStr(Key));
+  MarkTitle(false);
+end;
+
 
 { ======= MAIN MENU ====== }
 
@@ -2212,8 +2136,6 @@ begin
       //ntFontMinus ;
 
       ntBullet :            ToggleBullet();
-      ntBulletInc :         IndentIncrease();
-      ntBulletDec :         IndentDecrease();
 
       // NOTEBOOK
       //ntNoNotebook :
@@ -2446,22 +2368,6 @@ begin
   m1.OnClick := @MainMenuClicked;
   m1.Checked := isInBullet();
   m1.ImageIndex:=38;
-  FormatMenu.Add(m1);
-  // Format / Bullet increase
-  m1 := TMenuItem.Create(FormatMenu);
-  m1.Tag := ord(ntBulletInc);
-  m1.Caption := rsMenuBulletInc +' (Tab)';
-  m1.Enabled:= isInBullet();;
-  m1.OnClick := @MainMenuClicked;
-  m1.ImageIndex:=37;
-  FormatMenu.Add(m1);
-  // Format / Bullet decrease
-  m1 := TMenuItem.Create(FormatMenu);
-  m1.Tag := ord(ntBulletDec);
-  m1.Caption := rsMenuBulletDec +' (Shift-Tab)';
-  m1.Enabled:= isInBullet();;
-  m1.OnClick := @MainMenuClicked;
-  m1.ImageIndex:=36;
   FormatMenu.Add(m1);
 
   NotebooksMenu.Clear;
