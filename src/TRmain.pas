@@ -52,6 +52,7 @@ type TFormMain = class(TForm)
         procedure MenuNewNotebookNote(Sender : TObject);
 
         procedure OpenUrlNoteByTitle(t : String);
+        procedure ForceScan();
 
         procedure CheckCaseSensitiveChange(Sender: TObject);
         procedure SearchBoxChange(Sender: TObject);
@@ -692,6 +693,23 @@ begin
    end;
 
    Result:=deleted;
+end;
+
+procedure TFormMain.ForceScan();
+begin
+   Trlog('TFormMain.ForceScan');
+
+  if(assigned(ScanTimer)) then
+   begin
+     ScanTimer.Enabled := False;
+     FreeAndNil(ScanTimer);
+   end;
+  Application.ProcessMessages;
+
+  ScanTimer := TTimer.Create(nil);
+  ScanTimer.OnTimer := @ScanNotes;
+  ScanTimer.Interval := 10;
+  ScanTimer.Enabled := True;
 end;
 
 procedure TFormMain.ScanNotes(Sender : TObject);

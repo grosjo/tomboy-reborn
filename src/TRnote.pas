@@ -66,20 +66,21 @@ type
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormDestroy(Sender: TObject);
 
+    procedure onMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure onMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure onKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure onChange(Sender: TObject);
+
     { gets called under a number of conditions, easy one is just a re-show,
               or for a new note or a new note with a title from Link button
               or for an existing note where we get note file name
               or a new note from template where we have a note filename but IsTemplate
               also set, here we discard file name and make a new one. }
     procedure FormShow(Sender: TObject);
-    procedure KMemo1Change(Sender: TObject);
 
     { Watchs for  backspace affecting a bullet point, and whole lot of ctrl, shift, alt
               combinations. For things we let KMemo handle, just exit, for things we handle
               must set key to 0 after doing so. }
-    procedure KMemo1KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure KMemo1MouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-    procedure KMemo1MouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure MenuBulletClick(Sender: TObject);
 
     // Links inside note
@@ -94,6 +95,7 @@ private
     BlocksInTitle : integer;
     LastFind : integer;
 
+    HouseKeeper : TTimer;
 
     FontSizeNormal, FontSizeLarge, FontSizeTitle, FontSizeHuge, FontSizeSmall : integer;
     procedure SetFontSizes();
@@ -135,6 +137,7 @@ private
     { Alters the Font of Block as indicated }
     procedure AlterBlockFont(const FirstBlockNo, BlockNo: longint; const Command: TNoteAction; const param: integer=0);
 
+    procedure DoHouseKeeping(Sender: TObject);
 
         { If Toggle is true, sets bullets to what its currently no. Otherwise sets to TurnOn}
         procedure BulletControl(const Toggle, TurnOn: boolean);
@@ -196,7 +199,6 @@ private
         // Pastes into KMemo whatever is returned by the PrimarySelection system.
         //procedure PrimaryPaste(SelIndex: integer);
 
-        function CleanCaption() : ANSIString;
         procedure SetBullet(PB: TKMemoParagraph; Bullet: boolean);
         // Advises other apps we can do middle button paste
         procedure SetPrimarySelection;
@@ -640,7 +642,8 @@ begin
 
    TRlog('Cursor position '+IntToStr(note^.CursorPosition));
 
-   KMemo1.Select(note^.CursorPosition,0);
+   KMemo1.SelStart := note^.CursorPosition;
+   KMemo1.SelLength := 0;
 
    TRlog('Dealing with content end');
 
@@ -774,18 +777,28 @@ var
    then begin
       note^.X := Left;
       note^.Y := Top;
-      note^.SelectBoundPosition := KMemo1.RealSelStart;
+      note^.SelectBoundPosition := KMemo1.SelStart;
       note^.OpenOnStartup := true;
       note^.Height := Height;
       note^.Width := Width;
       note^.LastMetaChange := GetCurrentTimeStr();
       note^.LastMetaChangeGMT := GetGMTFromStr(note^.LastMetaChange);
    end;
+   Dirty := false;
 end;
 
 procedure TFormNote.Commit();
+var
+   filename : String;
 begin
+  if(Dirty) then
+  begin
+    MemoToNote();
+    filename := GetLocalNoteFile(note^.ID)+'.txt';
 
+    NoteToFile(note,filename);
+    TFormMain(mainWindow).ForceScan();
+  end;
 end;
 
 procedure TFormNote.BulletControl(const Toggle, TurnOn : boolean);
@@ -940,20 +953,17 @@ begin
     until (BlockNo > LastBlock) and KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph');   }
 end;
 
-procedure TFormNote.KMemo1MouseDown(Sender: TObject; Button: TMouseButton;
+procedure TFormNote.onMouseDown(Sender: TObject; Button: TMouseButton;
 		Shift: TShiftState; X, Y: Integer);
 begin
-   if ((ssCtrl in Shift) or (Button = mbRight)) then
-   begin
-      BuildMenus(Sender);
-      PopMenu.PopUp;
-   end;
+   BuildMenus(Sender);
+   if ((ssCtrl in Shift) or (Button = mbRight)) then PopMenu.PopUp;
 end;
 
 
 // ------------------  COPY ON SELECTION METHODS for LINUX and Windows ------
 
-procedure TFormNote.KMemo1MouseUp(Sender: TObject; Button: TMouseButton;
+procedure TFormNote.onMouseUp(Sender: TObject; Button: TMouseButton;
     Shift: TShiftState; X, Y: Integer);
 {$IFNDEF DARWIN}    // Mac cannot do Primary Paste, ie XWindows Paste
 var
@@ -978,6 +988,7 @@ begin
         else
             UnsetPrimarySelection();
     {$endif}
+    BuildMenus(Sender);
 end;
 
 procedure TFormNote.SetPrimarySelection;
@@ -1163,18 +1174,7 @@ end;
 procedure TFormNote.MarkDirty();
 begin
     Dirty := true;
-    if Caption = '' then Caption := '*'
-    else if Caption[1] <> '*' then
-        Caption := '* ' + Caption;
-end;
-
-
-function TFormNote.CleanCaption(): ANSIString;
-begin
-    if Caption = '' then exit('');
-    if Caption[1] = '*' then
-        Result := Copy(Caption, 3, 256)
-    else Result := Caption;
+    Caption := '* ' + note^.Title;
 end;
 
 procedure TFormNote.FormShow(Sender: TObject);
@@ -1210,8 +1210,9 @@ end;
 procedure TFormNote.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
   TRlog('TFormNote.FormCloseQuery');
-
-    CanClose := True;
+  HouseKeeper.Enabled := false;
+  Commit();
+  CanClose := True;
 end;
 
 procedure TFormNote.FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -1386,7 +1387,25 @@ begin
   m2.ImageIndex:=9;
   m1.Add(m2);
 
+  // Housekeeping
+  HouseKeeper := TTimer.Create(nil);
+  HouseKeeper.OnTimer := @DoHouseKeeping;
+  HouseKeeper.Interval := 60000;
+  HouseKeeper.Enabled := True;
 
+end;
+
+procedure TFormNote.DoHouseKeeping(Sender: TObject);
+begin
+  HouseKeeper.Enabled := False;
+  FreeAndNil(HouseKeeper);
+
+  Commit();
+
+  HouseKeeper := TTimer.Create(nil);
+  HouseKeeper.OnTimer := @DoHouseKeeping;
+  HouseKeeper.Interval := 60000;
+  HouseKeeper.Enabled := True;
 end;
 
 procedure TFormNote.ButtonFindPrevClick(Sender: TObject);
@@ -1414,7 +1433,8 @@ procedure TFormNote.FormDestroy(Sender: TObject);
     ARec : TNoteUpdateRec; }
 begin
   TrLog('TFormNote.FormDestroy');
-
+  HouseKeeper.Enabled := False;
+  FreeAndNil(HouseKeeper);
 end;
 
 procedure TFormNote.MarkTitle(force : boolean);
@@ -2040,10 +2060,11 @@ begin
 end;
 
 	{ Any change to the note text and this gets called. So, vital it be quick }
-procedure TFormNote.KMemo1Change(Sender: TObject);
+procedure TFormNote.onChange(Sender: TObject);
 begin
     if Processing then exit();           // don't do any of this while starting up.
 
+    MarkTitle(false);
     MarkDirty();
 end;
 
@@ -2150,7 +2171,7 @@ begin
    end;
 end;
 
-procedure TFormNote.KMemo1KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure TFormNote.onKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key));
 
@@ -2196,6 +2217,8 @@ begin
   // OTHER
 
   if key = VK_TAB then begin TrLog('Tab'); IndentIncrease(); Key := 0; exit(); end;
+
+  MarkTitle(false);
 
 end;
 

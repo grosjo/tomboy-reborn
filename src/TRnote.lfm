@@ -49,10 +49,10 @@ object FormNote: TFormNote
       ParentFont = False
       TabOrder = 0
       Visible = True
-      OnChange = KMemo1Change
-      OnKeyDown = KMemo1KeyDown
-      OnMouseDown = KMemo1MouseDown
-      OnMouseUp = KMemo1MouseUp
+      OnChange = onChange
+      OnKeyDown = onKeyDown
+      OnMouseDown = onMouseDown
+      OnMouseUp = onMouseUp
     end
   end
   object Panel2: TPanel
