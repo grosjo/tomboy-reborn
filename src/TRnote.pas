@@ -100,7 +100,7 @@ private
 
     procedure NoteToMemo();
     procedure MemoToNote();
-    procedure MarkTitle();
+    procedure MarkTitle(force : boolean);
     procedure MarkDirty();
     procedure Commit();
 
@@ -122,7 +122,6 @@ private
     function exportTXT() : boolean;
     function exportMarkDown() : boolean;
 
-    function GetTitle(): String;
     procedure NotePrint();
 
     procedure SpellSuggest(word : String; suggestions : TStrings);
@@ -166,7 +165,6 @@ private
           new text appears within the link block, bad .....  }
         procedure ClearNearLink(const StartS, EndS: integer);
         function DoCalculate(CalcStr: string): string;
-        procedure DoHousekeeping();
 
         procedure CheckForLinks(const StartScan : longint = 1; EndScan : longint = 0);
 
@@ -276,7 +274,7 @@ var
    TRlog('exportMarkdown to ' + filename);
    FreeAndNil(dd);
 
-   MarkTitle();
+   MarkTitle(false);
 
    i:=2;
 
@@ -602,6 +600,8 @@ begin
 
    Processing := True;
 
+   AlreadyLoaded := true;
+
    Dirty := False;
 
    // DISPLAY
@@ -669,7 +669,7 @@ var
    //KMemo1.Blocks.LockUpdate;
    //KMemo1.Blocks.UnlockUpdate;
 
-   MarkTitle();
+   MarkTitle(false);
 
    i:=2;
    s:='';
@@ -1183,13 +1183,11 @@ begin
 
    if Processing then exit();				// its a "re-show" event. Already have a note loaded.
 
-   TRlog('TFormNote.FormShow Testing loaded');
-
-   if not AlreadyLoaded then NoteToMemo();
-
-   TRlog('TFormNote.FormShow Notetomemo done');
-
-   MarkTitle();
+   if not AlreadyLoaded then
+   begin
+     NoteToMemo();
+     MarkTitle(true);
+   end;
 
    KMemo1.SelStart := KMemo1.Text.Length;  // set curser pos to end
    KMemo1.SelEnd := Kmemo1.Text.Length;
@@ -1419,22 +1417,7 @@ begin
 
 end;
 
-function TFormNote.GetTitle() : String;
-var
-    BlockNo : integer;
-    t : String;
-begin
-   BlockNo :=0;
-   t :='';
-   while ((BlockNo < Kmemo1.Blocks.Count) and (Kmemo1.Blocks.Items[BlockNo].ClassName <> 'TKMemoParagraph')) do
-   begin
-      t := t + Kmemo1.Blocks.Items[BlockNo].Text;
-      inc(BlockNo);
-   end;
-   Result := t;
-end;
-
-procedure TFormNote.MarkTitle();
+procedure TFormNote.MarkTitle(force : boolean);
 var
     BlockNo : integer;
     title : String;
@@ -1459,6 +1442,8 @@ begin
    TRlog('Found title : '+title + ' with '+IntToStr(BlockNo)+' blocks');
 
    KMemo1.Blocks.AddParagraph(BlockNo);
+
+   if(force) then title := note^.Title;
 
    ktb := KMemo1.Blocks.AddTextBlock(title,BlockNo+1);
 
@@ -1821,63 +1806,6 @@ begin
     else
 	    //SearchForm.OpenNote(TKMemoHyperlink(Sender).Text);
 end;
-
-
-procedure TFormNote.DoHousekeeping();
-var
-    CurserPos, SelLen, StartScan, EndScan, BlockNo, Blar : longint;
-    TempTitle : ANSIString;
-    // TS1, TS2, TS3, TS4 : TTimeStamp;           // Temp time stamping to test speed
-begin
-    if KMemo1.ReadOnly then exit();
-    CurserPos := KMemo1.RealSelStart;
-    SelLen := KMemo1.RealSelLength;
-    StartScan := CurserPos - LinkScanRange;
-    if StartScan < length(Caption) then StartScan := length(Caption);
-    EndScan := CurserPos + LinkScanRange;
-    if EndScan > length(KMemo1.Text) then EndScan := length(KMemo1.Text);   // Danger - should be KMemo1.Blocks.Text !!!
-    // TS1:=DateTimeToTimeStamp(Now);
-
-    BlockNo := KMemo1.Blocks.IndexToBlockIndex(CurserPos, Blar);
-
-    if ((BlocksInTitle + 10) > BlockNo) then begin
-          // We don't check title if user is not close to it.
-  	    MarkTitle();
-  	    TempTitle := GetTitle();
-        if Dirty then
-            Caption := '* ' + TempTitle
-        else
-            Caption := TempTitle;
-    end;
-
-    // OK, if we are in the first or second (?) block, no chance of a link anyway.
-    if BlockNo < 2 then begin
-        if KMemo1.Blocks.Count = 0 then 		// But bad things happen if its really empty !
-            KMemo1.Blocks.AddParagraph();
-  	        exit();
-    end;
-    if ShowIntLinks or ShowExtLinks then begin
-  	    ClearNearLink(StartScan, EndScan {CurserPos});
-  	    // TS2:=DateTimeToTimeStamp(Now);
-        CheckForLinks(StartScan, EndScan);
-        // TS3:=DateTimeToTimeStamp(Now);
-    end;
-    KMemo1.SelStart := CurserPos;
-    KMemo1.SelLength := SelLen;
-    //TRlog('Housekeeper called');
-
-  // Memo1.append('Clear ' + inttostr(TS2.Time-TS1.Time) + 'ms  Check ' + inttostr(TS3.Time-TS2.Time));
-
-  { Some notes about timing, 'medium' powered Linux laptop, 20k note.
-    Checks and changes to Title - less than mS
-    ClearNearLinks (none present) - less than mS
-    CheckForLinks (none present) - 180mS, thats mostly used up by MakeLinks()
-    	but length(KMemo1.Blocks.text) needs about 7mS too.
-
-    Can do better !
-  }
-end;
-
 
 
 { ---------------------- C A L C U L A T E    F U N C T I O N S ---------------}
