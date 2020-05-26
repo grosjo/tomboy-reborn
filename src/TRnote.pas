@@ -34,11 +34,7 @@ type TNoteMenuTags = (ntCommit, ntSync, ntFind, ntSearchAll, ntSettings,
 type TNoteAction = ( ChangeSize, ToggleBold, ToggleItalic, ToggleHighlight, ToggleFont, ToggleStrikeout, ToggleUnderline);
 
 
-type
-
-{ TFormNote }
-
- TFormNote = class(TForm)
+type TFormNote = class(TForm)
 
     ButtonFindPrev: TButton;
     ButtonFindNext: TButton;
@@ -67,7 +63,6 @@ type
     procedure FormDestroy(Sender: TObject);
 
     procedure onMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-    procedure onMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure onKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure onKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure onChange(Sender: TObject);
@@ -128,6 +123,14 @@ private
 
     procedure DoHouseKeeping(Sender: TObject);
 
+
+    // COPY/PASTE
+    procedure PrimaryCopy(const RequestedFormatID: TClipboardFormat; Data: TStream);
+    procedure PrimaryPaste();
+    procedure SetPrimarySelection();
+    procedure UnsetPrimarySelection();
+
+
         function ColumnCalculate(out AStr: string): boolean;
         function ComplexCalculate(out AStr: string): boolean;
         procedure ExprTan(var Result: TFPExpressionResult;
@@ -173,16 +176,6 @@ private
 	function NearABulletPoint(out Leading, Under, Trailing, IsFirstChar, NoBulletPara: Boolean; out BlockNo, TrailOffset, LeadOffset: longint): boolean;
         { Responds when user clicks on a hyperlink }
 		procedure OnUserClickLink(sender: TObject);
-        // A method called by this or other apps to get what we might have selected
-        procedure PrimaryCopy(const RequestedFormatID: TClipboardFormat;
-            Data: TStream);
-        // Pastes into KMemo whatever is returned by the PrimarySelection system.
-        //procedure PrimaryPaste(SelIndex: integer);
-
-        // Advises other apps we can do middle button paste
-        procedure SetPrimarySelection;
-        // Cancels any indication we can do middle button paste cos nothing is selected
-        procedure UnsetPrimarySelection;
 
     public
           note : PNoteInfo;
@@ -903,43 +896,11 @@ begin
    if ((ssCtrl in Shift) or (Button = mbRight)) then PopMenu.PopUp;
 end;
 
-
-// ------------------  COPY ON SELECTION METHODS for LINUX and Windows ------
-
-
-procedure TFormNote.onMouseUp(Sender: TObject; Button: TMouseButton;
-    Shift: TShiftState; X, Y: Integer);
-{$IFNDEF DARWIN}    // Mac cannot do Primary Paste, ie XWindows Paste
-var
-    Point : TPoint;
-    LinePos : TKmemoLinePosition; {$endif}
-begin
-    {$IFNDEF DARWIN}
-    if Button = mbMiddle then begin
-      Point := TPoint.Create(X, Y); // X and Y are pixels, not char positions !
-      LinePos := eolEnd;
-      while X > 0 do begin          // we might be right of the eol marker.
-            KMemo1.PointToIndex(Point, true, true, LinePos);
-            if LinePos = eolInside then break;
-            dec(Point.X);
-      end;
-      //PrimaryPaste(KMemo1.PointToIndex(Point, true, true, LinePos));
-      exit();
-    end;
-    if KMemo1.SelAvail and
-        (Kmemo1.Blocks.SelLength <> 0) then
-            SetPrimarySelection()
-        else
-            UnsetPrimarySelection();
-    {$endif}
-    MarkTitle(false);
-    BuildMenus(Sender);
-end;
-
-procedure TFormNote.SetPrimarySelection;
+procedure TFormNote.SetPrimarySelection();
 var
   FormatList: Array [0..1] of TClipboardFormat;
 begin
+  TRlog('TFormNote.SetPrimarySelection');
   if (PrimarySelection.OnRequest=@PrimaryCopy) then exit;
   FormatList[0] := CF_TEXT;
   try
@@ -949,37 +910,39 @@ begin
   end;
 end;
 
-procedure TFormNote.UnsetPrimarySelection;
+procedure TFormNote.UnsetPrimarySelection();
 begin
+  TRlog('TFormNote.UnsetPrimarySelection');
   if PrimarySelection.OnRequest=@PrimaryCopy then
     PrimarySelection.OnRequest:=nil;
 end;
 
-procedure TFormNote.PrimaryCopy(
-  const RequestedFormatID: TClipboardFormat;  Data: TStream);
+procedure TFormNote.PrimaryCopy(const RequestedFormatID: TClipboardFormat;  Data: TStream);
 var
-  s : string;
+   s : string;
 begin
-    S := KMemo1.Blocks.SelText;
-    if RequestedFormatID = CF_TEXT then
-        if length(S) > 0 then
-            Data.Write(s[1],length(s));
+   TRlog('TFormNote.PrimaryCopy');
+   S := KMemo1.Blocks.SelText;
+   if (RequestedFormatID = CF_TEXT) then Data.Write(s[1],length(s));
 end;
-    {
-procedure TFormNote.PrimaryPaste(SelIndex : integer);
+
+procedure TFormNote.PrimaryPaste();
 var
   Buff : string;
+  i : integer;
 begin
-    if PrimarySelection.HasFormat(CF_TEXT) then begin  // I don't know if this is useful at all.
-        Buff := PrimarySelection().AsText;
-        if Buff <> '' then begin
-            KMemo1.Blocks.InsertPlainText(SelIndex, Buff);
-            KMemo1.SelStart := SelIndex;
-            Kmemo1.SelEnd := SelIndex + length(Buff);
-        end;
-    end;
+  TRlog('TFormNote.PrimaryPaste');
+
+  Buff := PrimarySelection().AsText;
+  if Buff <> '' then
+   begin
+      i := KMemo1.RealSelStart;
+      KMemo1.Blocks.InsertPlainText(i, Buff);
+      KMemo1.SelStart := i;
+      Kmemo1.SelEnd := i + length(Buff);
+      MarkDirty();
+   end;
 end;
-}
 
 procedure TFormNote.InsertDate();
 var
@@ -1296,6 +1259,8 @@ begin
   HouseKeeper.Interval := 60000;
   HouseKeeper.Enabled := True;
 
+  SetPrimarySelection();
+
 end;
 
 procedure TFormNote.DoHouseKeeping(Sender: TObject);
@@ -1375,6 +1340,7 @@ begin
   TrLog('TFormNote.FormDestroy');
   HouseKeeper.Enabled := False;
   FreeAndNil(HouseKeeper);
+  UnsetPrimarySelection();
 end;
 
 procedure TFormNote.MarkTitle(force : boolean);
@@ -2028,33 +1994,33 @@ begin
   if {$ifdef DARWIN}ssMeta{$else}ssCtrl{$endif} in Shift then
   begin
 
-     if key = ord('B') then begin TrLog('Ctrl-B'); AlterFont(ToggleBold); Key := 0; exit(); end;
-     if key = ord('I') then begin TrLog('Ctrl-I'); AlterFont(ToggleItalic); Key := 0; exit(); end;
-     if key = ord('S') then begin TrLog('Ctrl-S'); AlterFont(ToggleStrikeout); Key := 0; exit(); end;
-     if key = ord('U') then begin TrLog('Ctrl-U'); AlterFont(ToggleUnderline); Key := 0; exit(); end;
-     if key = ord('T') then begin TrLog('Ctrl-T'); AlterFont(ToggleFont); Key := 0; exit(); end;
-     if key = ord('H') then begin TrLog('Ctrl-H'); AlterFont(ToggleHighlight); Key := 0; exit(); end;
+     if key = ord('B') then begin TrLog('Ctrl-B'); AlterFont(ToggleBold); end;
+     if key = ord('I') then begin TrLog('Ctrl-I'); AlterFont(ToggleItalic); end;
+     if key = ord('S') then begin TrLog('Ctrl-S'); AlterFont(ToggleStrikeout); end;
+     if key = ord('U') then begin TrLog('Ctrl-U'); AlterFont(ToggleUnderline); end;
+     if key = ord('T') then begin TrLog('Ctrl-T'); AlterFont(ToggleFont); end;
+     if key = ord('H') then begin TrLog('Ctrl-H'); AlterFont(ToggleHighlight); end;
 
-     if key = ord('A') then begin TrLog('Ctrl-A'); KMemo1.ExecuteCommand(ecSelectAll); Key := 0; exit(); end;
+     if key = ord('A') then begin TrLog('Ctrl-A'); KMemo1.ExecuteCommand(ecSelectAll); end;
 
-     if key = ord('D') then begin TrLog('Ctrl-D'); InsertDate(); Key := 0; exit(); end;
+     if key = ord('D') then begin TrLog('Ctrl-D'); InsertDate(); end;
 
-     if key = ord('C') then begin TrLog('Ctrl-C'); KMemo1.ExecuteCommand(TKEditCommand.ecCopy); MarkDirty(); Key := 0; exit(); end;
-     if key = ord('X') then begin TrLog('Ctrl-X'); KMemo1.ExecuteCommand(TKEditCommand.ecCut); MarkDirty(); Key := 0; exit(); end;
-     if key = ord('V') then begin TrLog('Ctrl-V'); KMemo1.ExecuteCommand(TKEditCommand.ecPaste); MarkDirty(); Key := 0; exit(); end;
+     if key = ord('C') then begin TrLog('Ctrl-C'); KMemo1.ExecuteCommand(TKEditCommand.ecCopy); MarkDirty(); end;
+     if key = ord('X') then begin TrLog('Ctrl-X'); KMemo1.ExecuteCommand(TKEditCommand.ecCut); MarkDirty(); end;
+     if key = ord('V') then begin TrLog('Ctrl-V'); PrimaryPaste(); {KMemo1.ExecuteCommand(TKEditCommand.ecPaste); MarkDirty(); } end;
 
-     if key = ord('W') then begin TrLog('Ctrl-W'); Commit(); Key := 0; exit(); end;
+     if key = ord('W') then begin TrLog('Ctrl-W'); Commit(); end;
 
-     if key = ord('O') then begin TrLog('Ctrl-O'); TFormMain(mainWIndow).ShowSettings(); Key := 0; exit(); end;
+     if key = ord('O') then begin TrLog('Ctrl-O'); TFormMain(mainWIndow).ShowSettings(); end;
 
-     if key = ord('P') then begin TrLog('Ctrl-P'); NotePrint(); Key :=0; exit(); end;
+     if key = ord('P') then begin TrLog('Ctrl-P'); NotePrint(); end;
 
-     if key = ord('Z') then begin TrLog('Ctrl-Z'); KMemo1.ExecuteCommand(TKEditCommand.ecUndo); Key := 0; exit(); end;
-     if key = ord('Y') then begin TrLog('Ctrl-Y'); KMemo1.ExecuteCommand(TKEditCommand.ecRedo); Key := 0; exit(); end;
+     if key = ord('Z') then begin TrLog('Ctrl-Z'); KMemo1.ExecuteCommand(TKEditCommand.ecUndo); end;
+     if key = ord('Y') then begin TrLog('Ctrl-Y'); KMemo1.ExecuteCommand(TKEditCommand.ecRedo); end;
 
-     if key = ord('F') then begin TrLog('Ctrl-F'); CheckboxFindInNote.Checked := true; ShowSearchPanel(true); EditFindInNote.SetFocus; Key :=0; exit(); end;
+     if key = ord('F') then begin TrLog('Ctrl-F'); CheckboxFindInNote.Checked := true; ShowSearchPanel(true); EditFindInNote.SetFocus; end;
 
-
+     Key := 0;
      exit();
    end;
 
@@ -2115,7 +2081,7 @@ begin
       ntSelectAll :         KMemo1.ExecuteCommand(ecSelectAll);
       ntCopy :              begin KMemo1.ExecuteCommand(TKEditCommand.ecCopy); MarkDirty(); end;
       ntCut :               begin KMemo1.ExecuteCommand(TKEditCommand.ecCut); MarkDirty(); end;
-      ntPaste :             begin KMemo1.ExecuteCommand(TKEditCommand.ecPaste); MarkDirty(); end;
+      ntPaste :             begin PrimaryPaste(); { KMemo1.ExecuteCommand(TKEditCommand.ecPaste); MarkDirty();} end;
       ntInsertDate :        InsertDate();
 
       //ntLink :

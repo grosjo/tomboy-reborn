@@ -733,7 +733,7 @@
         <PackageName Value="LCL"/>
       </Item5>
     </RequiredPackages>
-    <Units Count="23">
+    <Units Count="18">
       <Unit0>
         <Filename Value="tomboy-reborn.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -771,71 +771,71 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit5>
-      <Unit11>
+      <Unit6>
         <Filename Value="TRAutoStartCtrl.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit11>
-      <Unit12>
+      </Unit6>
+      <Unit7>
         <Filename Value="TRabout.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormAbout"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit12>
-      <Unit13>
+      </Unit7>
+      <Unit8>
         <Filename Value="TRhunspell.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit13>
-      <Unit14>
+      </Unit8>
+      <Unit9>
         <Filename Value="TRprint.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit14>
-      <Unit15>
+      </Unit9>
+      <Unit10>
         <Filename Value="TRtransport.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit15>
-      <Unit16>
+      </Unit10>
+      <Unit11>
         <Filename Value="TRtransportFile.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit16>
-      <Unit17>
+      </Unit11>
+      <Unit12>
         <Filename Value="TRtransportNC.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit17>
-      <Unit18>
+      </Unit12>
+      <Unit13>
         <Filename Value="TRtexts.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="TrTexts"/>
-      </Unit18>
-      <Unit19>
+      </Unit13>
+      <Unit14>
         <Filename Value="TRsyncError.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormSyncError"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="TRSyncError"/>
-      </Unit19>
-      <Unit20>
+      </Unit14>
+      <Unit15>
         <Filename Value="TRcolours.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormColours"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit20>
-      <Unit21>
+      </Unit15>
+      <Unit16>
         <Filename Value="TRnextSetup.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormNCSetup"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit21>
-      <Unit22>
+      </Unit16>
+      <Unit17>
         <Filename Value="TRmain.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormMain"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-      </Unit22>
+      </Unit17>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

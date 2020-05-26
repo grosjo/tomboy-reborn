@@ -51,8 +51,8 @@ object FormNote: TFormNote
       Visible = True
       OnChange = onChange
       OnKeyDown = onKeyDown
+      OnKeyUp = onKeyUp
       OnMouseDown = onMouseDown
-      OnMouseUp = onMouseUp
     end
   end
   object Panel2: TPanel
