@@ -184,7 +184,9 @@ RESOURCESTRING
   rsSpellNoDic = 'Select dic to use';
 
   rsCheckSel = 'Spelling';
-  rsCheckSelNop = 'No text selected';
+  rsCheckSelNop = 'Select text to check spelling';
+
+  rsNoteLink = 'Create a note link';
 
   rsHelpDelay = 'Delay startup 2 sec to allow OS to settle';
   rsHelpLang = 'Force Language, supported es, nl';

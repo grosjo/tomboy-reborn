@@ -50,8 +50,8 @@ object FormNote: TFormNote
       TabOrder = 0
       Visible = True
       OnChange = onChange
+      OnClick = onChange
       OnKeyDown = onKeyDown
-      OnKeyUp = onKeyUp
       OnMouseDown = onMouseDown
     end
   end

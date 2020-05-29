@@ -51,7 +51,7 @@ type TFormMain = class(TForm)
         procedure MainMenuClicked(Sender : TObject);
         procedure MenuNewNotebookNote(Sender : TObject);
 
-        procedure OpenUrlNoteByTitle(t : String);
+        procedure OpenNoteByTitle(t : String);
         procedure ForceScan();
 
         procedure CheckCaseSensitiveChange(Sender: TObject);
@@ -92,7 +92,7 @@ private
         procedure ProcessSync(Sender: TObject);
         procedure ProcessSyncUpdates(const DeletedList, DownList: TStringList);
 
-        procedure OpenNote(ID : String = ''; Notebook : String = '');
+        procedure OpenNote(ID : String = ''; Notebook : String = '' ; Title : String = '');
         function DeleteNote(ID: String) : boolean;
         function SaveNote(ID: String) : boolean;
 
@@ -443,14 +443,25 @@ begin
    end;
 end;
 
-procedure TFormMain.OpenUrlNoteByTitle(t : String);
+procedure TFormMain.OpenNoteByTitle(t : String);
 var
    i : integer;
+   b : boolean;
+   n : PNoteInfo;
 begin
    TRlog('Searching Note by title : ' + t);
 
+   b := false;
+
    for i := 0 to NotesList.Count-1 do
-      if (CompareText(NotesList.Items[i]^.Title,t) = 0) then OpenNote(NotesList.Items[i]^.ID);
+      if (CompareText(NotesList.Items[i]^.Title,t) = 0)
+      then begin
+        OpenNote(NotesList.Items[i]^.ID);
+        b := true;
+      end;
+
+   if(not b) then OpenNote('','',t);
+
 end;
 
 procedure TFormMain.MenuNewNotebookNote(Sender : TObject);
@@ -1292,7 +1303,7 @@ begin
 end;
 
 
-procedure TFormMain.OpenNote(ID : String = ''; Notebook : String = '');
+procedure TFormMain.OpenNote(ID : String = ''; Notebook : String = '' ; Title : String = '');
 var
     EBox : PNoteEditForm;
     n : PNoteInfo;
@@ -1300,6 +1311,12 @@ begin
    TRlog('OpenNote('+ID+' , '+Notebook+' )');
 
    n := NotesList.FindID(ID);
+
+   TRlog('Done searching');
+
+   Title := Trim(Title);
+
+   TRlog('Done cleaning title');
 
    if(n = nil) then
    begin
@@ -1310,6 +1327,10 @@ begin
       if((length(Notebook)>0) and (CompareText(Notebook,'-')<>0)) then n^.Tags.Add('system:notebook:'+Notebook);
       NotesList.Add(n);
    end;
+
+   TRlog('Setting title');
+
+   if(Length(Title)>0) then n^.Title := Title;
 
    TRlog('Testing TNoteEditForm');
 
@@ -1323,11 +1344,15 @@ begin
    TRlog('Creating TNoteEditForm');
 
    Ebox^ := TFormNote.Create(Self);
+
+   exit();
+
    TRlog('Assigning data ');
    n^.Display := Ebox;
    EBox^.note := n;
 
    TRlog('Showing FormEdit');
+
 
    EBox^.Show();
 end;

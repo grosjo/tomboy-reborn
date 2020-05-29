@@ -34,7 +34,11 @@ type TNoteMenuTags = (ntCommit, ntSync, ntFind, ntSearchAll, ntSettings,
 type TNoteAction = ( ChangeSize, ToggleBold, ToggleItalic, ToggleHighlight, ToggleFont, ToggleStrikeout, ToggleUnderline);
 
 
-type TFormNote = class(TForm)
+type
+
+{ TFormNote }
+
+ TFormNote = class(TForm)
 
     ButtonFindPrev: TButton;
     ButtonFindNext: TButton;
@@ -64,7 +68,6 @@ type TFormNote = class(TForm)
 
     procedure onMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure onKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure onKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure onChange(Sender: TObject);
 
     procedure FormShow(Sender: TObject);
@@ -80,6 +83,11 @@ private
     HouseKeeper : TTimer;
 
     FontSizeNormal, FontSizeLarge, FontSizeTitle, FontSizeHuge, FontSizeSmall : integer;
+
+    // Text changes
+    oldtext : String;
+    oldselstart, oldselend : Integer;
+
     procedure SetFontSizes();
 
     procedure NoteToMemo();
@@ -130,6 +138,8 @@ private
     procedure SetPrimarySelection();
     procedure UnsetPrimarySelection();
 
+    // LINKS
+    procedure CreateNoteLink();
 
         function ColumnCalculate(out AStr: string): boolean;
         function ComplexCalculate(out AStr: string): boolean;
@@ -224,7 +234,7 @@ var
 begin
    u := TKMemoHyperlink(Sender).Text;
    showmessage('Internal Link ' + u);
-   TFormMain(mainWindow).OpenUrlNoteByTitle(u);
+   TFormMain(mainWindow).OpenNoteByTitle(u);
 end;
 
 function TFormNote.ExportMarkDown() : boolean;
@@ -563,8 +573,6 @@ begin
 
    Trlog('NoteToMemo');
 
-   Dirty := False;
-
    // DISPLAY
 
    // First of all, deal with zero or neg settings
@@ -611,6 +619,12 @@ begin
    if (ShowIntLinks or ShowExtLinks) then CheckForLinks();
 
    AlreadyLoaded := true;
+   
+   Dirty := False;
+
+   oldtext := KMemo1.Text;
+   oldselstart := KMemo1.RealSelStart;
+   oldselend := KMemo1.RealSelend;
 
    TRlog('Done !');
 end;
@@ -873,7 +887,7 @@ begin
           end;
        end;
   end;
-  TRlog('done');
+  TRlog('TFormNote.ToggleBullet()');
 end;
 
 function TFormNote.isInBullet() : boolean;
@@ -906,8 +920,10 @@ begin
   try
     PrimarySelection.SetSupportedFormats(1, @FormatList[0]);
     PrimarySelection.OnRequest:=@PrimaryCopy;
-  except
+  except on E:Exception do TRlog(E.message);
   end;
+  TRlog('TFormNote.SetPrimarySelection done');
+
 end;
 
 procedure TFormNote.UnsetPrimarySelection();
@@ -1031,6 +1047,7 @@ begin
 	       Block.TextStyle.Font.Name := UsualFont;
             end;
    end;
+
 end;
 
 procedure TFormNote.MarkDirty();
@@ -1071,6 +1088,9 @@ begin
    ShowSearchPanel(false);
 
    BuildMenus(Sender);
+
+   SetPrimarySelection();
+
 end;
 
 procedure TFormNote.FormCloseQuery(Sender: TObject; var CanClose: boolean);
@@ -1253,13 +1273,15 @@ begin
   m2.ImageIndex:=9;
   m1.Add(m2);
 
+  TRlog('TFormNote.FormCreate - ENd menu');
+
   // Housekeeping
   HouseKeeper := TTimer.Create(nil);
   HouseKeeper.OnTimer := @DoHouseKeeping;
   HouseKeeper.Interval := 60000;
   HouseKeeper.Enabled := True;
 
-  SetPrimarySelection();
+  TRlog('TFormNote.FormCreate done');
 
 end;
 
@@ -1348,7 +1370,6 @@ var
     BlockNo : integer;
     title : String;
     ktb : TKMemoTextBlock;
-    needspace : boolean;
 begin
    TRlog('MarkTitle FontSizeTitle='+IntToStr(FontSizeTitle));
 
@@ -1363,41 +1384,38 @@ begin
 
    TRlog('Found title : '+title + ' with '+IntToStr(BlockNo)+' blocks');
 
-   KMemo1.Blocks.AddParagraph(BlockNo);
-   KMemo1.Blocks.AddParagraph(BlockNo);
+   //exit();
 
-   if(force) then title := note^.Title;
-
-   ktb := KMemo1.Blocks.AddTextBlock(title,BlockNo+1);
-
-   ktb.TextStyle.Font.Name := UsualFont;
-   ktb.TextStyle.Font.Size := FontSizeTitle;
-   ktb.TextStyle.Font.Color := TitleColour;
-   ktb.TextStyle.Font.Style := [fsUnderline];
-
-   needspace := false;
-   if(BlockNo +4< Kmemo1.Blocks.Count) then
-   begin
-      if (not Kmemo1.Blocks.Items[BlockNo+3].ClassNameIs('TKMemoParagraph')) then
-      begin
-         if (Kmemo1.Blocks.Items[BlockNo+3].ClassNameIs('TKMemoTextBlock') and (Length(Trim(Kmemo1.Blocks.Items[BlockNo+3].Text))>0)) then needspace := true;
-      end;
+   if((BlockNo<>2) or (Kmemo1.Blocks.Items[1].ClassName <> 'TKMemoParagraph') or (Kmemo1.Blocks.Items[0].ClassName <> 'TKMemoTextBlock'))
+   then begin
+     while(BlockNo>0) do begin Kmemo1.Blocks.Delete(0); dec(BlockNo); end;
+     KMemo1.Blocks.AddTextBlock(title,0);
+     KMemo1.Blocks.AddParagraph(1);
    end;
-   if(needspace) then KMemo1.Blocks.AddParagraph(BlockNo+2);
 
-   //if Kmemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock') then Title := Title + Kmemo1.Blocks.Items[BlockNo].Text;
-   while(BlockNo>=0) do
-   begin
-       Kmemo1.Blocks.Delete(0);
-       dec(BlockNo);
-   end;
+   if((Kmemo1.Blocks.Count<3) or (Kmemo1.Blocks.Items[2].ClassName <> 'TKMemoParagraph'))
+   then KMemo1.Blocks.AddParagraph(2);
+
+   if(force) then title := Trim(note^.Title);
+
+   ktb := KMemo1.Blocks.AddTextBlock(title,0);
+
+   if(CompareStr(ktb.TextStyle.Font.Name,UsualFont)<>0) then ktb.TextStyle.Font.Name := UsualFont;
+   if(ktb.TextStyle.Font.Size <> FontSizeTitle) then ktb.TextStyle.Font.Size := FontSizeTitle;
+   if(ktb.TextStyle.Font.Color <> TitleColour) then ktb.TextStyle.Font.Color := TitleColour;
+   if(not (ktb.TextStyle.Font.Style = [fsUnderline])) then ktb.TextStyle.Font.Style := [fsUnderline];
+
+   ktb := TKMemoTextBlock(KMemo1.Blocks.Items[1]);
+
+   if(CompareStr(ktb.TextStyle.Font.Name,UsualFont)<>0) then ktb.TextStyle.Font.Name := UsualFont;
+   if(ktb.TextStyle.Font.Size <> FontSizeTitle) then ktb.TextStyle.Font.Size := FontSizeTitle;
 
    BlockNo:=2;
    while ((BlockNo < Kmemo1.Blocks.Count)) do
    begin
-      ktb := TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]);
-      if ktb.ClassNameIs('TKMemoTextBlock') and (ktb.TextStyle.Font.Size = FontSizeTitle) then
+      if KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock') and (TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]).TextStyle.Font.Size = FontSizeTitle) then
       begin
+           ktb := TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]);
            ktb.TextStyle.Font.Size := FontSizeNormal;
            ktb.TextStyle.Font.Color := TextColour;
            ktb.TextStyle.Font.Style := [];
@@ -1405,14 +1423,11 @@ begin
       inc(BlockNo);
    end;
 
-   while((Kmemo1.Blocks.Count>3) and Kmemo1.Blocks.Items[3].ClassNameIs('TKMemoParagraph'))
-   do Kmemo1.Blocks.Delete(3);
-
    // Update title
    if(CompareStr(title, note^.Title) <>0) then
    begin
       TRlog('NOTE TITLE NOT EQUAL');
-      note^.Title := Title;
+      note^.Title := Trim(Title);
       MarkDirty();
    end;
 
@@ -1906,13 +1921,6 @@ begin
     exit(AStr <> '');
 end;
 
-	{ Any change to the note text and this gets called. So, vital it be quick }
-procedure TFormNote.onChange(Sender: TObject);
-begin
-    //MarkTitle(false);
-    MarkDirty();
-    BuildMenus(Sender);
-end;
 
 function TFormNote.NearABulletPoint(out Leading, Under, Trailing, IsFirstChar, NoBulletPara : Boolean;
         								out BlockNo, TrailOffset, LeadOffset : longint ) : boolean;
@@ -1986,6 +1994,24 @@ begin
    end;
 end;
 
+procedure TFormNote.onChange(Sender : TObject);
+begin
+   TRlog(' TFormNote.onChange');
+   if not AlreadyLoaded then exit();
+
+   if(CompareStr(oldtext,KMemo1.Text)<>0)
+   then begin
+     MarkDirty();
+     oldtext := KMemo1.Text;
+   end;
+   if((oldselstart<>KMemo1.RealSelStart) or (oldselend<>KMemo1.RealSelend))
+   then begin
+     oldselstart := KMemo1.RealSelStart;
+     oldselend := KMemo1.RealSelend;
+     BuildMenus(Sender);
+   end;
+end;
+
 procedure TFormNote.onKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key));
@@ -2027,20 +2053,14 @@ begin
   // SHIFT
   if ssShift in Shift then
   begin
-    ///if key = VK_TAB then begin TrLog('ShiftTab'); IndentDecrease(); Key := 0; exit(); end;
+    if key = VK_TAB then begin TrLog('ShiftTab'); ToggleBullet(); Key := 0; exit(); end;
 
     exit();
   end;
 
   // OTHER
 
-  //if key = VK_TAB then begin TrLog('Tab'); IndentIncrease(); Key := 0; exit(); end;
-end;
-
-procedure TFormNote.onKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
-begin
-     TRlog('TFormNote.KMemo1KeyUp '+IntToStr(Key));
-  MarkTitle(false);
+  if key = VK_TAB then begin TrLog('ShiftTab'); ToggleBullet(); Key := 0; exit(); end;
 end;
 
 
@@ -2084,7 +2104,7 @@ begin
       ntPaste :             begin PrimaryPaste(); { KMemo1.ExecuteCommand(TKEditCommand.ecPaste); MarkDirty();} end;
       ntInsertDate :        InsertDate();
 
-      //ntLink :
+      ntLink :              begin CreateNoteLink(); end;
       //ntURL :
 
       // SPELLING
@@ -2122,6 +2142,49 @@ begin
       ntAbout :             TFormMain(mainWindow).ShowAbout();
 
    end;
+end;
+
+procedure TFormNote.CreateNoteLink();
+var
+    s : String;
+    n,m,i : Integer;
+    hl : TKMemoHyperlink;
+    f : TFont;
+begin
+   TRlog('CreateNoteLink');
+   s := trim(KMemo1.SelText);
+
+   if(Length(s)<1) then exit();
+
+   TRlog('Real Start = '+IntToStr(KMemo1.RealSelStart));
+   TRlog('Real End = '+IntToStr(KMemo1.RealSelEnd));
+   n := KMemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, i);
+   f := TKMemoTextBlock(KMemo1.Blocks.Items[n]).TextStyle.Font;
+
+   if((i>0) and (i<Length(KMemo1.Blocks.Items[n].Text)))
+   then n := KMemo1.SplitAt(KMemo1.RealSelStart);
+
+   TRlog('Real End2 = '+IntToStr(KMemo1.RealSelEnd));
+   m := KMemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelend, i);
+   if((i>0) and (i<Length(TKMemoTextBlock(KMemo1.Blocks.Items[m]).Text)))
+   then m := KMemo1.SplitAt(KMemo1.RealSelEnd)-1;
+
+   i:= m-n;
+   while(i>0) do begin KMemo1.Blocks.Delete(n); dec(i); end;
+
+   hl := TKMemoHyperlink.Create;
+   hl.Text := s;
+   hl.URL := 'note://'+s;
+   hl.OnClick := @InternalLink;
+   f.Color := clBlue;
+   f.Style := f.Style + [fsUnderline];
+   hl.TextStyle.Font := f;
+
+   KMemo1.Blocks.AddHyperlink(hl,n);
+
+   TFormMain(mainWindow).OpenNoteByTitle(s);
+
+
 end;
 
 procedure TFormNote.BuildMenus(Sender: TObject);
@@ -2167,6 +2230,18 @@ begin
       m1.Caption := rsCheckSelNop ;
       m1.Enabled := false;
   end;
+
+  TRlog('Add sep pop');
+  PopMenu.Items.AddSeparator;
+
+  // POP / Insert note link
+  m1 := TMenuItem.Create(PopMenu);
+  m1.ImageIndex:=40;
+  m1.Caption := rsNoteLink;
+  m1.Enabled := (KMemo1.RealSelLength>0);
+  m1.Tag := ord(ntLink);
+  PopMenu.Items.Add(m1);
+
 
   // Pop / InsertDate
   m1 := TMenuItem.Create(PopMenu);
