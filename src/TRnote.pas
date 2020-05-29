@@ -79,6 +79,7 @@ type
 private
     AlreadyLoaded : boolean;
     Dirty : boolean;
+    ProcessingChange : boolean;
 
     HouseKeeper : TTimer;
 
@@ -141,36 +142,14 @@ private
     // LINKS
     procedure CreateNoteLink();
 
-        function ColumnCalculate(out AStr: string): boolean;
-        function ComplexCalculate(out AStr: string): boolean;
-        procedure ExprTan(var Result: TFPExpressionResult;
-            const Args: TExprParameterArray);
-
-        function FindNumbersInString(const AStr: string; out AtStart, AtEnd: string
-            ): boolean;
-        function ParagraphTextTrunc(): string;
-        function RelativePos(const Term: ANSIString; const MText: PChar;
-            StartAt: integer): integer;
-        function PreviousParagraphText(const Backby: integer): string;
-        function SimpleCalculate(out AStr: string): boolean;
-
-		procedure ClearLinks(const StartScan : longint =0; EndScan : longint = 0);
+    procedure ClearLinks(const StartScan : longint =0; EndScan : longint = 0);
         { Looks around current block looking for link blocks. If invalid, 'unlinks' them.
           Http or local links, we need to clear the colour and underline of any text nearby
           that have been 'smeared' from user editing at the end of a link. When this happens,
           new text appears within the link block, bad .....  }
         procedure ClearNearLink(const StartS, EndS: integer);
-        function DoCalculate(CalcStr: string): string;
 
         procedure CheckForLinks(const StartScan : longint = 1; EndScan : longint = 0);
-
-
-        procedure InitiateCalc();
-
-        { Searches for all occurances of Term in the KMemo text, makes them Links
-          Does not bother with single char terms. Expects KMemo1 to be already locked.}
-        procedure MakeAllLinks(const PText: PChar; const Term: ANSIString;
-            const StartScan: longint=1; EndScan: longint=0);
 
         { Makes a link at passed position as long as it does not span beyond a block.
             And if it does span beyond one block, I let that go through to the keeper.
@@ -179,11 +158,6 @@ private
             Its a SelectionIndex.  Note we no longer need pass this p the Link, remove ? }
 	procedure MakeLink(const Index, Len: longint);
 
-        { Returns true if current cursor is 'near' a bullet item. That could be because we are
-  		on a Para Marker thats a Bullet and/or either Leading or Trailing Para is a Bullet.
-  		We return with IsFirstChar true if we are on the first visible char of a line (not
-  		necessarily a bullet line). If we return FALSE, passed parameters may not be set. }
-	function NearABulletPoint(out Leading, Under, Trailing, IsFirstChar, NoBulletPara: Boolean; out BlockNo, TrailOffset, LeadOffset: longint): boolean;
         { Responds when user clicks on a hyperlink }
 		procedure OnUserClickLink(sender: TObject);
 
@@ -1110,6 +1084,8 @@ end;
 
 procedure TFormNote.ShowSearchPanel(s : boolean);
 begin
+  TRlog('ShowSearchPanel('+BoolToStr(s)+')');
+
   if(s) then
   begin
      TRlog('Showing Search panel');
@@ -1130,6 +1106,7 @@ var
 begin
   TRlog('TFormNote.FormCreate');
   AlreadyLoaded := false;
+  ProcessingChange := false;
   SetFontSizes();
   {$ifdef DARWIN}
     MenuBold.ShortCut      := KeyToShortCut(VK_B, [ssMeta]);
@@ -1384,8 +1361,6 @@ begin
 
    TRlog('Found title : '+title + ' with '+IntToStr(BlockNo)+' blocks');
 
-   //exit();
-
    if((BlockNo<>2) or (Kmemo1.Blocks.Items[1].ClassName <> 'TKMemoParagraph') or (Kmemo1.Blocks.Items[0].ClassName <> 'TKMemoTextBlock'))
    then begin
      while(BlockNo>0) do begin Kmemo1.Blocks.Delete(0); dec(BlockNo); end;
@@ -1484,43 +1459,6 @@ while I < (BlockNo + 10) do begin
     writeln(' Type=' + KMemo1.Blocks.Items[i].ClassName + ' Text=' + KMemo1.Blocks.Items[i].Text);
     inc(i);
 end; *)
-end;
-
-
-
-// Starts searching a string at StartAt for Term, returns 1 based offset from start of str if found, 0 if not. Like UTF8Pos(
-function TFormNote.RelativePos(const Term : ANSIString; const MText : PChar; StartAt : integer) : integer;
-begin
-  result := Pos(Term, MText+StartAt);
-  if Result <> 0 then
-      Result := Result + StartAt;
-end;
-
-
-procedure TFormNote.MakeAllLinks(const PText : PChar; const Term : ANSIString; const StartScan : longint =1; EndScan : longint = 0);
-var
-	Offset, NumbCR   : longint;
-    {$ifdef WINDOWS}
-    Ptr, EndP : PChar;                  // Will generate "not used" warning in Unix
-    {$endif}
-begin
-    Offset := RelativePos(Term, PText, StartScan);
-    while Offset > 0 do begin
-    	NumbCR := 0;
-        {$ifdef WINDOWS}                // compensate for Windows silly two char newlines
-        EndP := PText + Offset;
-        while EndP > PText do begin
-            if EndP^ = #13 then inc(NumbCR);
-            dec(EndP);
-        end;
-        {$endif}
-        if (PText[Offset-2] in [' ', #10, #13, ',', '.']) and
-                        (PText[Offset + length(Term) -1] in [' ', #10, #13, ',', '.']) then
-            MakeLink(UTF8Length(PText, Offset) -1 -NumbCR, UTF8length(Term));
-        Offset := RelativePos(Term, PText, Offset + 1);
-        if EndScan > 0 then
-        	if Offset> EndScan then break;
-    end;
 end;
 
 procedure TFormNote.CheckForLinks(const StartScan : longint =1; EndScan : longint = 0);
@@ -1689,299 +1627,6 @@ begin
 	    //SearchForm.OpenNote(TKMemoHyperlink(Sender).Text);
 end;
 
-
-{ ---------------------- C A L C U L A T E    F U N C T I O N S ---------------}
-
-procedure TFormNote.ExprTan(var Result: TFPExpressionResult;
-    const Args: TExprParameterArray);
-var
-  x: Double;
-begin
-  x := ArgToFloat(Args[0]);
-  Result.resFloat := tan(x);
-end;
-
-function TFormNote.DoCalculate(CalcStr : string) : string;
-var
-    FParser: TFPExpressionParser;
-    parserResult: TFPExpressionResult;
-begin
-    result := '';
-    if length(CalcStr) < 1 then exit('');
-    if CalcStr[length(CalcStr)] = '=' then
-        CalcStr := copy(CalcStr, 1, length(CalcStr)-1);
-    FParser := TFPExpressionParser.Create(nil);
-    try
-        try
-            FParser.Identifiers.AddFunction('tan', 'F', 'F', @ExprTan);
-            FParser.Builtins := [bcMath];
-            FParser.Expression := CalcStr;
-            parserResult := FParser.Evaluate;
-            case parserResult.ResultType of
-                rtInteger : result := inttostr(parserResult.ResInteger);
-                rtFloat : result := floattostrf(parserResult.ResFloat, ffFixed, 0, 3);
-            end;
-        finally
-          FParser.Free;
-        end;
-    except on E: EExprParser do showmessage(E.Message);
-    end;
-end;
-
-RESOURCESTRING
-    rsUnabletoEvaluate = 'Unable to find an expression to evaluate';
-// Called from a Ctrl-E, 'Equals', maybe 'Evaluate' ? Anyway, directs to appropriate
-// methods.
-procedure TFormNote.InitiateCalc();
-var
-    AnsStr : string;
-begin
-    if Kmemo1.blocks.RealSelLength > 0 then begin
-        if not ComplexCalculate(AnsStr) then exit;
-        AnsStr := '=' + AnsStr;
-    end
-        else if not SimpleCalculate(AnsStr) then
-            if not ColumnCalculate(AnsStr) then exit;
-    if AnsStr = '' then
-        showmessage(rsUnabletoEvaluate)
-    else begin
-        //TRlog('KMemo1.SelStart=' + inttostr(KMemo1.SelStart) + 'KMemo1.RealSelStart=' + inttostr(KMemo1.RealSelStart));
-        KMemo1.SelStart := KMemo1.Blocks.RealSelEnd;
-        KMemo1.SelLength := 0;
-        KMemo1.Blocks.InsertPlainText(KMemo1.SelStart, AnsStr);
-        KMemo1.SelStart := KMemo1.SelStart + length(AnsStr);
-        KMemo1.SelLength := 0;
-        //TRlog('KMemo1.SelStart=' + inttostr(KMemo1.SelStart) + 'KMemo1.RealSelStart=' + inttostr(KMemo1.RealSelStart));
-    end;
-end;
-
-// Returns all text in a para, 0 says current one, 1 previous para etc ...
-function TFormNote.PreviousParagraphText(const Backby : integer) : string;
-var
-    BlockNo, StopBlockNo, Index : longint;
-begin
-     Result := '';
-    StopBlockNo := KMemo1.NearestParagraphIndex;   // if we are on first line, '1'.
-    Index := BackBy + 1;                           // we want to overshoot
-    BlockNo := StopBlockNo;
-    while Index > 0 do begin
-        dec(BlockNo);
-        dec(Index);
-        if BlockNo < 1 then begin TRlog('underrun1'); exit; end;  // its all empty up there ....
-        while not Kmemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph') do begin
-            dec(BlockNo);
-            if BlockNo < 1 then begin TRlog('Underrun 2'); exit; end;
-        end;
-        if Index = 1 then StopBlockNo := BlockNo;       // almost there yet ?
-    end;
-    inc(BlockNo);
-    while BlockNo < StopBlockNo do begin
-        Result := Result + Kmemo1.Blocks.Items[BlockNo].Text;
-        inc(BlockNo);
-    end;
-    //TRlog('PREVIOUS BlockNo=' + inttostr(BlockNo) + '  StopBlockNo=' + inttostr(StopBlockNo));
-end;
-
-
-// Return content of paragraph that caret is within, up to caret pos.
-function TFormNote.ParagraphTextTrunc() : string;
-var
-    BlockNo, StopBlockNo, PosInBlock : longint;
-begin
-    Result := '';
-    StopBlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelEnd, PosInBlock);
-    if StopBlockNo < 0 then StopBlockNo := 0;
-    BlockNo := StopBlockNo-1;
-    while (BlockNo > 0) and (not Kmemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph')) do
-        dec(BlockNo);
-    // TRlog('BlockNo=' + inttostr(BlockNo) + ' StopBlock=' + inttostr(StopBlockNo) + '  PosInBlock=' + inttostr(PosInBlock));
-    if BlockNo > 0 then inc(BlockNo);
-    if BlockNo < 0 then BlockNo := 0;
-    if (BlockNo > StopBlockNo) then exit;
-    while BlockNo < StopBlockNo do begin
-        Result := Result + Kmemo1.Blocks.Items[BlockNo].Text;
-        inc(BlockNo);
-    end;
-    if (PosInBlock > 0) then begin
-        Result := Result + copy(KMemo1.Blocks.Items[BlockNo].Text, 1, PosInBlock);
-    end;
-end;
-
-// Looks for a number at both begining and end of string. Ret empty ones if unsuccessful
-function TFormNote.FindNumbersInString(const AStr: string; out AtStart, AtEnd : string) : boolean;
-var
-    Index : integer = 1;
-begin
-    if AStr = '' then exit(false);
-    AtStart := '';
-    AtEnd := '';
-    while Index <= length(AStr) do begin
-        if AStr[Index] in ['0'..'9', '.'] then AtStart := AtStart + AStr[Index]
-        else break;
-        inc(Index);
-    end;
-    Index := length(AStr);
-    while Index > 0 do begin
-        if AStr[Index] in ['0'..'9', '.'] then AtEnd :=  AStr[Index] + AtEnd
-        else break;
-        dec(Index);
-    end;
-    result := (AtStart <> '') or (AtEnd <> '');
-end;
-
-// Tries to find a column of numbers above, trying to rhs, then lhs.
-// if we find tow or more lines, use it.
-function TFormNote.ColumnCalculate(out AStr : string) : boolean;
-var
-    TheLine, AtStart, AtEnd, CalcStrStart, CalcStrEnd : string;
-    Index : integer = 1;
-    StartDone : boolean = False;
-    EndDone : boolean = False;
-begin
-    AStr := '';
-    CalcStrStart := '';
-    CalcStrEnd := '';
-    repeat
-        TheLine := PreviousParagraphText(Index);
-        FindNumbersInString(TheLine, AtStart, AtEnd);
-        //TRlog('Scanned string [' + TheLine + '] and found [' + AtStart + '] and [' + atEnd + ']');
-        if AtStart = '' then
-            if EndDone then break
-            else StartDone := True;
-        if AtEnd = '' then
-            if StartDone then break
-            else EndDone := True;
-        if (AtStart <> '') and (not StartDone) then
-            if CalcStrStart = '' then CalcStrStart := AtStart
-            else CalcStrStart := CalcStrStart + ' + ' + AtStart;
-        if (AtEnd <> '') and (not EndDone) then
-            if CalcStrEnd = '' then CalcStrEnd := AtEnd
-            else CalcStrEnd := CalcStrEnd + ' + ' + AtEnd;
-        inc(Index);
-    until (AtStart = '') and (AtEnd = '');
-    if not EndDone then AStr := CalcStrEnd;
-    if not StartDone then AStr := CalcStrStart;
-    AStr := DoCalculate(AStr);
-    Result := (AStr <> '');
-end;
-
-// Assumes that the current selection contains a complex calc expression.
-function TFormNote.ComplexCalculate(out AStr : string) : boolean;
-var
-    BlockNo, Temp : longint;
-begin
-    BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelEnd-1, Temp);
-    if kmemo1.blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph') then begin
-        // TRlog('Para cleanup in progress');
-        Temp := KMemo1.SelLength;
-        Kmemo1.SelStart := KMemo1.Blocks.RealSelStart;
-        KMemo1.SelLength := Temp-1;
-    end;
-    if abs(KMemo1.SelLength) < 1 then exit(false);
-   // TRlog('Complex Calc [' + KMemo1.Blocks.SelText + ']');
-   AStr := DoCalculate(KMemo1.Blocks.SelText);
-   Result := (AStr <> '');
-end;
-
-const
-    CalcChars : set of char =  ['0'..'9'] + ['^', '*', '-', '+', '/'] + ['.', '=', ' ', '(', ')'];
-
-// acts iff char under curser or to left is an '='
-function TFormNote.SimpleCalculate(out AStr : string) : boolean;
-var
-    Index : longint;
-    GotEquals : boolean = false;
-begin
-    Result := False;
-    AStr := ParagraphTextTrunc();
-    // look for equals
-    while length(AStr) > 0 do begin
-        if AStr[length(AStr)] = ' ' then begin
-            delete(AStr, length(AStr), 1);
-            continue;
-        end;
-        if AStr[length(AStr)] = '=' then begin
-            delete(AStr, length(AStr), 1);
-            GotEquals := True;
-            continue;
-        end;
-        if not GotEquals then exit
-        else break;
-    end;
-    // if to here, we have a string that used to start with =, lets see what else it has ?
-    Index := length(AStr);
-    if Index = 0 then exit;
-    while AStr[Index] in CalcChars do begin
-        dec(Index);
-        if Index < 1 then break;
-    end;
-    delete(AStr, 1, Index);
-    // TRlog('SimpleCalc=[' + AStr + ']');
-    AStr := DoCalculate(AStr);
-    exit(AStr <> '');
-end;
-
-
-function TFormNote.NearABulletPoint(out Leading, Under, Trailing, IsFirstChar, NoBulletPara : Boolean;
-        								out BlockNo, TrailOffset, LeadOffset : longint ) : boolean;
-	// on medium linux laptop, 20k note this function takes less than a mS
-var
-    PosInBlock, Index, CharCount : longint;
-begin
-    Under := False;
-    NoBulletPara := False;
-    BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
-    if kmemo1.blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph') then begin
-  		Under := (TKMemoParagraph(kmemo1.blocks.Items[BlockNo]).Numbering = pnuBullets);
-        NoBulletPara := not Under;
-    end;
-    Index := 1;
-    CharCount := PosInBlock;
-    while BlockNo >= Index do begin
-	    if kmemo1.blocks.Items[BlockNo-Index].ClassNameIs('TKMemoParagraph') then break;
-  	    CharCount := CharCount + kmemo1.blocks.Items[BlockNo-Index].Text.Length;
-	    inc(Index);
-        // Danger - what if we don't find one going left ?
-    end;
-    if BlockNo < Index then begin
-        Result := False;
-        TRlog('Returning False as we appear to be playing in Heading.');
-        exit();
-    end else Leading := (TKMemoParagraph(kmemo1.blocks.Items[BlockNo-Index]).Numbering = pnuBullets);
-    IsFirstChar := (CharCount = 0);
-    LeadOffset := Index;
-    Index := 0;
-    while true do begin
-        // must not call Classnameis with blockno = count
-        TRlog('Doing para seek, C=' + inttostr(KMemo1.Blocks.Count) + ' B=' + inttostr(BlockNo) + ' I=' + inttostr(Index));
-        inc(Index);
-        if (BlockNo + Index) >= (Kmemo1.Blocks.Count) then begin
-
-            TRlog('Overrun looking for a para marker.');
-            // means there are no para markers beyond here.  So cannot be TrailingBullet
-            Index := 0;
-            break;
-        end;
-	    if kmemo1.blocks.Items[BlockNo+Index].ClassNameIs('TKMemoParagraph') then break;
-    end;
-    TrailOffset := Index;
-    if TrailOffset > 0 then
-  	    Trailing := (TKMemoParagraph(kmemo1.blocks.Items[BlockNo+Index]).Numbering = pnuBullets)
-    else Trailing := False;
-    Result := (Leading or Under or Trailing);
-    	    TRlog('IsNearBullet -----------------------------------');
-        TRlog('      Result      =' + booltostr(Result, true));
-        TRlog('      Leading     =' + booltostr(Leading, true));
-        TRlog('      Under       =' + booltostr(Under, true));
-        TRlog('      Trailing    =' + booltostr(Trailing, true));
-        TRlog('      IsFirstChar =' + booltostr(IsFirstChar, true));
-        TRlog('      NoBulletPara=' + booltostr(NoBulletPara, true));
-        TRlog('      LeadOffset  =' + inttostr(LeadOffset));
-        TRlog('      TrailOffset =' + inttostr(Trailoffset));
-        TRlog('      BlockNo     =' + inttostr(BlockNo));
-
-end;
-
 procedure TFormNote.NotePrint();
 var
    p : TKPrn;
@@ -1998,18 +1643,27 @@ procedure TFormNote.onChange(Sender : TObject);
 begin
    TRlog(' TFormNote.onChange');
    if not AlreadyLoaded then exit();
+   if ProcessingChange then exit();
+
+   ProcessingChange := true;
 
    if(CompareStr(oldtext,KMemo1.Text)<>0)
    then begin
+     TRlog(' Text has changed');
+     MarkTitle(false);
      MarkDirty();
      oldtext := KMemo1.Text;
+     TRlog('New text length = '+IntToStr(Length(oldtext)));
    end;
    if((oldselstart<>KMemo1.RealSelStart) or (oldselend<>KMemo1.RealSelend))
    then begin
+     TRlog(' Selection has changed');
      oldselstart := KMemo1.RealSelStart;
      oldselend := KMemo1.RealSelend;
      BuildMenus(Sender);
    end;
+
+   ProcessingChange := false;
 end;
 
 procedure TFormNote.onKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);

@@ -1334,18 +1334,20 @@ begin
 
    TRlog('Testing TNoteEditForm');
 
-   if(n^.Display <> nil) then begin
+   if(n^.Display <> nil) then
+   begin
+      TRlog('Closing TNoteEditForm');
       EBox := PNoteEditForm(n^.Display);
       EBox^.Hide();
       EBox^.Close;
       FreeAndNil(n^.Display);
    end;
 
-   TRlog('Creating TNoteEditForm');
+   new(EBox);
+
+   TRlog('Creating TNoteEditForm yo');
 
    Ebox^ := TFormNote.Create(Self);
-
-   exit();
 
    TRlog('Assigning data ');
    n^.Display := Ebox;
