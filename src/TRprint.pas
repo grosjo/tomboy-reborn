@@ -11,7 +11,7 @@ uses
 type PWord=^TWord;
 
      TWord= record
-      AWord : String;
+      AWord : UTF8String;
       Size : integer;
       Bold, Italic, NewLine : boolean;
       Colour : TColor;
@@ -22,7 +22,7 @@ type TWordList = class(TList)
       function Get(Index : Integer) : PWord;
    public
       destructor Destroy; Override;
-      procedure Add(TheWord : ANSIString; S : integer; B, I, NL : boolean; Colour : TColor);
+      procedure Add(TheWord : UTF8String; S : integer; B, I, NL : boolean; Colour : TColor);
       property Items[Index : integer] : PWord read Get; default;
    end;
 
@@ -81,7 +81,7 @@ begin
     inherited Destroy;
 end;
 
-procedure TWordList.Add(TheWord: ANSIString; S: integer; B, I, NL: boolean; Colour : TColor);
+procedure TWordList.Add(TheWord: UTF8String; S: integer; B, I, NL: boolean; Colour : TColor);
 var
     PL : PWord;
 begin
@@ -238,7 +238,7 @@ var
    BlockNo : integer = 0;
    I : integer;
    ExFont : TFont;
-   St : ANSIString = '';
+   St : UTF8String = '';
 begin
    if WordList <> Nil then WordList.Free;
    WordList := TWordList.Create;

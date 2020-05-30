@@ -29,11 +29,11 @@ type    { TFormNCSetup }
     SetupStatus: TLabel;
     NCDone: TToggleBox;
     function isSuccess() : boolean;
-    function getKey() : String;
-    function getToken() : String;
-    function getTokenSecret() : String;
-    procedure setKey(s : String);
-    procedure setToken(s : String);
+    function getKey() : UTF8String;
+    function getToken() : UTF8String;
+    function getTokenSecret() : UTF8String;
+    procedure setKey(s : UTF8String);
+    procedure setToken(s : UTF8String);
     procedure NCAuthClick(Sender: TObject);
     procedure AuthSuccess(i : Int64);
     procedure AuthFailure(i : Int64);
@@ -42,13 +42,13 @@ type    { TFormNCSetup }
   private
     success : boolean;
     listening : boolean;
-    Key : String;
-    Token : String;
-    TokenSecret : String;
-    Verifier : String;
-    requestTokenUrl : String;
-    authorizeUrl : String;
-    accessTokenUrl : String;
+    Key : UTF8String;
+    Token : UTF8String;
+    TokenSecret : UTF8String;
+    Verifier : UTF8String;
+    requestTokenUrl : UTF8String;
+    authorizeUrl : UTF8String;
+    accessTokenUrl : UTF8String;
     web: TRServer;
     procedure DoHandleRequest(Sender: TObject; var ARequest: TFPHTTPConnectionRequest; var AResponse: TFPHTTPConnectionResponse);
   end;
@@ -107,36 +107,36 @@ begin
   Result := success;
 end;
 
-function TFormNCSetup.getKey() : String;
+function TFormNCSetup.getKey() : UTF8String;
 begin
   Result := Key;
 end;
 
-function TFormNCSetup.getToken() : String;
+function TFormNCSetup.getToken() : UTF8String;
 begin
   Result := Token;
 end;
 
-function TFormNCSetup.getTokenSecret() : String;
+function TFormNCSetup.getTokenSecret() : UTF8String;
 begin
   Result := TokenSecret;
 end;
 
-procedure TFormNCSetup.setKey(s : String);
+procedure TFormNCSetup.setKey(s : UTF8String);
 begin
   if(length(s)<5) then
      Key := MD5Print(MD5String(Format('%d',[Random(9999999-123400)+123400])))
   else Key := s;
 end;
 
-procedure TFormNCSetup.setToken(s : String);
+procedure TFormNCSetup.setToken(s : UTF8String);
 begin
   Token :=s;
 end;
 
 procedure TFormNCSetup.NCAuthClick(Sender: TObject);
 var
-  res, s1, s2, s3, resturl, u : String;
+  res, s1, s2, s3, resturl, u : UTF8String;
   jData : TJSONData;
   jObject : TJSONObject;
   p : TStrings;
@@ -234,7 +234,7 @@ end;
 
 procedure TFormNCSetup.DoHandleRequest(Sender: TObject; var ARequest: TFPHTTPConnectionRequest; var AResponse: TFPHTTPConnectionResponse);
 var
-  restok, resverif : String;
+  restok, resverif : UTF8String;
 begin
   AResponse.Code := 200;
   AResponse.ContentType := 'text/html;charset=utf-8';
@@ -267,7 +267,7 @@ end;
 procedure TFormNCSetup.AuthSuccess(i : Int64);
 var
   p : TStrings;
-  res, s1, s2 : String;
+  res, s1, s2 : UTF8String;
   ts : TSysCharSet;
 begin
   NCAuth.Enabled :=false;

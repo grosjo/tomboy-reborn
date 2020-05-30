@@ -13,17 +13,17 @@ type
 
   TAutoStartCtrl = class
     Private
-        procedure AutoOff(AppName : string);            // dont need appname Linux or windows, maybe MacOS ?
-        procedure AutoOn(AppName: string);
+        procedure AutoOff(AppName : UTF8String);            // dont need appname Linux or windows, maybe MacOS ?
+        procedure AutoOn(AppName: UTF8String);
         {$ifdef WINDOWS}
-        function WindowsDirectory(CSIDL : integer): string;
+        function WindowsDirectory(CSIDL : integer): UTF8String;
         {$endif}
     Public
-        ErrorMessage : string;  // If set, trouble Will Roberinson !
-        TargetName : string;    // Whatever we need copy, link or what ever to
-        LinkName : string;      // What we put in destination
-        LinkDestination : string; // Directory we put the above.
-        constructor Create(AppName : string; StartIt : boolean);
+        ErrorMessage : UTF8String;  // If set, trouble Will Roberinson !
+        TargetName : UTF8String;    // Whatever we need copy, link or what ever to
+        LinkName : UTF8String;      // What we put in destination
+        LinkDestination : UTF8String; // Directory we put the above.
+        constructor Create(AppName : UTF8String; StartIt : boolean);
         destructor Destroy;  override;
   end;
 
@@ -35,7 +35,7 @@ uses LazUTF8
 { TAutoStartCtrl }
 
 {$ifdef WINDOWS}
-function TAutoStartCtrl.WindowsDirectory(CSIDL : integer) : string;
+function TAutoStartCtrl.WindowsDirectory(CSIDL : integer) : UTF8String;
 var
    DirArray : array[0..MAX_PATH] of Char;
    PIDL : PItemIDList;
@@ -50,7 +50,7 @@ begin
 end;
 {$endif}
 
-procedure TAutoStartCtrl.AutoOn(AppName : string);
+procedure TAutoStartCtrl.AutoOn(AppName : UTF8String);
 {$ifdef WINDOWS}
 Var
    IObject : IUnknown;
@@ -83,14 +83,14 @@ begin
     {$endif}
 end;
 
-procedure TAutoStartCtrl.AutoOff(AppName : string);
+procedure TAutoStartCtrl.AutoOff(AppName : UTF8String);
 begin
     if FileExistsUTF8(LinkDestination + LinkName) then
         DeleteFileUTF8(LinkDestination + LinkName);
 end;
 
-constructor TAutoStartCtrl.Create(AppName: string; StartIt: boolean);
-{$ifdef WINDOWS}var CPU : string;{$endif}
+constructor TAutoStartCtrl.Create(AppName: UTF8String; StartIt: boolean);
+{$ifdef WINDOWS}var CPU : UTF8String;{$endif}
 begin
     inherited create;
     ErrorMessage := '';

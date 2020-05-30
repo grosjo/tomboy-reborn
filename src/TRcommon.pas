@@ -50,20 +50,20 @@ type TSyncStatus = (
 
 type TNoteInfo =
   record
-        ID : ANSIString;            // The 36 char ID
-        CreateDate : ANSIString;
+        ID : UTF8String;            // The 36 char ID
+        CreateDate : UTF8String;
         CreateDateGMT : TDateTime;
-        LastChange : ANSIString;
+        LastChange : UTF8String;
         LastChangeGMT : TDateTime;
-        LastMetaChange : ANSIString;
+        LastMetaChange : UTF8String;
         LastMetaChangeGMT : TDateTime;
-        Version : String;
+        Version : UTF8String;
         Rev : Integer;
-        LastSync: ANSIString;
+        LastSync: UTF8String;
         LastSyncGMT : TDateTime;
         Action : TSyncAction;
-        Title : String;
-        Content : String;
+        Title : UTF8String;
+        Content : UTF8String;
         OpenOnStartup : boolean;
         Pinned : boolean;
         CursorPosition : integer;
@@ -73,7 +73,7 @@ type TNoteInfo =
         X : integer;
         Y : integer;
         Tags : TStringList;
-        Error : String;
+        Error : UTF8String;
         Deleted : boolean;
         Display : ^TForm;
   end;
@@ -85,11 +85,11 @@ type TNoteInfoList =
     private
      	function Get(Index: integer): PNoteInfo;
     public
-        LName : String;
+        LName : UTF8String;
         destructor Destroy; override;
         function Add(ANote : PNoteInfo) : integer;
         function Remove(ANote : PNoteInfo) : integer;
-        function FindID(const ID : ANSIString) : PNoteInfo;
+        function FindID(const ID : UTF8String) : PNoteInfo;
         property Items[Index: integer]: PNoteInfo read Get; default;
   end;
 
@@ -102,87 +102,87 @@ type TClashRecord =
 
 // Environmment
 const Backup = 'Backup';
-procedure TRlog(s : String);
-function AboutString() : String;
-function GetDefaultConfigDir() : string;
-function GetDefaultNotesDir() : string;
-function GetLocalNoteFile(NoteID : string; altrep : String = ''): string;
-function GetLocalBackupPath(): string;
-function GetTempFile() : string;
-function ConfigWrite(source : String) : boolean;
-function ConfigRead(source : String) : integer;
+procedure TRlog(s : UTF8String);
+function AboutString() : UTF8String;
+function GetDefaultConfigDir() : UTF8String;
+function GetDefaultNotesDir() : UTF8String;
+function GetLocalNoteFile(NoteID : UTF8String; altrep : UTF8String = ''): UTF8String;
+function GetLocalBackupPath(): UTF8String;
+function GetTempFile() : UTF8String;
+function ConfigWrite(source : UTF8String) : boolean;
+function ConfigRead(source : UTF8String) : integer;
 
 // Note generic function
-function GetNewID() : String;
-function NoteIDLooksOK(const ID : string) : boolean;
-function FileToNote(filename : String; NoteInfo : PNoteInfo) : boolean;
-function NoteToFile(note : PNoteInfo; filename : String) : boolean;
-function RemoveXml(const St : String) : String;
+function GetNewID() : UTF8String;
+function NoteIDLooksOK(const ID : UTF8String) : boolean;
+function FileToNote(filename : UTF8String; NoteInfo : PNoteInfo) : boolean;
+function NoteToFile(note : PNoteInfo; filename : UTF8String) : boolean;
+function RemoveXml(const St : UTF8String) : UTF8String;
 procedure CopyNote(A : PNoteInfo; c : PNoteInfo);
 function EmptyNote() : PNoteInfo;
 function NoteContains(const TermList: TStringList; N : PNoteInfo ; CaseSensitive : boolean = false): boolean;
-function NoteBelongs(const notebook : String ; N : PNoteInfo ): boolean;
+function NoteBelongs(const notebook : UTF8String ; N : PNoteInfo ): boolean;
 function NoteTimeOrder(Item1: Pointer;Item2: Pointer):Integer;
 
 // String function
-function ReplaceAngles(const Str : String) : String;
-function EncodeAngles(const Str : String) : String;
-function RemoveBadXMLCharacters(const InStr : String; DoQuotes : boolean = false) : String;
-function isURL(u : String) : boolean;
+function ReplaceAngles(const Str : UTF8String) : UTF8String;
+function EncodeAngles(const Str : UTF8String) : UTF8String;
+function isURL(u : UTF8String) : boolean;
+function CleanTitle(u: UTF8String) : UTF8String;
 
 // Font
-function GetDefaultFixedFont() : string;
-function GetDefaultUsualFont() : string;
+function GetDefaultFixedFont() : UTF8String;
+function GetDefaultUsualFont() : UTF8String;
 
 // Datetime
-function GetGMTFromStr(const DateStr: ANSIString): TDateTime;
-function GetTimeFromGMT(d : TDateTime) : String;
-function GetCurrentTimeStr() : String;
-function GetDisplayTimeFromGMT(d : TDateTime) : String;
+function GetGMTFromStr(const DateStr: UTF8String): TDateTime;
+function GetTimeFromGMT(d : TDateTime) : UTF8String;
+function GetCurrentTimeStr() : UTF8String;
+function GetDisplayTimeFromGMT(d : TDateTime) : UTF8String;
 
 
 // Spelling
-function GetDictDefaultPath() : String;
-function GetDictDefaultLibrary() : String;
+function GetDictDefaultPath() : UTF8String;
+function GetDictDefaultLibrary() : UTF8String;
 
 // Network
-function URLDecode(s: String): String;
-function URLEncode(s: string): string;
-function WebPut(u : String; params : TStrings; data : String) : String;
-function WebPost(u : String; params : TStrings) : String;
-function WebGet(u : String; params : TStrings) : String;
+function URLDecode(s: UTF8String): UTF8String;
+function URLEncode(s: UTF8String): UTF8String;
+function WebPut(u : UTF8String; params : TStrings; data : UTF8String) : UTF8String;
+function WebPost(u : UTF8String; params : TStrings) : UTF8String;
+function WebGet(u : UTF8String; params : TStrings) : UTF8String;
 
 // Oauth 1.0
 const OAuthCallbackUrl = 'http://localhost:8000/tomboy-web-sync/';
-procedure OauthBaseParams(const p : TStrings; Key : string; Token : String = ''; Verifier : String = '');
-function OauthTimestamp() : String;
-function OauthNonce() : String;
+procedure OauthBaseParams(const p : TStrings; Key : UTF8String; Token : UTF8String = ''; Verifier : UTF8String = '');
+function OauthTimestamp() : UTF8String;
+function OauthNonce() : UTF8String;
 procedure OauthParamsSort(const params : TStrings) ;
-procedure OauthSign(u : String; mode : String; params : TStrings; Key,Secret : String);
+procedure OauthSign(u : UTF8String; mode : UTF8String; params : TStrings; Key,Secret : UTF8String);
 
 // Sync
-function SyncActionName(Act : TSyncAction) : string;
+function SyncActionName(Act : TSyncAction) : UTF8String;
 function isSyncConfigured() : boolean;
 
 var
-    ConfigDir : String;
-    NotesDir : String;
-    ConfigFile : String;
+    ConfigDir : UTF8String;
+    NotesDir : UTF8String;
+    ConfigFile : UTF8String;
 
     ShowIntLinks,ShowExtLinks, ManyNoteBooks,
       Autostart, SearchAtStart, UseTrayIcon : boolean;
 
-    UsualFont, FixedFont : string;
+    UsualFont, FixedFont : UTF8String;
     //FontRange : TFontRange;
     FontScale : integer;
 
     SyncType : TSyncTransport;
     SyncClashOption : TSyncClashOption;
 
-    SyncFileRepo, SyncNCurl, SyncNCKey, SyncNCToken, SyncNCSecret : String;
+    SyncFileRepo, SyncNCurl, SyncNCKey, SyncNCToken, SyncNCSecret : UTF8String;
     SyncRepeat,LastUsedNB : integer;
 
-    DictLibrary, DictPath, DictFile : String;
+    DictLibrary, DictPath, DictFile : UTF8String;
 
     BackGndColour, TextColour, HiColour, TitleColour : TColor;
 
@@ -200,14 +200,14 @@ implementation
 
 { ===== ENVIRONMENT ==== }
 
-procedure TRlog(s : String);
+procedure TRlog(s : UTF8String);
 begin
   if(Debug) then DebugLn(s);
 end;
 
-function AboutString() : string;
+function AboutString() : UTF8String;
 var
-   Stg : string;
+   Stg : UTF8String;
    FileVerInfo: TFileVersionInfo;
 begin
    Stg := rsAbout + #10;
@@ -228,7 +228,7 @@ begin
             + ' ' + GetEnvironmentVariable('XDG_CURRENT_DESKTOP');
 end;
 
-function GetDefaultConfigDir() : string;
+function GetDefaultConfigDir() : UTF8String;
 begin
     {$ifdef DARWIN}
         // First we try the right place, if there use it, else try unix place, if
@@ -248,7 +248,7 @@ begin
     TRlog('Default Conf Dir ='+Result);
 end;
 
-function GetDefaultNotesDir() : string;
+function GetDefaultNotesDir() : UTF8String;
 begin
     {$IFDEF UNIX}
     Result := GetEnvironmentVariable('HOME') + '/.local/share/TomboyReborn/';
@@ -269,7 +269,7 @@ begin
     ForceDirectoriesUTF8(Result);
 end;
 
-function GetLocalNoteFile(NoteID : string; altrep : String = ''): string;
+function GetLocalNoteFile(NoteID : UTF8String; altrep : UTF8String = ''): UTF8String;
 begin
     TRlog('GetLocalNoteFile ('+NoteID+')');
     altrep := chomppathdelim(altrep);
@@ -282,20 +282,20 @@ begin
 
 end;
 
-function GetLocalBackupPath(): string;
+function GetLocalBackupPath(): UTF8String;
 begin
     Result := NotesDir + 'Backup' + PathDelim;
 end;
 
-function GetTempFile() : String;
+function GetTempFile() : UTF8String;
 var
-    d : String;
+    d : UTF8String;
 begin
     d := GetTempDir(true);
     Result := GetTempFileName(d, 'TB_');
 end;
 
-function ConfigWrite(source : String) : boolean;
+function ConfigWrite(source : UTF8String) : boolean;
 var
     f : TINIFile;
     i : integer;
@@ -373,11 +373,11 @@ begin
     TRlog('ConfigWrite DONE '+source);
 end;
 
-function ConfigRead(source : String) : integer;
+function ConfigRead(source : UTF8String) : integer;
 var
     f : TINIFile;
     i : integer;
-    s : String;
+    s : UTF8String;
 begin
 
     TRlog('ConfigRead(' + source + ')');
@@ -502,17 +502,17 @@ end;
 
 { ===== NOTE FUNCTIONS ==== }
 
-function GetNewID() : String;
+function GetNewID() : UTF8String;
 var
   GUID : TGUID;
-  s : String;
+  s : UTF8String;
 begin
    CreateGUID(GUID);
    s := copy(GUIDToString(GUID), 2, 36);
    Result := LowerCase(s);
 end;
 
-function NoteIDLooksOK(const ID : string) : boolean;
+function NoteIDLooksOK(const ID : UTF8String) : boolean;
 begin
     if length(ID) <> 36 then exit(false);
     if pos('-', ID) <> 9 then exit(false);
@@ -523,7 +523,7 @@ function NoteContains(const TermList: TStringList; N : PNoteInfo ; CaseSensitive
 var
   ok : boolean;
   i :integer;
-  a,b,c : String;
+  a,b,c : UTF8String;
 
 begin
    if(not assigned(N)) then exit(false);
@@ -550,11 +550,11 @@ begin
    Result := ok;
 end;
 
-function NoteBelongs(const notebook : String ; N : PNoteInfo ): boolean;
+function NoteBelongs(const notebook : UTF8String ; N : PNoteInfo ): boolean;
 var
    i : integer;
    ok : boolean;
-   s : String;
+   s : UTF8String;
 begin
 
    if(length(notebook) = 0) then exit(true);
@@ -672,27 +672,31 @@ begin
    Result := n;
 end;
 
-function ReplaceAngles(const Str : String) : String;
+function ReplaceAngles(const Str : UTF8String) : UTF8String;
 var
-    s : String;
+    s : UTF8String;
 begin
    s := StringReplace(Str,'&lt;','<',[rfReplaceAll]);
    s := StringReplace(s,'&gt;','>',[rfReplaceAll]);
    s := StringReplace(s,'&#x9;',#9,[rfReplaceAll]);
+   s := StringReplace(s,'&apos;','''',[rfReplaceAll]);
+   s := StringReplace(s,'&quot;','"',[rfReplaceAll]);
    Result := StringReplace(s,'&amp;','&',[rfReplaceAll]);
 end;
 
-function EncodeAngles(const Str : String) : String;
+function EncodeAngles(const Str : UTF8String) : UTF8String;
 var
-    s : String;
+    s : UTF8String;
 begin
    s := StringReplace(Str,'<','&lt;',[rfReplaceAll]);
    s := StringReplace(s,'>','&gt;',[rfReplaceAll]);
    s := StringReplace(s,#9,'&#x9;',[rfReplaceAll]);
+   s := StringReplace(s,'''','&apos;',[rfReplaceAll]);
+   s := StringReplace(s,'"','&quot;',[rfReplaceAll]);
    Result := StringReplace(s,'&','&amp;',[rfReplaceAll]);
 end;
 
-function NoteToFile(note : PNoteInfo; filename : String) : boolean;
+function NoteToFile(note : PNoteInfo; filename : UTF8String) : boolean;
 var
    f : TStringList;
    ok : boolean;
@@ -733,7 +737,7 @@ begin
    result := ok;
 end;
 
-function FileToNote(filename : String; NoteInfo : PNoteInfo) : boolean;
+function FileToNote(filename : UTF8String; NoteInfo : PNoteInfo) : boolean;
 var
     Doc : TXMLDocument;
     Node,Child : TDOMNode;
@@ -946,7 +950,7 @@ end;
 
 { ===== XML ===== }
 
-function RemoveXml(const St : String) : String;
+function RemoveXml(const St : UTF8String) : UTF8String;
 var
     X, Y : integer;
     FoundOne : boolean = false;
@@ -965,70 +969,8 @@ begin
     until not FoundOne;
 end;
 
-function RemoveBadXMLCharacters(const InStr : String; DoQuotes : boolean = false) : String;
-var
-   Index : longint = 1;
-   Start : longint = 1;
-begin
-   Result := '';
-   while Index <= length(InStr) do
-     begin
-          if InStr[Index] = '<' then
-          begin
-             Result := Result + Copy(InStr, Start, Index - Start);
-             Result := Result + '&lt;';
-             inc(Index);
-             Start := Index;
-             continue;
-          end;
 
-          if InStr[Index] = '>' then
-          begin
-             Result := Result + Copy(InStr, Start, Index - Start);
-             Result := Result + '&gt;';
-             inc(Index);
-             Start := Index;
-             continue;
-          end;
-
-          if InStr[Index] = '&' then
-          begin
-             Result := Result + Copy(InStr, Start, Index - Start);
-             Result := Result + '&amp;';
-             inc(Index);
-             Start := Index;
-             continue;
-          end;
-
-          if DoQuotes then
-          begin
-             if InStr[Index] = '''' then
-             begin
-                Result := Result + Copy(InStr, Start, Index - Start);
-                Result := Result + '&apos;';
-                inc(Index);
-                Start := Index;
-                continue;
-             end;
-
-             if InStr[Index] = '"' then
-             begin
-                Result := Result + Copy(InStr, Start, Index - Start);
-                Result := Result + '&quot;';
-                inc(Index);
-                Start := Index;
-                continue;
-             end;
-          end;
-
-          inc(Index);
-     end;
-
-   Result := Result + Copy(InStr, Start, Index - Start);
-end;
-
-
-function isURL(u : String) : boolean;
+function isURL(u : UTF8String) : boolean;
 begin
   if(CompareText('http://',Copy(u,1,7))=0) then exit(true);
   if(CompareText('https://',Copy(u,1,8))=0) then exit(true);
@@ -1037,16 +979,32 @@ begin
   Result := false;
 end;
 
+function CleanTitle(u: UTF8String) : UTF8String;
+var
+   i,j : integer;
+   s : AnsiString;
+begin
+  s := u;
+  i:=0;
+  while(i<Length(u))
+  do begin
+     TRlog('CleanTitle ('+s+') '+IntToStr(i)+' => '+s+' ORD='+IntToStr(Ord(s.Chars[i])));
+     if(s.Chars[i]<' ') then u := StringReplace(u, s,' ',[rfReplaceAll]);
+     inc(i);
+  end;
+  result := u;
+end;
+
 { ===== DATETIME ==== }
 
-function GetTimeFromGMT(d : TDateTime) : String;
+function GetTimeFromGMT(d : TDateTime) : UTF8String;
 begin;
     Result := FormatDateTime('YYYY-MM-DD',d) + 'T'
                    + FormatDateTime('hh:mm:ss.zzz"0000+00:00"',d);
 
 end;
 
-function GetDisplayTimeFromGMT(d : TDateTime) : String;
+function GetDisplayTimeFromGMT(d : TDateTime) : UTF8String;
 var
    offset : double;
 begin;
@@ -1058,10 +1016,10 @@ begin;
 
 end;
 
-function GetCurrentTimeStr(): ANSIstring;
+function GetCurrentTimeStr(): UTF8String;
 var
    ThisMoment : TDateTime;
-   Res : ANSIString;
+   Res : UTF8String;
    Off : longint;
 begin
     {$ifdef LINUX}
@@ -1081,7 +1039,7 @@ begin
     Result := Result + res;
 end;
 
-function GetGMTFromStr(const DateStr: ANSIString): TDateTime;
+function GetGMTFromStr(const DateStr: UTF8String): TDateTime;
 var
     TimeZone : TDateTime;
 begin
@@ -1123,7 +1081,7 @@ begin
        then Result := Result - TimeZone
        else if DateStr[28] = '-'
           then Result := Result + TimeZone
-	  else TRlog('******* Bugger, we are not parsing DATE String ********');
+	  else TRlog('******* Bugger, we are not parsing DATE UTF8String ********');
     except on EConvertError do
        begin
        TRlog('FAIL on calculating GMT ' + DateStr);
@@ -1137,14 +1095,14 @@ end;
 { ===== FONT ==== }
 
 
-function GetDefaultFixedFont() : string;
-var  T : string;
-    FontNames : array[1..7] of string
+function GetDefaultFixedFont() : UTF8String;
+    var  T : UTF8String;
+    FontNames : array[1..7] of UTF8String
       = ('Monospace', 'Monaco', 'Nimbus Mono L', 'Liberation Mono', 'Lucida Console', 'Lucida Sans Typewriter', 'Courier New' );
 
     f : TForm;
 
-    function IsMono(FontName : String) : boolean;
+    function IsMono(FontName : UTF8String) : boolean;
     begin
       f.Canvas.Font.Name := FontName;
       TRlog('IsMono '+FontName);
@@ -1180,7 +1138,7 @@ begin
     FreeAndNil(f);
 end;
 
-function GetDefaultUsualFont() : String;
+function GetDefaultUsualFont() : UTF8String;
 var
     f : TForm;
 begin
@@ -1207,7 +1165,7 @@ begin
       AHandler := TSocketHandler.Create;
 end;
 
-function URLDecode(s: String): String;
+function URLDecode(s: UTF8String): UTF8String;
 var
   i,lengthsource: integer;
   source: PAnsiChar;
@@ -1234,7 +1192,7 @@ begin
     end;
 end;
 
-function URLEncode(s: string): string;
+function URLEncode(s: UTF8String): UTF8String;
 var
   i: integer;
   source: PAnsiChar;
@@ -1252,13 +1210,13 @@ begin
   end;
 end;
 
-function WebPut(u : String; params : TStrings; data : String) : String;
+function WebPut(u : UTF8String; params : TStrings; data : UTF8String) : UTF8String;
 var
   Client: TFPHttpClient;
   res : TStringStream;
   i : integer;
   handler : TRSockecktHandler;
-  auth : String;
+  auth : UTF8String;
 begin
 
   Client := TFPHttpClient.Create(nil);
@@ -1294,7 +1252,7 @@ begin
   FreeAndNil(res);
 end;
 
-function WebGet(u : String; params : TStrings) : String;
+function WebGet(u : UTF8String; params : TStrings) : UTF8String;
 var
   Client: TFPHttpClient;
   i : integer;
@@ -1323,7 +1281,7 @@ begin
 end;
 
 
-function WebPost(u : String; params : TStrings) : String;
+function WebPost(u : UTF8String; params : TStrings) : UTF8String;
 var
   Client: TFPHttpClient;
   res : TStringStream;
@@ -1363,7 +1321,7 @@ end;
 
 { ===== OAUTH 1.0 ==== }
 
-procedure OauthBaseParams(const p : TStrings; Key : string; Token : String = ''; Verifier : String = '');
+procedure OauthBaseParams(const p : TStrings; Key : UTF8String; Token : UTF8String = ''; Verifier : UTF8String = '');
 begin
   //OAuth setup
   p.Add('oauth_version');
@@ -1391,12 +1349,12 @@ begin
   end;
 end;
 
-function OauthTimestamp() : String;
+function OauthTimestamp() : UTF8String;
 begin
   Result := Format('%d',[Trunc((Now - EncodeDate(1970, 1 ,1)) * 24 * 60 * 60)]);
 end;
 
-function OauthNonce() : String;
+function OauthNonce() : UTF8String;
 begin
   Result := Format('%d',[Random(9999999-123400)+123400]);
 end;
@@ -1435,17 +1393,17 @@ begin
 end;
 
 
-procedure OauthSign(u : String; mode : String; params : TStrings; Key,Secret : String);
+procedure OauthSign(u : UTF8String; mode : UTF8String; params : TStrings; Key,Secret : UTF8String);
 var
-  data : String;
-  p : String;
+  data : UTF8String;
+  p : UTF8String;
   i : integer;
   j : integer;
-  hashkey : String;
-  signature : String;
-  s2 : String;
-  c : String;
-  b64 : String;
+  hashkey : UTF8String;
+  signature : UTF8String;
+  s2 : UTF8String;
+  c : UTF8String;
+  b64 : UTF8String;
 begin
   p :='';
   i:=0;
@@ -1493,7 +1451,7 @@ end;
 
 { ===== SPELLING ==== }
 
-function GetDictDefaultPath() : String;
+function GetDictDefaultPath() : UTF8String;
 begin
     {$ifdef WINDOWS}
     Result := 'C:\Program Files\LibreOffice 5\share\extensions\dict-en\';
@@ -1506,7 +1464,7 @@ begin
     {$ENDIF}
 end;
 
-function GetDictDefaultLibrary() : String;
+function GetDictDefaultLibrary() : UTF8String;
 begin
     {$ifdef WINDOWS}
     Result := 'C:\Program Files\LibreOffice 5\share\extensions\dict-en\';
@@ -1541,7 +1499,7 @@ begin
   exit(false);
 end;
 
-function SyncActionName(Act: TSyncAction): string;
+function SyncActionName(Act: TSyncAction): UTF8String;
 begin
     Result := ' Unknown ';
     case Act of
@@ -1580,7 +1538,7 @@ end;
 
 
 { This will be quite slow with a big list notes, consider an AVLTree ? }
-function TNoteInfoList.FindID(const ID: ANSIString): PNoteInfo;
+function TNoteInfoList.FindID(const ID: UTF8String): PNoteInfo;
 var
     Index : longint;
 begin

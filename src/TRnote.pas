@@ -79,21 +79,24 @@ type
 private
     AlreadyLoaded : boolean;
     Dirty : boolean;
-    ProcessingChange : boolean;
+    ProcessingChange, ProcessingTitle : boolean;
 
-    HouseKeeper : TTimer;
+    HouseKeeper, TitleFormatter : TTimer;
 
     FontSizeNormal, FontSizeLarge, FontSizeTitle, FontSizeHuge, FontSizeSmall : integer;
 
     // Text changes
-    oldtext : String;
+    oldtext : UTF8String;
     oldselstart, oldselend : Integer;
 
     procedure SetFontSizes();
 
+    procedure PostFormatTitle();
+    procedure ReceiveFormatTitle(Sender: TObject);
+    procedure MarkTitle(force : boolean);
+
     procedure NoteToMemo();
     procedure MemoToNote();
-    procedure MarkTitle(force : boolean);
     procedure MarkDirty();
     procedure MarkClean();
     procedure Commit();
@@ -119,11 +122,11 @@ private
 
     procedure NotePrint();
 
-    procedure SpellSuggest(word : String; suggestions : TStrings);
-    procedure ReplaceSel(s : String);
+    procedure SpellSuggest(word : UTF8String; suggestions : TStrings);
+    procedure ReplaceSel(s : UTF8String);
 
     { Take a piece of text into KMemo block recursively }
-    procedure TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
+    procedure TextToMemo(s : UTF8String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
 
     { Alters the font etc of selected area as indicated }
     procedure AlterFont(const Command : TNoteAction; const param: integer = 0);
@@ -195,7 +198,7 @@ end;
 
 procedure TFormNote.ExternalLink(sender : TObject);
 var
-   u : String;
+   u : UTF8String;
 begin
    u := TKMemoHyperlink(Sender).Text;
    showmessage('External Link ' + u);
@@ -204,7 +207,7 @@ end;
 
 procedure TFormNote.InternalLink(sender : TObject);
 var
-   u : String;
+   u : UTF8String;
 begin
    u := TKMemoHyperlink(Sender).Text;
    showmessage('Internal Link ' + u);
@@ -216,10 +219,10 @@ var
    i,j : integer;
    Block : TKMemoBlock;
    FT : TKMemoTextBlock;
-   s2,partext : String;
+   s2,partext : UTF8String;
    tfs : TStringList;
    dd : TSelectDirectoryDialog;
-   filename : String;
+   filename : UTF8String;
  begin
    TRlog('exportMarkDown');
 
@@ -294,7 +297,7 @@ end;
 function TFormNote.exportRTF(): boolean;
 var
    dd : TSelectDirectoryDialog;
-   filename : String;
+   filename : UTF8String;
 begin
    TRlog('exportRFT');
 
@@ -315,7 +318,7 @@ end;
 function TFormNote.exportTXT(): boolean;
 var
    dd : TSelectDirectoryDialog;
-   filename : String;
+   filename : UTF8String;
 begin
    TRlog('exportTXT');
 
@@ -333,7 +336,7 @@ begin
    Result := true;
 end;
 
-procedure TFormNote.ReplaceSel(s : String);
+procedure TFormNote.ReplaceSel(s : UTF8String);
 var
   i,j,k : integer;
 begin
@@ -349,7 +352,7 @@ begin
   KMemo1.Blocks.InsertPlainText(k,s);
 end;
 
-procedure TFormNote.SpellSuggest(word : String; suggestions : TStrings);
+procedure TFormNote.SpellSuggest(word : UTF8String; suggestions : TStrings);
 var
     spell : THunspell;
 begin
@@ -369,15 +372,16 @@ begin
    suggestions.Add(word);
 end;
 
-procedure TFormNote.TextToMemo(s : String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
+procedure TFormNote.TextToMemo(s : UTF8String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
 var
     i,j,k,m : integer;
-    Ktext,tagtext,sub,chr : String;
+    Ktext,tagtext,sub : UTF8String;
     tagtype : TTagType;
     par : TKMemoParagraph;
     ktb : TKMemoTextBlock;
     f : TFont;
     hl : TKMemoHyperlink;
+    chr : AnsiString;
     ch : Char;
 begin
    i:=1; j:= length(s);
@@ -592,8 +596,6 @@ begin
 
    if (ShowIntLinks or ShowExtLinks) then CheckForLinks();
 
-   AlreadyLoaded := true;
-   
    Dirty := False;
 
    oldtext := KMemo1.Text;
@@ -608,7 +610,7 @@ var
    i,j : integer;
    Block : TKMemoBlock;
    FT : TKMemoTextBlock;
-   s,s2,partext : String;
+   s,s2,partext : UTF8String;
    lines : TStringList;
  begin
 
@@ -735,8 +737,10 @@ end;
 
 procedure TFormNote.Commit();
 var
-   filename : String;
+   filename : UTF8String;
 begin
+  ProcessingChange := true;
+
   if(Dirty) then
   begin
     MemoToNote();
@@ -745,6 +749,9 @@ begin
     NoteToFile(note,filename);
     TFormMain(mainWindow).ForceScan();
   end;
+
+  ProcessingChange := false;
+
 end;
 
 function TFormNote.isBold() : boolean;
@@ -909,7 +916,7 @@ end;
 
 procedure TFormNote.PrimaryCopy(const RequestedFormatID: TClipboardFormat;  Data: TStream);
 var
-   s : string;
+   s : UTF8String;
 begin
    TRlog('TFormNote.PrimaryCopy');
    S := KMemo1.Blocks.SelText;
@@ -918,7 +925,7 @@ end;
 
 procedure TFormNote.PrimaryPaste();
 var
-  Buff : string;
+  Buff : UTF8String;
   i : integer;
 begin
   TRlog('TFormNote.PrimaryPaste');
@@ -1040,6 +1047,10 @@ procedure TFormNote.FormShow(Sender: TObject);
 begin
    TRlog('TFormNote.FormShow');
 
+   KMemo1.Blocks.LockUpdate;
+
+   ProcessingChange := true;
+
    if not AlreadyLoaded then
    begin
      NoteToMemo();
@@ -1051,19 +1062,23 @@ begin
 
    KMemo1.SetFocus;
 
-   KMemo1.Blocks.LockUpdate;
    {$ifdef windows}
     Color:= TextColour;
    {$endif}
    KMemo1.Colors.BkGnd:= BackGndColour;
    Kmemo1.Blocks.DefaultTextStyle.Font.Color := TextColour;
-   KMemo1.Blocks.UnLockUpdate;
 
    ShowSearchPanel(false);
 
    BuildMenus(Sender);
 
    SetPrimarySelection();
+
+   AlreadyLoaded := true;
+
+   ProcessingChange := false;
+
+   KMemo1.Blocks.UnLockUpdate;
 
 end;
 
@@ -1107,6 +1122,7 @@ begin
   TRlog('TFormNote.FormCreate');
   AlreadyLoaded := false;
   ProcessingChange := false;
+  ProcessingTitle := false;
   SetFontSizes();
   {$ifdef DARWIN}
     MenuBold.ShortCut      := KeyToShortCut(VK_B, [ssMeta]);
@@ -1262,12 +1278,33 @@ begin
 
 end;
 
+procedure TFormNote.PostFormatTitle();
+begin
+  if(assigned(TitleFormatter)) then
+  begin
+    TitleFormatter.Enabled:=false;
+    FreeAndNil(TitleFormatter);
+  end;
+
+  TitleFormatter := TTimer.Create(nil);
+  TitleFormatter.OnTimer := @ReceiveFormatTitle;
+  TitleFormatter.Interval := 1000;
+  TitleFormatter.Enabled := True;
+end;
+
+
+procedure TFormNote.ReceiveFormatTitle(Sender: TObject);
+begin
+   MarkTitle(false);
+end;
+
 procedure TFormNote.DoHouseKeeping(Sender: TObject);
 begin
+  TRlog('DoHouseKeeping');
   HouseKeeper.Enabled := False;
   FreeAndNil(HouseKeeper);
 
-  Commit();
+  //Commit();
 
   HouseKeeper := TTimer.Create(nil);
   HouseKeeper.OnTimer := @DoHouseKeeping;
@@ -1277,7 +1314,7 @@ end;
 
 procedure TFormNote.ButtonFindPrevClick(Sender: TObject);
 var
-   s, lo: String;
+   s, lo: UTF8String;
    i,j,k : integer;
 begin
    s := LowerCase(Trim(EditFindInNote.Caption));
@@ -1316,7 +1353,7 @@ end;
 
 procedure TFormNote.ButtonFindNextClick(Sender: TObject);
 var
-    s,lo: String;
+    s,lo: UTF8String;
     i : integer;
 begin
    s := LowerCase(Trim(EditFindInNote.Caption));
@@ -1344,77 +1381,107 @@ end;
 
 procedure TFormNote.MarkTitle(force : boolean);
 var
-    BlockNo : integer;
-    title : String;
+    title : UTF8String;
     ktb : TKMemoTextBlock;
+    ktp: TKMemoParagraph;
+    i : integer;
 begin
+   if(assigned(TitleFormatter)) then
+   begin
+      TitleFormatter.Enabled:=false;
+      FreeAndNil(TitleFormatter);
+   end;
+
+   if(ProcessingTitle) then exit();
+   ProcessingTitle:=true;
+
+   KMemo1.Blocks.LockUpdate;
+
    TRlog('MarkTitle FontSizeTitle='+IntToStr(FontSizeTitle));
 
-   BlockNo :=0;
+   While(Kmemo1.Blocks.Count<4)
+   do begin
+     KMemo1.Blocks.AddTextBlock('');
+     KMemo1.Blocks.AddParagraph();
+   end;
+
+   i :=0;
    title :='';
 
-   while ((BlockNo < Kmemo1.Blocks.Count) and ((length(Trim(Title))=0) or (Kmemo1.Blocks.Items[BlockNo].ClassName <> 'TKMemoParagraph'))) do
+   while ((i < Kmemo1.Blocks.Count) and ((length(Trim(Title))=0) or (Kmemo1.Blocks.Items[i].ClassName <> 'TKMemoParagraph'))) do
    begin
-      if Kmemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock') then Title := Title + Kmemo1.Blocks.Items[BlockNo].Text;
-      inc(BlockNo);
+      if Kmemo1.Blocks.Items[i].ClassNameIs('TKMemoTextBlock') then Title := Title + CleanTitle(Kmemo1.Blocks.Items[i].Text);
+      inc(i);
    end;
 
-   TRlog('Found title : '+title + ' with '+IntToStr(BlockNo)+' blocks');
+   TRlog('Found title : "'+title + '" with '+IntToStr(i)+' blocks');
 
-   if((BlockNo<>2) or (Kmemo1.Blocks.Items[1].ClassName <> 'TKMemoParagraph') or (Kmemo1.Blocks.Items[0].ClassName <> 'TKMemoTextBlock'))
+   if(force) then title := CleanTitle(Trim(note^.Title))
+   else title := CleanTitle(title);
+
+   TRlog('Now title is "'+title + '"');
+
+   if((i<>1) or (Kmemo1.Blocks.Items[1].ClassName <> 'TKMemoParagraph') or (Kmemo1.Blocks.Items[0].ClassName <> 'TKMemoTextBlock'))
    then begin
-     while(BlockNo>0) do begin Kmemo1.Blocks.Delete(0); dec(BlockNo); end;
+     while(i>0) do begin Kmemo1.Blocks.Delete(0); dec(i); end;
      KMemo1.Blocks.AddTextBlock(title,0);
      KMemo1.Blocks.AddParagraph(1);
+   end
+   else TKMemoTextBlock(Kmemo1.Blocks.Items[0]).Text := title;
+
+   if((Kmemo1.Blocks.Count<3) or (Kmemo1.Blocks.Items[2].ClassName <> 'TKMemoTextBlock') or (Length(Trim(TKMemoTextBlock(Kmemo1.Blocks.Items[2]).Text)) > 0))
+   then KMemo1.Blocks.AddTextBlock('',2);
+
+   if((Kmemo1.Blocks.Count<4) or (Kmemo1.Blocks.Items[3].ClassName <> 'TKMemoParagraph'))
+   then KMemo1.Blocks.AddParagraph(3);
+
+   i:=0;
+   while(i<4)
+   do begin
+      ktb := TKMemoTextBlock(Kmemo1.Blocks.Items[i]);
+      TRlog('Testing block '+IntToStr(i)+' : '+ktb.Text);
+      if(CompareStr(ktb.TextStyle.Font.Name,UsualFont)<>0) then ktb.TextStyle.Font.Name := UsualFont;
+      if(ktb.TextStyle.Font.Size <> FontSizeTitle) then ktb.TextStyle.Font.Size := FontSizeTitle;
+      if(ktb.TextStyle.Font.Color <> TitleColour) then ktb.TextStyle.Font.Color := TitleColour;
+      if(not (ktb.TextStyle.Font.Style = [fsUnderline])) then ktb.TextStyle.Font.Style := [fsUnderline];
+      inc(i);
    end;
 
-   if((Kmemo1.Blocks.Count<3) or (Kmemo1.Blocks.Items[2].ClassName <> 'TKMemoParagraph'))
-   then KMemo1.Blocks.AddParagraph(2);
-
-   if(force) then title := Trim(note^.Title);
-
-   ktb := KMemo1.Blocks.AddTextBlock(title,0);
-
-   if(CompareStr(ktb.TextStyle.Font.Name,UsualFont)<>0) then ktb.TextStyle.Font.Name := UsualFont;
-   if(ktb.TextStyle.Font.Size <> FontSizeTitle) then ktb.TextStyle.Font.Size := FontSizeTitle;
-   if(ktb.TextStyle.Font.Color <> TitleColour) then ktb.TextStyle.Font.Color := TitleColour;
-   if(not (ktb.TextStyle.Font.Style = [fsUnderline])) then ktb.TextStyle.Font.Style := [fsUnderline];
-
-   ktb := TKMemoTextBlock(KMemo1.Blocks.Items[1]);
-
-   if(CompareStr(ktb.TextStyle.Font.Name,UsualFont)<>0) then ktb.TextStyle.Font.Name := UsualFont;
-   if(ktb.TextStyle.Font.Size <> FontSizeTitle) then ktb.TextStyle.Font.Size := FontSizeTitle;
-
-   BlockNo:=2;
-   while ((BlockNo < Kmemo1.Blocks.Count)) do
+   TRlog('Cleaning further blocks');
+   i:=4;
+   while ((i < Kmemo1.Blocks.Count)) do
    begin
-      if KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock') and (TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]).TextStyle.Font.Size = FontSizeTitle) then
-      begin
-           ktb := TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]);
+      if (KMemo1.Blocks.Items[i].ClassNameIs('TKMemoTextBlock') or KMemo1.Blocks.Items[i].ClassNameIs('TKMemoParagraph')) and (TKMemoTextBlock(KMemo1.Blocks.Items[i]).TextStyle.Font.Size = FontSizeTitle)
+      then begin
+           TRlog('Cleaning block '+IntToStr(i));
+           ktb := TKMemoTextBlock(KMemo1.Blocks.Items[i]);
            ktb.TextStyle.Font.Size := FontSizeNormal;
            ktb.TextStyle.Font.Color := TextColour;
            ktb.TextStyle.Font.Style := [];
       end;
-      inc(BlockNo);
+      inc(i);
    end;
 
    // Update title
-   if(CompareStr(title, note^.Title) <>0) then
+   if(CompareStr(Trim(title), note^.Title) <>0) then
    begin
       TRlog('NOTE TITLE NOT EQUAL');
       note^.Title := Trim(Title);
       MarkDirty();
    end;
 
+   KMemo1.Blocks.UnLockUpdate;
+
+   ProcessingTitle := false;
 end;
 
 
 { -----------  L I N K    R E L A T E D    F U N C T I O N S  ---------- }
 
-procedure TFormNote.MakeLink({const Link : ANSIString;} const Index, Len : longint);
+procedure TFormNote.MakeLink({const Link : UTF8String;} const Index, Len : longint);
 var
 	Hyperlink, HL: TKMemoHyperlink;
-    TrueLink : string;
+    TrueLink : UTF8string;
 	BlockNo, BlockOffset, Blar{, i} : longint;
 	// DontSplit : Boolean = false;
     // blk : TKMemoTextBlock;
@@ -1463,7 +1530,7 @@ end;
 
 procedure TFormNote.CheckForLinks(const StartScan : longint =1; EndScan : longint = 0);
 var
-    Searchterm : ANSIstring;
+    Searchterm : UTF8String;
     Len, httpLen : longint;
 //    Tick, Tock : qword;
     pText : pchar;
@@ -1502,7 +1569,7 @@ end;
 procedure TFormNote.ClearNearLink(const StartS, EndS : integer); //CurrentPos : longint);
 var
     {BlockNo,}  Blar, StartBlock, EndBlock : longint;
-    LinkText  : ANSIString;
+    LinkText  : String;
 
     function ValidWebLink() : boolean;                  // returns true if LinkText is valid web address
     var
@@ -1602,7 +1669,7 @@ end;
 procedure TFormNote.ClearLinks(const StartScan : longint =0; EndScan : longint = 0);
 var
       BlockNo, EndBlock, Blar : longint;
-      LinkText : ANSIString;
+      LinkText : UTF8String;
 begin
     BlockNo := KMemo1.Blocks.IndexToBlockIndex(StartScan, Blar); // DANGER, we must adjust StartScan to block boundary
     EndBlock := KMemo1.Blocks.IndexToBlockIndex(EndScan, Blar);	 // DANGER, we must adjust EndScan to block boundary
@@ -1646,11 +1713,12 @@ begin
    if ProcessingChange then exit();
 
    ProcessingChange := true;
+   TRlog(' TFormNote.onChange GO');
 
    if(CompareStr(oldtext,KMemo1.Text)<>0)
    then begin
      TRlog(' Text has changed');
-     MarkTitle(false);
+     PostFormatTitle();
      MarkDirty();
      oldtext := KMemo1.Text;
      TRlog('New text length = '+IntToStr(Length(oldtext)));
@@ -1667,8 +1735,13 @@ begin
 end;
 
 procedure TFormNote.onKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+    i,j : integer;
 begin
   TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key));
+  i := KMemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, j);
+  TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key)+ ' Block='+IntToStr(i));
+
 
   // CTRL
   if {$ifdef DARWIN}ssMeta{$else}ssCtrl{$endif} in Shift then
@@ -1729,9 +1802,6 @@ begin
 end;
 
 procedure TFormNote.MainMenuClicked(Sender : TObject);
-var
-    FormAbout : TFormAbout;
-    s : String;
 begin
 
    TRlog('MainMenuClicked');
@@ -1800,7 +1870,7 @@ end;
 
 procedure TFormNote.CreateNoteLink();
 var
-    s : String;
+    s : UTF8String;
     n,m,i : Integer;
     hl : TKMemoHyperlink;
     f : TFont;

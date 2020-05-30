@@ -10,15 +10,15 @@ uses
 
 type TFileSync = Class(TTomboyTrans)
     private
-        function GetRemoteNotePath(Rev: integer; NoteID : string = ''): string;
-        function GetRemoteNoteLastChange(const ID : string; rev : Integer; out Error : string) : string;
+        function GetRemoteNotePath(Rev: integer; NoteID : UTF8String = ''): UTF8String;
+        function GetRemoteNoteLastChange(const ID : UTF8String; rev : Integer; out Error : UTF8String) : UTF8String;
     public
         function TestTransport() : TSyncStatus; override;
         function GetNotes(const NoteMeta : TNoteInfoList) : boolean; override;
         function PushChanges(notes : TNoteInfoList): boolean; override;
         function DoRemoteManifest(const RemoteManifest : TStringList) : boolean; override;
         function IDLooksOK() : boolean; Override;
-        function getPrefix(): string; Override;
+        function getPrefix(): UTF8String; Override;
     end;
 
 
@@ -27,7 +27,7 @@ implementation
 uses laz2_DOM, laz2_XMLRead, LazFileUtils, FileUtil;
 
 
-function TFileSync.getPrefix(): string;
+function TFileSync.getPrefix(): UTF8String;
 begin
   Result := 'file';
 end;
@@ -35,7 +35,7 @@ end;
 function TFileSync.TestTransport(): TSyncStatus;
 var
     Doc : TXMLDocument;
-    repo : String;
+    repo : UTF8String;
     ManExists, ZeroExists : boolean; // for readability of code only
 begin
     TRlog('TransportFIle : TestTransport');
@@ -117,7 +117,7 @@ var
     Node : TDOMNode;
     j : integer;
     NoteInfo : PNoteInfo;
-    manifest,note : String;
+    manifest,note : UTF8String;
 begin
     TRlog(#10 + '******* TransportFile : Get Notes');
 
@@ -204,7 +204,7 @@ end;
 function TFileSync.PushChanges(notes : TNoteInfoList): boolean;
 var
     i : integer;
-    d,n : string;
+    d,n : UTF8String;
     note : PNoteInfo;
     ok : boolean;
 begin
@@ -229,7 +229,7 @@ end;
 
 function TFileSync.DoRemoteManifest(const RemoteManifest: TStringList): boolean;
 var
-    d : String;
+    d : UTF8String;
 begin
    d := getParam('RemoteAddress') + 'manifest.xml';
 
@@ -255,9 +255,9 @@ begin
     result := True;
 end;
 
-function TFileSync.GetRemoteNotePath(Rev: integer; NoteID : string = ''): string;
+function TFileSync.GetRemoteNotePath(Rev: integer; NoteID : UTF8String = ''): UTF8String;
 var
-   s,path : String;
+   s,path : UTF8String;
 begin
     TRlog('GetRemoteNotePath ( '+IntToStr(Rev)+' , '+ NoteID+' ) ');
 
@@ -277,11 +277,11 @@ begin
     Result := s;
 end;
 
-function TFileSync.GetRemoteNoteLastChange(const ID : string; rev : Integer; out Error : string) : string;
+function TFileSync.GetRemoteNoteLastChange(const ID : UTF8String; rev : Integer; out Error : UTF8String) : UTF8String;
 var
    Doc : TXMLDocument;
    Node : TDOMNode;
-   filename : string;
+   filename : UTF8String;
 begin
    filename := GetRemoteNotePath(rev,ID);
 

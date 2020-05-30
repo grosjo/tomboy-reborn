@@ -16,9 +16,9 @@ type TTomboyTrans = class
 
     public
 
-        ErrorString : string;
+        ErrorString : UTF8String;
         { The current server ID. Is set with a successful TestTransport call. }
-        ServerID : string;
+        ServerID : UTF8String;
         { The current Server Rev, before we upload. Is set with a successful
               TestTransport call. }
         ServerRev : integer;
@@ -45,12 +45,12 @@ type TTomboyTrans = class
               notes will be sent to it a bit later. New RevNo will be RemoteServerRev plus 1 }
         function DoRemoteManifest(const RemoteManifest : TStringList) : boolean; virtual; abstract;
 
-        function getPrefix(): string; virtual; abstract;
+        function getPrefix(): UTF8String; virtual; abstract;
 
         function IDLooksOK() : boolean; virtual; abstract;
 
-        procedure setParam(p : String; v : String);
-        function getParam(p : String) : String;
+        procedure setParam(p : UTF8String; v : UTF8String);
+        function getParam(p : UTF8String) : UTF8String;
 
 
   end;
@@ -74,7 +74,7 @@ begin
 end;
 
 
-procedure TTomboyTrans.setParam(p : String; v : String);
+procedure TTomboyTrans.setParam(p : UTF8String; v : UTF8String);
 var
   i : LongInt;
 begin
@@ -88,10 +88,10 @@ begin
   i := names.IndexOf(p);
 end;
 
-function TTomboyTrans.getParam(p : String) : String ;
+function TTomboyTrans.getParam(p : UTF8String) : UTF8String ;
 var
   i : LongInt;
-  v : String;
+  v : UTF8String;
 begin
   i := names.IndexOf(p);
   if(i<0) then v := ''

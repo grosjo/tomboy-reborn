@@ -41,7 +41,7 @@ type
      procedure SyncHidden();
 
 public
-     ErrorString : String;
+     ErrorString : UTF8String;
 
 private
 
@@ -71,7 +71,7 @@ private
     function DoSync() : boolean;
 
 
-    function GetNoteTitle(const ID : ANSIString) : ANSIString;
+    function GetNoteTitle(const ID : UTF8String) : UTF8String;
 
     { Stats }
     procedure SyncSummary();
@@ -79,7 +79,7 @@ private
     { we will pass address of this function to Sync }
     function ResolveClashUI(const ClashRec : TClashRecord) : TSyncAction;
 
-    function getManifestName() : String;
+    function getManifestName() : UTF8String;
 
     {   Asks Transport for a list of the notes remote server knows about. }
     function LoadRemoteNotes() : boolean;
@@ -169,7 +169,7 @@ begin
    FreeAndNil(DownloadList);
 end;
 
-function TFormSync.getManifestName() : String;
+function TFormSync.getManifestName() : UTF8String;
 begin
     TRlog('GetManifestName');
 
@@ -177,7 +177,7 @@ begin
 end;
 
 
-function TFormSync.GetNoteTitle(const ID : ANSIString) : ANSIString;
+function TFormSync.GetNoteTitle(const ID : UTF8String) : UTF8String;
 var
     note : PNoteInfo;
 begin
@@ -212,7 +212,7 @@ end;
 procedure TFormSync.FindDeletedServerNotes();
 var
     PNote,LNote : PNoteInfo;
-    ID : String;
+    ID : UTF8String;
     i,c : integer;
 begin
    TRlog('FindDeletedServerNotes');
@@ -255,7 +255,7 @@ begin
     for i := 0 to LocalMetaData.Count -1 do
     begin
         LNote := LocalMetaData.Items[i];
-        if(LNote^.Action <> SynUnset) then continue; // Don't look at notes already scrutinized
+        if(LNote^.Action <> SynUnset) then continue; // Dont look at notes already scrutinized
         if(not LNote^.Deleted) then continue; // Consider only deleted
 
         PNote := NoteMetaData.FindID(LNote^.ID);
@@ -275,7 +275,7 @@ end;
 
 procedure TFormSync.FindNewLocalNotes();
 var
-    ID : String;
+    ID : UTF8String;
     c,i : integer;
     PNote, LNote : PNoteInfo;
 begin
@@ -285,7 +285,7 @@ begin
    for i := 0 to LocalMetaData.Count -1 do
    begin
       LNote := LocalMetaData.Items[i];
-      if(LNote^.Action <> SynUnset) then continue; // Don't look at notes already scrutinized
+      if(LNote^.Action <> SynUnset) then continue; // Dont look at notes already scrutinized
       if(LNote^.Deleted) then continue; // Do not consider deleted
 
       ID := LNote^.ID;
@@ -307,7 +307,7 @@ end;
 
 procedure TFormSync.FindNewRemoteNotes();
 var
-    ID : String;
+    ID : UTF8String;
     c,i : integer;
     PNote,LNote : PNoteInfo;
 begin
@@ -317,7 +317,7 @@ begin
     for i := 0 to NoteMetaData.Count -1 do
     begin
         PNote := NoteMetaData.Items[i];
-        if(PNote^.Action <> SynUnset) then continue; // Don't look at notes already scrutinized
+        if(PNote^.Action <> SynUnset) then continue; // Dont look at notes already scrutinized
 
         ID := PNote^.ID;
         LNote := LocalMetaData.FindID(ID);
@@ -331,7 +331,7 @@ end;
 
 procedure TFormSync.SetSystemicActions();
 var
-    ID : String;
+    ID : UTF8String;
     i : integer;
     LNote, SNote : PNoteInfo;
 begin
@@ -341,7 +341,7 @@ begin
     begin
         SNote := NoteMetaData.Items[i];
 
-        if(SNote^.Action <> SynUnset) then continue; // Don't look at notes already scrutinized
+        if(SNote^.Action <> SynUnset) then continue; // Dont look at notes already scrutinized
         TRlog('SYSTEMIC '+ SNote^.ID + ' APPLYING RULES' );
 
         ID := SNote^.ID;
@@ -479,7 +479,7 @@ end;
 function TFormSync.DoDownloads() : boolean;
 var
     i : integer;
-    dest,backupdir,backup,ID : String;
+    dest,backupdir,backup,ID : UTF8String;
     f : TextFile;
     note : PNoteInfo;
 begin
@@ -523,7 +523,7 @@ end;
 function TFormSync.DoDeleteLocal() : boolean;
 var
     I : integer;
-    s,d,ID : String;
+    s,d,ID : UTF8String;
 begin
     TRlog('DoDeleteLocal');
 
@@ -558,7 +558,7 @@ end;
 function TFormSync.PushChanges() : boolean;
 var
     notes : TNoteInfoList;
-    ID : String;
+    ID : UTF8String;
     i : integer;
     n,l : PNoteInfo;
 begin
@@ -604,7 +604,7 @@ function TFormSync.DoManifest(): boolean;
 var
     OutFile: TStringList;
     Index : integer;
-    r : string;
+    r : UTF8String;
     n,l : PNoteInfo;
     ok : boolean;
 begin
@@ -679,12 +679,12 @@ end;
 
 function TFormSync.LoadLocalNotes(): boolean;
 var
-   ID,s : String;
+   ID,s : UTF8String;
    c,j : integer;
    Info : TSearchRec;
    PNote : PNoteInfo;
    Doc : TXMLDocument;
-   manifest : String;
+   manifest : UTF8String;
    NodeList : TDOMNodeList;
    Node : TDOMNode;
 begin
@@ -1011,7 +1011,7 @@ end;
 procedure TFormSync.SyncSummary();
 var
     i,j : integer;
-    St : String;
+    St : UTF8String;
     n : PNoteInfo;
     act : TSyncAction;
 begin

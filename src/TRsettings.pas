@@ -120,9 +120,9 @@ type
    private
       settingsloading : boolean;
       procedure LoadSettings();
-      procedure VerifyDictLibrary(const libname : String);
+      procedure VerifyDictLibrary(const libname : UTF8String);
       function DictFilesSearch() : integer;
-      function VerifyDictFile(const FullDicName: string): boolean;
+      function VerifyDictFile(const FullDicName: UTF8String): boolean;
 
     end;
 
@@ -638,7 +638,7 @@ begin
     exit(ListBoxDic.Items.Count);
 end;
 
-function TFormSettings.VerifyDictFile(const FullDicName: string): boolean;
+function TFormSettings.VerifyDictFile(const FullDicName: UTF8String): boolean;
 var
     Spell : THunspell;
 begin
@@ -678,7 +678,7 @@ begin
         VerifyDictFile(DictPath + ListBoxDic.Items.Strings[ListBoxDic.ItemIndex]);
 end;
 
-procedure TFormSettings.VerifyDictLibrary(const libname : String);
+procedure TFormSettings.VerifyDictLibrary(const libname : UTF8String);
 var
     Spell : THunspell;
 begin

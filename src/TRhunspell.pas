@@ -33,31 +33,31 @@ type
   private
     Speller: Pointer;
         { Loads indicated library, returns False and sets ErrorMessage if something wrong }
-    function LoadHunspellLibrary(LibraryName: AnsiString): Boolean;
+    function LoadHunspellLibrary(LibraryName: UTF8String): Boolean;
   public
     	    { set to True if speller is ready to accept requests }
     GoodToGo : boolean;
     	    { empty if OK, contains an error message if something goes wrong }
-    ErrorMessage : ANSIString;
+    ErrorMessage : UTF8String;
             { Will have a full name to library if correctly loaded at create }
-    LibraryFullName : string;
+    LibraryFullName : AnsiString;
             { Will have a "first guess" as to where dictionaries are, poke another name in
             and call FindDictionary() if default did not work }
-    constructor Create(const FullLibName : ANSIString = '');
+    constructor Create(const FullLibName : AnsiString = '');
     destructor Destroy; override;
             { Returns True if word spelt correctly }
-    function Spell(Word: string): boolean;
+    function Spell(Word: UTF8String): boolean;
             { Returns with List full of suggestions how to spell Word }
-    procedure Suggest(Word: string; List: TStrings);
+    procedure Suggest(Word: UTF8String; List: TStrings);
             { untested }
-    procedure Add(Word: string);
+    procedure Add(Word: UTF8String);
             { untested }
-    procedure Remove(Word: string);
+    procedure Remove(Word: UTF8String);
             { returns a full library name or '' if it cannot find anything suitable }
     function FindLibrary(out FullName : AnsiString) : boolean;
             { returns true if it successfully set the indicated dictionary }
-    function SetDictionary(const FullDictName: string) : boolean;
-    function SetNewLibrary(const LibName : string) : boolean;
+    function SetDictionary(const FullDictName: UTF8String) : boolean;
+    function SetNewLibrary(const LibName : UTF8String) : boolean;
   end;
 
 var Hunspell_create: THunspell_create;
@@ -83,7 +83,7 @@ uses LazUTF8, SysUtils, {$ifdef linux}Process,{$endif} LazFileUtils, Forms, lazl
 
 { THunspell }
 
-function THunspell.LoadHunspellLibrary(libraryName: Ansistring): Boolean;
+function THunspell.LoadHunspellLibrary(libraryName: UTF8String): Boolean;
 begin
     Result := false;
     HunLibHandle := LoadLibrary(PAnsiChar(libraryName));
@@ -122,7 +122,7 @@ begin
     if Result then  TRlog('Loaded library OK ' + LibraryName);
 end;
 
-constructor THunspell.Create(const FullLibName : ANSIString = '');
+constructor THunspell.Create(const FullLibName : AnsiString = '');
 begin
     ErrorMessage := '';
     LibraryFullName := FullLibName;
@@ -149,15 +149,14 @@ begin
     inherited Destroy;
 end;
 
-function THunspell.Spell(Word: string): boolean;
+function THunspell.Spell(Word: UTF8String): boolean;
 begin
     Result := hunspell_spell(Speller, PChar(Word))
 end;
 
-procedure THunspell.Suggest(Word: string; List: TStrings);
+procedure THunspell.Suggest(Word: UTF8String; List: TStrings);
 var i, len: Integer;
 	SugList, Words: PPChar;
-    //Blar : AnsiString;
 begin
     List.clear;
     try
@@ -165,7 +164,6 @@ begin
         Words := SugList;
         for i := 1 to len do begin
             List.Add(Words^);
-            //Blar := Words^;
             Inc(PtrInt(Words), sizeOf(Pointer));
         end;
     finally
@@ -173,22 +171,22 @@ begin
     end;
 end;
 
-procedure THunspell.Add(Word: string);
+procedure THunspell.Add(Word: UTF8String);
 begin
     Hunspell_add(Speller, Pchar(Word));
 end;
 
-procedure THunspell.Remove(Word: string);
+procedure THunspell.Remove(Word: UTF8String);
 begin
     Hunspell_remove(Speller, Pchar(Word));
 end;
 
-function THunspell.FindLibrary(out FullName : ANSIString):boolean;
+function THunspell.FindLibrary(out FullName : AnsiString):boolean;
 var
     {$ifdef LINUX} I : integer = 1; {$endif}
     {$ifndef LINUX}
     Info : TSearchRec;
-    Mask : ANSIString;
+    Mask : UTF8String;
     {$endif}
 begin
     Result := False;
@@ -241,9 +239,9 @@ begin
         TRlog('FindLibrary Failed to find a Hunspell Library' + FullName +']');
 end;
 
-function THunspell.SetDictionary(const FullDictName: string) : boolean;
+function THunspell.SetDictionary(const FullDictName: UTF8String) : boolean;
 var
-    FullAff : string;
+    FullAff : UTF8String;
 begin
     TRlog('about to try to set dictionary');
     Result := False;
@@ -277,7 +275,7 @@ begin
     Result := GoodToGo;
 end;
 
-function THunspell.SetNewLibrary(const LibName: string): boolean;
+function THunspell.SetNewLibrary(const LibName: UTF8String): boolean;
 begin
     LibraryFullName := LibName;
     Result := LoadHunspellLibrary(LibraryFullName);

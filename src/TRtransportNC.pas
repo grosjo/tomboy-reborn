@@ -17,10 +17,10 @@ type TNextSync = Class(TTomboyTrans)
         function PushChanges(notes : TNoteInfoList) : boolean; override;
         function DoRemoteManifest(const RemoteManifest : TStringList) : boolean; override;
         function IDLooksOK() : boolean; Override;
-        function getPrefix(): string; Override;
+        function getPrefix(): UTF8String; Override;
     private
-        Token, TokenSecret, Key : String;
-        function JsonEscape(s : String) : String;
+        Token, TokenSecret, Key : UTF8String;
+        function JsonEscape(s : UTF8String) : UTF8String;
 
  end;
 
@@ -38,19 +38,19 @@ begin
     inherited Destroy;
 end;
 
-function TNextSync.getPrefix() : string;
+function TNextSync.getPrefix() : UTF8String;
 begin
   Result := 'nc';
 end;
 
 function TNextSync.TestTransport(): TSyncStatus;
 var
-  resturl,res : String;
+  resturl,res : UTF8String;
   json : TJSONData;
   jObject : TJSONObject;
   p : TStrings;
   ok : boolean;
-  sid : String;
+  sid : UTF8String;
   rev : integer;
 begin
     WriteLn('Next-TestTransport');
@@ -139,7 +139,7 @@ end;
 
 function TNextSync.GetNotes(const NoteMeta: TNoteInfoList): boolean;
 var
-  res : String;
+  res : UTF8String;
   json: TJSONData;
   jObject : TJSONObject;
   jnotes,jtags : TJSONArray;
@@ -274,9 +274,9 @@ begin
     result := ok;
 end;
 
-function TNextSync.JsonEscape(s : String) : String;
+function TNextSync.JsonEscape(s : UTF8String) : UTF8String;
 var
-   r : String;
+   r : UTF8String;
    i,j : integer;
 begin
 {
@@ -312,7 +312,7 @@ function TNextSync.PushChanges(notes : TNoteInfoList) : boolean;
 var
     i,j : integer;
     note : PNoteInfo;
-    res : String;
+    res : UTF8String;
     json: TJSONData;
     p : TStrings;
     jObject : TJSONObject;

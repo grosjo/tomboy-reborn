@@ -51,7 +51,7 @@ type TFormMain = class(TForm)
         procedure MainMenuClicked(Sender : TObject);
         procedure MenuNewNotebookNote(Sender : TObject);
 
-        procedure OpenNoteByTitle(t : String);
+        procedure OpenNoteByTitle(t : UTF8String);
         procedure ForceScan();
 
         procedure CheckCaseSensitiveChange(Sender: TObject);
@@ -78,25 +78,25 @@ private
         fsett,fabout : TForm;
 
         SearchCaseSensitive : boolean;      // Flag linked to the checkbox
-        SelectedNotebook : String;         // Notebook selected
-        SelectedNote : String;         // Note ID selected
+        SelectedNotebook : UTF8String;         // Notebook selected
+        SelectedNote : UTF8String;         // Note ID selected
 
         syncshallrun : boolean;
         procedure ShowLists(sender: TObject);
-        function AddNotebook(nb : String) : boolean;
-        function AddNewNotebook(nb : String): boolean;
+        function AddNotebook(nb : UTF8String) : boolean;
+        function AddNewNotebook(nb : UTF8String): boolean;
 
-        function AddLastUsed(ID : String; atend : boolean = false) : boolean;
+        function AddLastUsed(ID : UTF8String; atend : boolean = false) : boolean;
 
         procedure ScanNotes(Sender: TObject);
         procedure ProcessSync(Sender: TObject);
         procedure ProcessSyncUpdates(const DeletedList, DownList: TStringList);
 
-        procedure OpenNote(ID : String = ''; Notebook : String = '' ; Title : String = '');
-        function DeleteNote(ID: String) : boolean;
-        function SaveNote(ID: String) : boolean;
+        procedure OpenNote(ID : UTF8String = ''; Notebook : UTF8String = '' ; Title : UTF8String = '');
+        function DeleteNote(ID: UTF8String) : boolean;
+        function SaveNote(ID: UTF8String) : boolean;
 
-        function DeleteNotebook(nb : String): boolean;
+        function DeleteNotebook(nb : UTF8String): boolean;
 
 
 public
@@ -443,7 +443,7 @@ begin
    end;
 end;
 
-procedure TFormMain.OpenNoteByTitle(t : String);
+procedure TFormMain.OpenNoteByTitle(t : UTF8String);
 var
    i : integer;
    b : boolean;
@@ -559,6 +559,7 @@ end;
 procedure TFormMain.MainMenuClicked(Sender : TObject);
 var
     s : String;
+    s2 : UTF8String;
 begin
 
    TRlog('MainMenuClicked');
@@ -572,9 +573,10 @@ begin
         mtNewNotebook : begin
             s:='';
             InputQuery(rsNotebooks,rsEnterNewNotebook ,s);
-            if(AddNewNotebook(s)) then
+            s2 := s;
+            if(AddNewNotebook(s2)) then
             begin
-               SelectedNotebook := Trim(s);
+               SelectedNotebook := Trim(s2);
                ShowLists(Sender);
                StatusBar1.SimpleText:= 'Notebook "'+SelectedNoteBook+'" selected'
             end;
@@ -592,7 +594,7 @@ end;
 
 { ======= LISTS MANAGEMENT ====== }
 
-function TFormMain.AddLastUsed(ID : String; atend : boolean = false) : boolean;
+function TFormMain.AddLastUsed(ID : UTF8String; atend : boolean = false) : boolean;
 var
    i : integer;
 begin
@@ -621,7 +623,7 @@ begin
    Result := true;
 end;
 
-function TFormMain.AddNewNotebook(nb : String): boolean;
+function TFormMain.AddNewNotebook(nb : UTF8String): boolean;
 var
    i : integer;
 begin
@@ -639,7 +641,7 @@ begin
    Result:=true;
 end;
 
-function TFormMain.AddNotebook(nb : String): boolean;
+function TFormMain.AddNotebook(nb : UTF8String): boolean;
 var
    i : integer;
 begin
@@ -657,12 +659,12 @@ begin
    Result:=true;
 end;
 
-function TFormMain.DeleteNotebook(nb : String): boolean;
+function TFormMain.DeleteNotebook(nb : UTF8String): boolean;
 var
    i,j : integer;
    deleted : boolean;
    n : PNoteInfo;
-   s : String;
+   s : UTF8String;
 begin
    nb := Trim(nb);
    if((length(nb)=0) or (CompareText(nb,'-') =0)) then exit(false);
@@ -725,11 +727,11 @@ end;
 
 procedure TFormMain.ScanNotes(Sender : TObject);
 Var
-    ID : String;
+    ID : UTF8String;
     n,n2 : PNoteInfo;
     i,c1,c2 : integer;
     Info : TSearchRec;
-    s : String;
+    s : UTF8String;
 begin
    TRlog('ScanNotes');
 
@@ -942,9 +944,9 @@ begin
 end;
 
 
-function TFormMain.DeleteNote(ID: String) : boolean;
+function TFormMain.DeleteNote(ID: UTF8String) : boolean;
 var
-    s,d : String;
+    s,d : UTF8String;
     n : PNoteInfo;
 begin
 
@@ -992,9 +994,9 @@ begin
    Result := false;
 end;
 
-function TFormMain.SaveNote(ID: String) : boolean;
+function TFormMain.SaveNote(ID: UTF8String) : boolean;
 var
-    s,d : String;
+    s,d : UTF8String;
     n : PNoteInfo;
 begin
 
@@ -1101,7 +1103,7 @@ procedure TFormMain.SGNotesDblClick(Sender: TObject);
 var
    r : integer;
    n : PNoteInfo;
-   ID : String;
+   ID : UTF8String;
 begin
    r := SGNotes.Row;
    TRlog('Double Clicked (Notes) on line : '+IntToStr(r));
@@ -1303,7 +1305,7 @@ begin
 end;
 
 
-procedure TFormMain.OpenNote(ID : String = ''; Notebook : String = '' ; Title : String = '');
+procedure TFormMain.OpenNote(ID : UTF8String = ''; Notebook : UTF8String = '' ; Title : UTF8String = '');
 var
     EBox : PNoteEditForm;
     n : PNoteInfo;

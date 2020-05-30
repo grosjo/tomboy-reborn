@@ -203,7 +203,7 @@ RESOURCESTRING
   rsHelpSaveExit = 'After import single note, save & exit';
 
   rsLineBreak = {$IFDEF LINUX} AnsiChar(#10) {$ENDIF}
-               {$IFDEF MSWINDOWS} AnsiString(#13#10) {$ENDIF};
+               {$IFDEF MSWINDOWS} AnsiUTF8String(#13#10) {$ENDIF};
 implementation
 
 end.
