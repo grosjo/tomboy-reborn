@@ -277,7 +277,7 @@ end;
 function TNextSync.JsonEscape(s : UTF8String) : UTF8String;
 var
    r : UTF8String;
-   i,j : integer;
+   i : integer;
 begin
 {
     Backspace is replaced with \b
@@ -292,7 +292,6 @@ begin
     TRlog(s);
     r:='';
 
-    j := 0;
     for i := 1 to Length (s) do
     begin
        if(s[i] = #13) then r:= r + '\n'

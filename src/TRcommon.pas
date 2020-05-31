@@ -972,6 +972,7 @@ end;
 
 function isURL(u : UTF8String) : boolean;
 begin
+  u := Trim(u);
   if(CompareText('http://',Copy(u,1,7))=0) then exit(true);
   if(CompareText('https://',Copy(u,1,8))=0) then exit(true);
   if(CompareText('ftp://',Copy(u,1,6))=0) then exit(true);
@@ -979,17 +980,24 @@ begin
   Result := false;
 end;
 
+
+function isNoteLink(u : UTF8String) : boolean;
+begin
+  u := Trim(u);
+  if(CompareText('note://',Copy(u,1,7))=0) then exit(true);
+  Result := false;
+end;
+
 function CleanTitle(u: UTF8String) : UTF8String;
 var
-   i,j : integer;
+   i : integer;
    s : AnsiString;
 begin
-  s := u;
   i:=0;
   while(i<Length(u))
   do begin
-     TRlog('CleanTitle ('+s+') '+IntToStr(i)+' => '+s+' ORD='+IntToStr(Ord(s.Chars[i])));
-     if(s.Chars[i]<' ') then u := StringReplace(u, s,' ',[rfReplaceAll]);
+     s := u;
+     if(s.Chars[i]<' ') then u := StringReplace(u, Copy(s,i+1,1),' ',[rfReplaceAll]);
      inc(i);
   end;
   result := u;

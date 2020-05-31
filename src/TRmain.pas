@@ -265,7 +265,6 @@ end;
 procedure TFormMain.BuildFileMenu(Sender : TObject);
 var
     m1,m2 : TMenuItem;
-    n : PNOteInfo;
     i : integer;
 begin
     TRlog('BuildFileMenu');
@@ -447,7 +446,6 @@ procedure TFormMain.OpenNoteByTitle(t : UTF8String);
 var
    i : integer;
    b : boolean;
-   n : PNoteInfo;
 begin
    TRlog('Searching Note by title : ' + t);
 

@@ -65,8 +65,10 @@ RESOURCESTRING
   rsMenuUnderlined = 'Underlined';
   rsMenuHighlight = 'Highlight';
   rsMenuFixed = 'FixedFont';
-  rsMenuLink = 'Insert Link to Note';
-  rsMenuURL = 'Insert Link to URL';
+  rsAddNoteLink = 'Insert Link to Note';
+  rsAddURLLink = 'Insert Link to URL';
+  rsRemoveLink = 'Remove link';
+  rsLinks = 'Link';
   rsNotebooks = 'Notebooks';
   rsMenuFontPlus = 'Increase font size';
   rsMenuFontMinus = 'Decrease font size';
@@ -93,7 +95,7 @@ RESOURCESTRING
   rsTrayAbout = 'About';
   rsTrayQuit = 'Quit';
 
-  rsInsertDate = 'Insert date';
+  rsInsertDate = 'Insert current date';
 
 
   rsSetupNotesDirFirst = 'Please setup a notes directory first';
@@ -185,8 +187,6 @@ RESOURCESTRING
 
   rsCheckSel = 'Spelling';
   rsCheckSelNop = 'Select text to check spelling';
-
-  rsNoteLink = 'Create a note link';
 
   rsHelpDelay = 'Delay startup 2 sec to allow OS to settle';
   rsHelpLang = 'Force Language, supported es, nl';

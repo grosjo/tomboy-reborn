@@ -480,7 +480,6 @@ function TFormSync.DoDownloads() : boolean;
 var
     i : integer;
     dest,backupdir,backup,ID : UTF8String;
-    f : TextFile;
     note : PNoteInfo;
 begin
     TRlog('DoDownloads');
@@ -558,7 +557,6 @@ end;
 function TFormSync.PushChanges() : boolean;
 var
     notes : TNoteInfoList;
-    ID : UTF8String;
     i : integer;
     n,l : PNoteInfo;
 begin
