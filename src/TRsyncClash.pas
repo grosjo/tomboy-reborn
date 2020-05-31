@@ -43,8 +43,8 @@ implementation
 
 procedure TFormClash.FormShow(Sender: TObject);
 begin
-    Left := mainWindow.Left + random(100);
-    Top := mainWindow.Top + random(100);
+    Left := mainWindow.Left + 20;
+    Top := mainWindow.Top + 20;
 end;
 
 end.
