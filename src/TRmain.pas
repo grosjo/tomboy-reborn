@@ -52,7 +52,7 @@ type TFormMain = class(TForm)
         procedure MenuNewNotebookNote(Sender : TObject);
 
         procedure OpenNoteByTitle(t : UTF8String);
-        procedure ForceScan();
+        procedure PostScan();
 
         procedure CheckCaseSensitiveChange(Sender: TObject);
         procedure SearchBoxChange(Sender: TObject);
@@ -122,8 +122,9 @@ var
 begin
    TRlog('TFormMain.FormCreate');
 
+   syncshallrun := true;
 
-    NotesList := TNoteInfoList.Create;
+   NotesList := TNoteInfoList.Create;
     NotesList.Lname := 'TSearch list';
 
     NotebooksList := TStringList.Create;
@@ -180,7 +181,7 @@ begin
     MainMenu.Items.Clear;
     MainMenu.Images := MenuIconList;
 
-    ScanNotes(Self);
+    PostScan();
 
     // 'File'
     FileMenu := TMenuItem.Create(MainMenu);
@@ -238,7 +239,6 @@ begin
         TrayIcon.Show;
     end;
 
-    syncshallrun := true;
     LastSync := now;
 
     // TIMERS
@@ -710,16 +710,15 @@ begin
    Result:=deleted;
 end;
 
-procedure TFormMain.ForceScan();
+procedure TFormMain.PostScan();
 begin
-   Trlog('TFormMain.ForceScan');
+   Trlog('TFormMain.PostScan');
 
   if(assigned(ScanTimer)) then
-   begin
+  begin
      ScanTimer.Enabled := False;
      FreeAndNil(ScanTimer);
-   end;
-  Application.ProcessMessages;
+  end;
 
   ScanTimer := TTimer.Create(nil);
   ScanTimer.OnTimer := @ScanNotes;
@@ -742,6 +741,16 @@ begin
      ScanTimer.Enabled := False;
      FreeAndNil(ScanTimer);
    end;
+
+   if(not syncshallrun) then
+   begin
+      ScanTimer := TTimer.Create(nil);
+      ScanTimer.OnTimer := @ScanNotes;
+      ScanTimer.Interval := 100;
+      ScanTimer.Enabled := True;
+   end;
+
+   syncshallrun := false;
 
    NotebooksList.Clear;
 
@@ -810,6 +819,8 @@ begin
 
    StatusBar1.SimpleText:= 'Found '+IntToStr(c1)+' local notes and '+IntToStr(c2) + ' notebooks';
 
+   syncshallrun := true;
+
 end;
 
 procedure TFormMain.ProcessSync(Sender : TObject);
@@ -817,13 +828,15 @@ var
   m : integer;
   FormSync : TFormSync;
 begin
-   SyncTimer.Enabled := False;
-   FreeAndNil(SyncTimer);
+   if(Assigned(SyncTimer))
+   then begin
+     SyncTimer.Enabled := False;
+     FreeAndNil(SyncTimer);
+   end;
 
    TRlog('ProcessSync');
 
    if(not syncshallrun) then TRlog(rsOtherSyncProcess)
-
    else if(SyncRepeat>0) then
    begin
       m := Round((now-LastSync)*1440.0);
@@ -852,7 +865,7 @@ begin
 
    SyncTimer := TTimer.Create(nil);
    SyncTimer.OnTimer := @ProcessSync;
-   SyncTimer.Interval := 60000;
+   SyncTimer.Interval := 9863;
    SyncTimer.Enabled := True;
 
 end;

@@ -77,7 +77,7 @@ type
 private
     AlreadyLoaded : boolean;
     Dirty : boolean;
-    ProcessingChange, ProcessingTitle : boolean;
+    ProcessingChange, ProcessingTitle, isClosing : boolean;
 
     HouseKeeper, TitleFormatter, MenuBuilder : TTimer;
 
@@ -98,7 +98,8 @@ private
     procedure MemoToNote();
     procedure MarkDirty();
     procedure MarkClean();
-    procedure Commit();
+
+    procedure Commit(Sender : TObject);
 
     procedure ShowSearchPanel(s : boolean);
     procedure BuildMenus(Sender: TObject);
@@ -131,7 +132,7 @@ private
     function IncFontSize(n : integer) : integer;
     function DecFontSize(n : integer) : integer;
 
-    procedure DoHouseKeeping(Sender: TObject);
+    procedure PostCommit();
 
 
     // COPY/PASTE
@@ -593,13 +594,13 @@ var
    lines.Add(note^.Title);
    lines.Add('');
 
-   i:=2;
+   i:=4;
    s:='';
 
    while(i<KMemo1.Blocks.Count) do
    begin
       j:=i;
-      // Seraching Paragraph
+      // Searching Paragraph
       while( (j<KMemo1.Blocks.Count) and (not KMemo1.Blocks.Items[j].ClassNameIs('TKMemoParagraph')) )
          do inc(j);
 
@@ -647,6 +648,9 @@ var
 
    s := lines.Text;
 
+   TRlog('=================');
+   TRlog('NOTE v0 ='+s);
+
    // Delete opposite tags
    s2:='';
    while(CompareStr(s,s2)<>0) do
@@ -674,7 +678,8 @@ var
       s := StringReplace(s,'</italic>'+#10+'<italic>',#10,[rfReplaceAll]);
       s := StringReplace(s,'</bold>'+#10+'<bold>',#10,[rfReplaceAll]);
    end;
-   TRlog('NOTE ='+s);
+   TRlog('=================');
+   TRlog('NOTE v1 ='+s);
 
    if(CompareStr(s, note^.Content) <> 0) then
    begin
@@ -707,11 +712,16 @@ var
    MarkClean();
 end;
 
-procedure TFormNote.Commit();
+procedure TFormNote.Commit(Sender : TObject);
 var
    filename : UTF8String;
 begin
   ProcessingChange := true;
+  if(Assigned(HouseKeeper))
+  then begin
+     HouseKeeper.Enabled := False;
+     FreeAndNil(HouseKeeper);
+  end;
 
   if(Dirty) then
   begin
@@ -719,11 +729,18 @@ begin
     filename := GetLocalNoteFile(note^.ID);
 
     NoteToFile(note,filename);
-    TFormMain(mainWindow).ForceScan();
+    TFormMain(mainWindow).PostScan();
   end;
 
   ProcessingChange := false;
 
+  if(not isClosing) then
+  begin
+     HouseKeeper := TTimer.Create(nil);
+     HouseKeeper.OnTimer := @Commit;
+     HouseKeeper.Interval := 30000;
+     HouseKeeper.Enabled := True;
+  end;
 end;
 
 function TFormNote.isBold() : boolean;
@@ -1122,8 +1139,8 @@ end;
 procedure TFormNote.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
   TRlog('TFormNote.FormCloseQuery');
-  HouseKeeper.Enabled := false;
-  Commit();
+  isClosing := true;
+  Commit(Sender);
   CanClose := True;
 end;
 
@@ -1160,6 +1177,7 @@ begin
   AlreadyLoaded := false;
   ProcessingChange := false;
   ProcessingTitle := false;
+  isClosing := false;
   SetFontSizes();
 
   KMemo1.TextStyle.Font.Size := FontSizeNormal;
@@ -1316,15 +1334,13 @@ begin
 
   // Housekeeping
   HouseKeeper := TTimer.Create(nil);
-  HouseKeeper.OnTimer := @DoHouseKeeping;
-  HouseKeeper.Interval := 60000;
+  HouseKeeper.OnTimer := @Commit;
+  HouseKeeper.Interval := 30000;
   HouseKeeper.Enabled := True;
 
   TRlog('TFormNote.FormCreate done');
 
 end;
-
-
 
 procedure TFormNote.PostBuildMenus();
 begin
@@ -1360,17 +1376,20 @@ begin
    MarkTitle(false);
 end;
 
-procedure TFormNote.DoHouseKeeping(Sender: TObject);
-begin
-  TRlog('DoHouseKeeping');
-  HouseKeeper.Enabled := False;
-  FreeAndNil(HouseKeeper);
 
-  //Commit();
+procedure TFormNote.PostCommit();
+begin
+  TRlog('PostCommit');
+
+  if(Assigned(HouseKeeper)) then
+  begin
+    HouseKeeper.Enabled := False;
+    FreeAndNil(HouseKeeper);
+  end;
 
   HouseKeeper := TTimer.Create(nil);
-  HouseKeeper.OnTimer := @DoHouseKeeping;
-  HouseKeeper.Interval := 60000;
+  HouseKeeper.OnTimer := @Commit;
+  HouseKeeper.Interval := 100;
   HouseKeeper.Enabled := True;
 end;
 
@@ -1852,7 +1871,7 @@ begin
      if key = VK_X then begin TrLog('Ctrl-X'); KMemo1.ExecuteCommand(TKEditCommand.ecCut); MarkDirty(); Key := 0; end;
      if key = VK_V then begin TrLog('Ctrl-V'); PrimaryPaste(); {KMemo1.ExecuteCommand(TKEditCommand.ecPaste); MarkDirty(); } Key := 0; end;
 
-     if key = VK_W then begin TrLog('Ctrl-W'); Commit(); Key := 0; end;
+     if key = VK_W then begin TrLog('Ctrl-W'); PostCommit(); Key := 0; end;
 
      if key = VK_O then begin TrLog('Ctrl-O'); TFormMain(mainWIndow).ShowSettings(); Key := 0; end;
 
@@ -1957,7 +1976,7 @@ begin
 
       //ntDuplicate :
 
-      ntCommit :            Commit();
+      ntCommit :            PostCommit();
 
       //ntDelete :
 
