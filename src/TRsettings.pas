@@ -58,8 +58,6 @@ type
           CheckAutoStart : TCheckBox;
           CheckManyNotebooks: TCheckBox;
           CheckShowSearchAtStart: TCheckBox;
-	  CheckShowExtLinks: TCheckBox;
-	  CheckShowIntLinks: TCheckBox;
           GroupBox4: TGroupBox;
 	  GroupBox5: TGroupBox;
 	  Label1: TLabel;
@@ -99,8 +97,6 @@ type
 	procedure CheckAutostartChange(Sender: TObject);
         procedure CheckBoxAutoSyncChange(Sender: TObject);
         procedure CheckManyNotebooksChange(Sender: TObject);
-        procedure CheckShowExtLinksChange(Sender: TObject);
-        procedure CheckShowIntLinksChange(Sender: TObject);
         procedure CheckShowSearchAtStartChange(Sender: TObject);
         procedure EditScaleChange(Sender: TObject);
         procedure EditTimerSyncChange(Sender: TObject);
@@ -307,24 +303,6 @@ begin
    ManyNoteBooks := CheckManyNotebooks.Checked;
 end;
 
-procedure TFormSettings.CheckShowExtLinksChange(Sender: TObject);
-begin
-   TRlog('CheckShowExtLinksChange');
-
-   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
-
-   ShowExtLinks := CheckShowExtLinks.Checked;
-end;
-
-procedure TFormSettings.CheckShowIntLinksChange(Sender: TObject);
-begin
-   TRlog('CheckShowIntLinksChange');
-
-   if(settingsloading) then begin TRlog('Event while loading'); exit(); end;
-
-   ShowIntLinks := CheckShowIntLinks.Checked;
-end;
-
 procedure TFormSettings.CheckShowSearchAtStartChange(Sender: TObject);
 begin
    TRlog('CheckShowSearchAtStartChange');
@@ -504,8 +482,6 @@ begin
   LabelSettingPath.Caption := ConfigFile;
   LabelNotesPath.Caption := NotesDir;
 
-  CheckShowIntLinks.Checked := ShowIntLinks;
-  CheckShowExtLinks.Checked := ShowExtLinks;
   CheckManyNoteBooks.checked := ManyNoteBooks;
   CheckAutostart.Checked := Autostart;
   CheckShowSearchAtStart.Checked := SearchAtStart;

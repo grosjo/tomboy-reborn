@@ -122,34 +122,32 @@ object FormSettings: TFormSettings
       object GroupBox5: TGroupBox
         AnchorSideLeft.Control = TabBasic
         AnchorSideRight.Control = GroupBox2
-        AnchorSideBottom.Control = TabBasic
-        AnchorSideBottom.Side = asrBottom
-        Left = 192
-        Height = 176
-        Top = 160
-        Width = 198
-        Anchors = [akRight]
+        AnchorSideBottom.Control = GroupBox2
+        Left = 216
+        Height = 96
+        Top = 163
+        Width = 392
+        Anchors = [akBottom]
         BorderSpacing.Left = 5
         BorderSpacing.Right = 10
         BorderSpacing.Bottom = 5
         Caption = 'Font Size'
-        ClientHeight = 158
-        ClientWidth = 196
+        ClientHeight = 78
+        ClientWidth = 390
         TabOrder = 2
         object ButtonSetColours: TButton
           AnchorSideLeft.Control = GroupBox5
-          AnchorSideLeft.Side = asrCenter
-          AnchorSideTop.Control = ButtonFixedFont
+          AnchorSideTop.Control = EditScale
           AnchorSideTop.Side = asrBottom
           AnchorSideRight.Control = GroupBox5
           AnchorSideRight.Side = asrBottom
           AnchorSideBottom.Control = GroupBox5
           AnchorSideBottom.Side = asrBottom
-          Left = 49
+          Left = 20
           Height = 23
-          Top = 121
+          Top = 46
           Width = 99
-          BorderSpacing.Left = 10
+          BorderSpacing.Left = 20
           BorderSpacing.Top = 10
           BorderSpacing.Right = 10
           BorderSpacing.Bottom = 10
@@ -187,15 +185,16 @@ object FormSettings: TFormSettings
           AnchorSideLeft.Control = GroupBox5
           AnchorSideLeft.Side = asrCenter
           AnchorSideTop.Control = EditScale
-          AnchorSideTop.Side = asrBottom
+          AnchorSideTop.Side = asrCenter
           AnchorSideRight.Control = GroupBox5
           AnchorSideRight.Side = asrBottom
           AnchorSideBottom.Control = GroupBox5
           AnchorSideBottom.Side = asrBottom
-          Left = 50
+          Left = 208
           Height = 25
-          Top = 51
+          Top = 10
           Width = 96
+          Anchors = [akTop]
           BorderSpacing.Left = 10
           BorderSpacing.Top = 15
           BorderSpacing.Bottom = 10
@@ -208,20 +207,20 @@ object FormSettings: TFormSettings
         object ButtonFixedFont: TButton
           AnchorSideLeft.Control = GroupBox5
           AnchorSideLeft.Side = asrCenter
-          AnchorSideTop.Control = ButtonFont
-          AnchorSideTop.Side = asrBottom
-          AnchorSideRight.Control = GroupBox5
-          AnchorSideRight.Side = asrBottom
-          AnchorSideBottom.Control = GroupBox5
-          AnchorSideBottom.Side = asrBottom
-          Left = 50
+          AnchorSideTop.Control = ButtonSetColours
+          AnchorSideTop.Side = asrCenter
+          AnchorSideRight.Control = ButtonFont
+          AnchorSideRight.Side = asrCenter
+          AnchorSideBottom.Control = ButtonSetColours
+          AnchorSideBottom.Side = asrCenter
+          Left = 208
           Height = 25
-          Top = 86
+          Top = 44
           Width = 96
+          Anchors = [akRight, akBottom]
           BorderSpacing.Left = 10
           BorderSpacing.Top = 5
           BorderSpacing.Right = 10
-          BorderSpacing.Bottom = 10
           Caption = 'Fixed Font'
           OnClick = ButtonFixedFontClick
           ParentShowHint = False
@@ -230,59 +229,37 @@ object FormSettings: TFormSettings
         end
       end
       object GroupBox2: TGroupBox
+        AnchorSideLeft.Control = GroupBox1
+        AnchorSideLeft.Side = asrBottom
         AnchorSideBottom.Control = TabBasic
         AnchorSideBottom.Side = asrBottom
-        Left = 400
-        Height = 178
-        Top = 160
-        Width = 208
-        Anchors = [akBottom]
-        BorderSpacing.Bottom = 5
+        Left = 216
+        Height = 69
+        Top = 264
+        Width = 392
+        Anchors = [akLeft, akBottom]
+        BorderSpacing.Bottom = 10
         Caption = 'Notes options'
-        ClientHeight = 160
-        ClientWidth = 206
+        ClientHeight = 51
+        ClientWidth = 390
         TabOrder = 3
-        object CheckShowIntLinks: TCheckBox
-          AnchorSideLeft.Control = GroupBox2
-          AnchorSideTop.Control = CheckManyNotebooks
-          AnchorSideTop.Side = asrBottom
-          Left = 15
-          Height = 23
-          Top = 68
-          Width = 134
-          BorderSpacing.Left = 15
-          BorderSpacing.Top = 15
-          Caption = 'Show Internal Links'
-          OnChange = CheckShowIntLinksChange
-          TabOrder = 0
-        end
-        object CheckShowExtLinks: TCheckBox
-          AnchorSideLeft.Control = GroupBox2
-          AnchorSideTop.Control = CheckShowIntLinks
-          AnchorSideTop.Side = asrBottom
-          Left = 15
-          Height = 23
-          Top = 106
-          Width = 139
-          BorderSpacing.Left = 15
-          BorderSpacing.Top = 15
-          Caption = 'Show External  Links'
-          OnChange = CheckShowExtLinksChange
-          TabOrder = 1
-        end
         object CheckManyNotebooks: TCheckBox
           AnchorSideLeft.Control = GroupBox2
           AnchorSideTop.Control = GroupBox2
+          AnchorSideBottom.Control = GroupBox2
+          AnchorSideBottom.Side = asrBottom
           Left = 15
-          Height = 38
+          Height = 21
           Hint = 'This may adversly affect tradional Tomboy, take care.'
           Top = 15
-          Width = 134
+          Width = 239
+          Anchors = [akTop, akLeft, akBottom]
           BorderSpacing.Left = 15
           BorderSpacing.Top = 15
-          Caption = 'Allow notes to have'#10'several notebooks'
+          BorderSpacing.Bottom = 15
+          Caption = 'Allow notes to have several notebooks'
           OnChange = CheckManyNotebooksChange
-          TabOrder = 2
+          TabOrder = 0
         end
       end
       object GroupBox1: TGroupBox
@@ -293,14 +270,14 @@ object FormSettings: TFormSettings
         Left = 10
         Height = 173
         Top = 160
-        Width = 172
+        Width = 196
         Anchors = [akLeft, akRight, akBottom]
         BorderSpacing.Left = 10
         BorderSpacing.Right = 10
         BorderSpacing.Bottom = 10
         Caption = 'App options'
         ClientHeight = 155
-        ClientWidth = 170
+        ClientWidth = 194
         TabOrder = 4
         object CheckShowSearchAtStart: TCheckBox
           AnchorSideLeft.Control = GroupBox1
@@ -356,7 +333,7 @@ object FormSettings: TFormSettings
           AnchorSideRight.Side = asrBottom
           AnchorSideBottom.Control = Label11
           AnchorSideBottom.Side = asrCenter
-          Left = 119
+          Left = 143
           Height = 28
           Top = 111
           Width = 41

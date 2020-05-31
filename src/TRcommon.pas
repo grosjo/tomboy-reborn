@@ -169,11 +169,9 @@ var
     NotesDir : UTF8String;
     ConfigFile : UTF8String;
 
-    ShowIntLinks,ShowExtLinks, ManyNoteBooks,
-      Autostart, SearchAtStart, UseTrayIcon : boolean;
+    ManyNoteBooks, Autostart, SearchAtStart, UseTrayIcon : boolean;
 
     UsualFont, FixedFont : UTF8String;
-    //FontRange : TFontRange;
     FontScale : integer;
 
     SyncType : TSyncTransport;
@@ -316,8 +314,6 @@ begin
     f.writestring('Basic', 'NotesDir', NotesDir);
 
     f.writestring('Basic', 'ManyNotebooks', BoolToStr(ManyNoteBooks, true) );
-    f.writestring('Basic', 'ShowIntLinks', BoolToStr(ShowIntLinks, true));
-    f.writestring('Basic', 'ShowExtLinks', BoolToStr(ShowExtLinks, true));
     f.WriteString('Basic', 'Autostart', BoolToStr(Autostart, true));
     f.WriteString('Basic', 'ShowSearchAtStart', BoolToStr(SearchAtStart, true));
 
@@ -396,8 +392,6 @@ begin
        NotesDir:= f.readstring('Basic', 'NotesDir', GetDefaultNotesDir());
 
        ManyNoteBooks        := StrToBool(f.readstring('Basic', 'ManyNotebooks', 'false'));
-       ShowIntLinks         := StrToBool(f.readstring('Basic', 'ShowIntLinks', 'true'));
-       ShowExtLinks         := StrToBool(f.readstring('Basic', 'ShowExtLinks', 'true'));
        Autostart            := StrToBool(f.readstring('Basic', 'Autostart', 'false'));
        SearchAtStart        := StrToBool(f.readstring('Basic', 'ShowSearchAtStart', 'true'));
 
@@ -456,8 +450,6 @@ begin
     // No config file
         GetDefaultNotesDir();
 
-        ShowIntLinks := true;
-        ShowExtLinks := true;
         ManyNoteBooks := false;
         Autostart := true;
         SearchAtStart := false;

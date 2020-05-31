@@ -31,7 +31,7 @@ type TNoteMenuTags = (ntCommit, ntSync, ntFind, ntSearchAll, ntSettings,
       ntHighlight, ntFontPLus, ntFontMinus, ntBullet, ntNoNotebook,
       ntNewNotebook, ntSpelling, ntSelectAll, ntInsertDate    );
 
-type TNoteAction = ( ChangeSize, ToggleBold, ToggleItalic, ToggleHighlight, ToggleFont, ToggleStrikeout, ToggleUnderline);
+type TNoteAction = ( IncreaseSize, DecreaseSize, ToggleBold, ToggleItalic, ToggleHighlight, ToggleFont, ToggleStrikeout, ToggleUnderline);
 
 
 type
@@ -68,6 +68,8 @@ type
 
     procedure onMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure onKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure onMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure onKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure onChange(Sender: TObject);
 
     procedure FormShow(Sender: TObject);
@@ -123,8 +125,10 @@ private
 
     procedure TextToMemo(s : UTF8String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
 
-    procedure AlterFont(const Command : TNoteAction; const param: integer = 0);
-    procedure AlterBlockFont(const FirstBlockNo, BlockNo: longint; const Command: TNoteAction; const param: integer=0);
+    procedure AlterFont(const Command : TNoteAction);
+    procedure AlterBlockFont(const FirstBlockNo, BlockNo: longint; const Command: TNoteAction);
+    function IncFontSize(n : integer) : integer;
+    function DecFontSize(n : integer) : integer;
 
     procedure DoHouseKeeping(Sender: TObject);
 
@@ -852,6 +856,20 @@ begin
 end;
 
 
+procedure TFormNote.onMouseUp(Sender: TObject; Button: TMouseButton;
+		Shift: TShiftState; X, Y: Integer);
+begin
+   TRlog('TFormNote.KMemo1MouseUp ');
+
+   if((oldselstart<>KMemo1.RealSelStart) or (oldselend<>KMemo1.RealSelend))
+   then begin
+      TRlog(' Selection has changed (mouseup)');
+      oldselstart := KMemo1.RealSelStart;
+      oldselend := KMemo1.RealSelend;
+      BuildMenus(Sender);
+   end;
+end;
+
 procedure TFormNote.onMouseDown(Sender: TObject; Button: TMouseButton;
 		Shift: TShiftState; X, Y: Integer);
 begin
@@ -944,13 +962,15 @@ begin
    Kmemo1.SelEnd := d+21;
 end;
 
-procedure TFormNote.AlterFont(const Command : TNoteAction; const param: integer = 0);
+procedure TFormNote.AlterFont(const Command : TNoteAction);
 var
    FirstBlockNo, LastBlockNo, IntIndex, LastChar, FirstChar : longint;
    SplitStart : boolean = false;
 begin
    TrLog('TFormNote.AlterFont');
+   ProcessingChange := true;
 
+   KMemo1.blocks.LockUpdate;
    LastChar := Kmemo1.RealSelEnd;
    FirstChar := KMemo1.RealSelStart;
 
@@ -962,12 +982,16 @@ begin
 
    while LastBlockNo > FirstBlockNo do
    begin
-      AlterBlockFont(FirstBlockNo, LastBlockNo, Command, param);
+      AlterBlockFont(FirstBlockNo, LastBlockNo, Command);
       dec(LastBlockNo);
    end;
 
    if SplitStart then FirstBlockNo := KMemo1.SplitAt(FirstChar);
-   AlterBlockFont(FirstBlockNo, FirstBlockNo, Command, param);
+   AlterBlockFont(FirstBlockNo, FirstBlockNo, Command);
+
+   KMemo1.blocks.UnLockUpdate;
+
+   ProcessingChange := false;
 
    KMemo1.SelEnd := LastChar;
    KMemo1.SelStart := FirstChar;
@@ -975,7 +999,23 @@ begin
    MarkDirty();
 end;
 
-procedure TFormNote.AlterBlockFont(const FirstBlockNo, BlockNo : longint; const Command : TNoteAction; const param : integer = 0);
+function TFormNote.IncFontSize(n : integer) : integer;
+begin
+  if(n < FontSizeSmall) then exit(FontSizeSmall);
+  if(n < FontSizeNormal) then exit(FontSizeNormal);
+  if(n < FontSizeLarge) then exit(FontSizeLarge);
+  Result := FontSizeHuge;
+end;
+
+function TFormNote.DecFontSize(n : integer) : integer;
+begin
+  if(n > FontSizeHuge) then exit(FontSizeHuge);
+  if(n > FontSizeLarge) then exit(FontSizeLarge);
+  if(n > FontSizeNormal) then exit(FontSizeNormal);
+  Result := FontSizeSmall;
+end;
+
+procedure TFormNote.AlterBlockFont(const FirstBlockNo, BlockNo : longint; const Command : TNoteAction);
 var
    Block, FirstBlock : TKMemoTextBlock;
 begin
@@ -984,7 +1024,9 @@ begin
 
    case Command of
 
-      TNoteAction.ChangeSize : Block.TextStyle.Font.Size := param;
+      TNoteAction.IncreaseSize : Block.TextStyle.Font.Size := IncFontSize(Block.TextStyle.Font.Size);
+
+      TNoteAction.DecreaseSize : Block.TextStyle.Font.Size := DecFontSize(Block.TextStyle.Font.Size);
 
       TNoteAction.ToggleBold :
          if fsBold in FirstBlock.TextStyle.Font.style
@@ -1737,17 +1779,32 @@ begin
      PostFormatTitle();
      MarkDirty();
      oldtext := KMemo1.Text;
-     TRlog('New text length = '+IntToStr(Length(oldtext)));
-   end;
-   if((oldselstart<>KMemo1.RealSelStart) or (oldselend<>KMemo1.RealSelend))
-   then begin
-     TRlog(' Selection has changed');
      oldselstart := KMemo1.RealSelStart;
      oldselend := KMemo1.RealSelend;
      BuildMenus(Sender);
+     TRlog('New text length = '+IntToStr(Length(oldtext)));
+   end else
+   if((oldselstart<>KMemo1.RealSelStart) or (oldselend<>KMemo1.RealSelend))
+   then begin
+      TRlog(' Selection has changed (mouseup)');
+      oldselstart := KMemo1.RealSelStart;
+      oldselend := KMemo1.RealSelend;
+      BuildMenus(Sender);
    end;
-
    ProcessingChange := false;
+end;
+
+procedure TFormNote.onKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+   TRlog('TFormNote.KMemo1KeyUp '+IntToStr(Key));
+
+   if((oldselstart<>KMemo1.RealSelStart) or (oldselend<>KMemo1.RealSelend))
+   then begin
+      TRlog(' Selection has changed (keyup)');
+      oldselstart := KMemo1.RealSelStart;
+      oldselend := KMemo1.RealSelend;
+      BuildMenus(Sender);
+   end;
 end;
 
 procedure TFormNote.onKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -1788,6 +1845,9 @@ begin
      if key = ord('Y') then begin TrLog('Ctrl-Y'); KMemo1.ExecuteCommand(TKEditCommand.ecRedo); Key := 0; end;
 
      if key = ord('F') then begin TrLog('Ctrl-F'); CheckboxFindInNote.Checked := true; ShowSearchPanel(true); EditFindInNote.SetFocus; Key := 0; end;
+
+     if key = VK_LCL_EQUAL then begin TrLog('Ctrl-+'); AlterFont(IncreaseSize); Key := 0; end;
+     if key = VK_LCL_MINUS then begin TrLog('Ctrl-+'); AlterFont(DecreaseSize); Key := 0; end;
 
      exit();
    end;
@@ -1866,8 +1926,8 @@ begin
       ntFixed :             AlterFont(ToggleFont);
       ntHighlight :         AlterFont(ToggleHighlight);
 
-      //ntFontPLus :
-      //ntFontMinus ;
+      ntFontPlus :          AlterFont(IncreaseSize);
+      ntFontMinus :         AlterFont(DecreaseSize);
 
       ntBullet :            ToggleBullet(0);
 
@@ -1972,7 +2032,6 @@ begin
   m1.Tag := ord(ntSelectAll);
   m1.Caption := rsMenuSelectAll+' (Ctrl A)';
   m1.OnClick := @MainMenuClicked;
-  m1.Enabled:= (KMemo1.RealSelLength>0);
   m1.ImageIndex:=40;
   PopMenu.Items.Add(m1);
 
