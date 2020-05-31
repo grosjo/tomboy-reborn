@@ -28,8 +28,8 @@ type TNoteMenuTags = (ntCommit, ntSync, ntFind, ntSearchAll, ntSettings,
       ntAbout,ntDuplicate, ntDelete, ntMarkdown, ntRTF, ntPlain, ntPrint,
       ntRedo, ntUndo, ntCopy, ntCut, ntPaste, ntNoteLink, ntURLLink,
       ntRemoveLink, ntBold, ntItalic, ntStrike, ntUnderlined, ntFixed,
-      ntHighlight, ntFontPLus, ntFontMinus, ntBullet, ntNoNotebook,
-      ntNewNotebook, ntSpelling, ntSelectAll, ntInsertDate    );
+      ntHighlight, ntFontPLus, ntFontMinus, ntBullet, ntNewNotebook,
+      ntSpelling, ntSelectAll, ntInsertDate    );
 
 type TNoteAction = ( IncreaseSize, DecreaseSize, ToggleBold, ToggleItalic, ToggleHighlight, ToggleFont, ToggleStrikeout, ToggleUnderline);
 
@@ -79,7 +79,7 @@ private
     Dirty : boolean;
     ProcessingChange, ProcessingTitle : boolean;
 
-    HouseKeeper, TitleFormatter : TTimer;
+    HouseKeeper, TitleFormatter, MenuBuilder : TTimer;
 
     FontSizeNormal, FontSizeLarge, FontSizeTitle, FontSizeHuge, FontSizeSmall : integer;
 
@@ -90,6 +90,7 @@ private
     procedure SetFontSizes();
 
     procedure PostFormatTitle();
+    procedure PostBuildMenus();
     procedure ReceiveFormatTitle(Sender: TObject);
     procedure MarkTitle(force : boolean);
 
@@ -866,7 +867,7 @@ begin
       TRlog(' Selection has changed (mouseup)');
       oldselstart := KMemo1.RealSelStart;
       oldselend := KMemo1.RealSelend;
-      BuildMenus(Sender);
+      PostBuildMenus();
    end;
 end;
 
@@ -1106,7 +1107,7 @@ begin
 
    ShowSearchPanel(false);
 
-   BuildMenus(Sender);
+   PostBuildMenus();
 
    SetPrimarySelection();
 
@@ -1321,6 +1322,22 @@ begin
 
   TRlog('TFormNote.FormCreate done');
 
+end;
+
+
+
+procedure TFormNote.PostBuildMenus();
+begin
+  if(assigned(MenuBuilder)) then
+  begin
+    MenuBuilder.Enabled:=false;
+    FreeAndNil(MenuBuilder);
+  end;
+
+  MenuBuilder := TTimer.Create(nil);
+  MenuBuilder.OnTimer := @BuildMenus;
+  MenuBuilder.Interval := 20;
+  MenuBuilder.Enabled := True;
 end;
 
 procedure TFormNote.PostFormatTitle();
@@ -1781,7 +1798,7 @@ begin
      oldtext := KMemo1.Text;
      oldselstart := KMemo1.RealSelStart;
      oldselend := KMemo1.RealSelend;
-     BuildMenus(Sender);
+     PostBuildMenus();
      TRlog('New text length = '+IntToStr(Length(oldtext)));
    end else
    if((oldselstart<>KMemo1.RealSelStart) or (oldselend<>KMemo1.RealSelend))
@@ -1789,7 +1806,7 @@ begin
       TRlog(' Selection has changed (mouseup)');
       oldselstart := KMemo1.RealSelStart;
       oldselend := KMemo1.RealSelend;
-      BuildMenus(Sender);
+      PostBuildMenus();
    end;
    ProcessingChange := false;
 end;
@@ -1803,7 +1820,7 @@ begin
       TRlog(' Selection has changed (keyup)');
       oldselstart := KMemo1.RealSelStart;
       oldselend := KMemo1.RealSelend;
-      BuildMenus(Sender);
+      PostBuildMenus();
    end;
 end;
 
@@ -1820,34 +1837,34 @@ begin
   if {$ifdef DARWIN}ssMeta{$else}ssCtrl{$endif} in Shift then
   begin
 
-     if key = ord('B') then begin TrLog('Ctrl-B'); AlterFont(ToggleBold); Key := 0; end;
-     if key = ord('I') then begin TrLog('Ctrl-I'); AlterFont(ToggleItalic); Key := 0; end;
-     if key = ord('S') then begin TrLog('Ctrl-S'); AlterFont(ToggleStrikeout); Key := 0; end;
-     if key = ord('U') then begin TrLog('Ctrl-U'); AlterFont(ToggleUnderline); Key := 0; end;
-     if key = ord('T') then begin TrLog('Ctrl-T'); AlterFont(ToggleFont); Key := 0; end;
-     if key = ord('H') then begin TrLog('Ctrl-H'); AlterFont(ToggleHighlight); Key := 0; end;
+     if key = VK_B then begin TrLog('Ctrl-B'); AlterFont(ToggleBold); Key := 0; end;
+     if key = VK_I then begin TrLog('Ctrl-I'); AlterFont(ToggleItalic); Key := 0; end;
+     if key = VK_S then begin TrLog('Ctrl-S'); AlterFont(ToggleStrikeout); Key := 0; end;
+     if key = VK_U then begin TrLog('Ctrl-U'); AlterFont(ToggleUnderline); Key := 0; end;
+     if key = VK_T then begin TrLog('Ctrl-T'); AlterFont(ToggleFont); Key := 0; end;
+     if key = VK_H then begin TrLog('Ctrl-H'); AlterFont(ToggleHighlight); Key := 0; end;
 
-     if key = ord('A') then begin TrLog('Ctrl-A'); KMemo1.ExecuteCommand(ecSelectAll); Key := 0; end;
+     if key = VK_A then begin TrLog('Ctrl-A'); KMemo1.ExecuteCommand(ecSelectAll); Key := 0; end;
 
-     if key = ord('D') then begin TrLog('Ctrl-D'); InsertDate(); Key := 0; end;
+     if key = VK_D then begin TrLog('Ctrl-D'); InsertDate(); Key := 0; end;
 
-     if key = ord('C') then begin TrLog('Ctrl-C'); KMemo1.ExecuteCommand(TKEditCommand.ecCopy); MarkDirty(); Key := 0; end;
-     if key = ord('X') then begin TrLog('Ctrl-X'); KMemo1.ExecuteCommand(TKEditCommand.ecCut); MarkDirty(); Key := 0; end;
-     if key = ord('V') then begin TrLog('Ctrl-V'); PrimaryPaste(); {KMemo1.ExecuteCommand(TKEditCommand.ecPaste); MarkDirty(); } Key := 0; end;
+     if key = VK_C then begin TrLog('Ctrl-C'); KMemo1.ExecuteCommand(TKEditCommand.ecCopy); MarkDirty(); Key := 0; end;
+     if key = VK_X then begin TrLog('Ctrl-X'); KMemo1.ExecuteCommand(TKEditCommand.ecCut); MarkDirty(); Key := 0; end;
+     if key = VK_V then begin TrLog('Ctrl-V'); PrimaryPaste(); {KMemo1.ExecuteCommand(TKEditCommand.ecPaste); MarkDirty(); } Key := 0; end;
 
-     if key = ord('W') then begin TrLog('Ctrl-W'); Commit(); Key := 0; end;
+     if key = VK_W then begin TrLog('Ctrl-W'); Commit(); Key := 0; end;
 
-     if key = ord('O') then begin TrLog('Ctrl-O'); TFormMain(mainWIndow).ShowSettings(); Key := 0; end;
+     if key = VK_O then begin TrLog('Ctrl-O'); TFormMain(mainWIndow).ShowSettings(); Key := 0; end;
 
-     if key = ord('P') then begin TrLog('Ctrl-P'); NotePrint(); Key := 0; end;
+     if key = VK_P then begin TrLog('Ctrl-P'); NotePrint(); Key := 0; end;
 
-     if key = ord('Z') then begin TrLog('Ctrl-Z'); KMemo1.ExecuteCommand(TKEditCommand.ecUndo); Key := 0; end;
-     if key = ord('Y') then begin TrLog('Ctrl-Y'); KMemo1.ExecuteCommand(TKEditCommand.ecRedo); Key := 0; end;
+     if key = VK_Z then begin TrLog('Ctrl-Z'); KMemo1.ExecuteCommand(TKEditCommand.ecUndo); Key := 0; end;
+     if key = VK_Y then begin TrLog('Ctrl-Y'); KMemo1.ExecuteCommand(TKEditCommand.ecRedo); Key := 0; end;
 
-     if key = ord('F') then begin TrLog('Ctrl-F'); CheckboxFindInNote.Checked := true; ShowSearchPanel(true); EditFindInNote.SetFocus; Key := 0; end;
+     if key = VK_F then begin TrLog('Ctrl-F'); CheckboxFindInNote.Checked := true; ShowSearchPanel(true); EditFindInNote.SetFocus; Key := 0; end;
 
-     if key = VK_LCL_EQUAL then begin TrLog('Ctrl-+'); AlterFont(IncreaseSize); Key := 0; end;
-     if key = VK_LCL_MINUS then begin TrLog('Ctrl-+'); AlterFont(DecreaseSize); Key := 0; end;
+     if key = VK_LCL_EQUAL then begin TrLog('Ctrl +'); AlterFont(IncreaseSize); Key := 0; end;
+     if key = VK_LCL_MINUS then begin TrLog('Ctrl -'); AlterFont(DecreaseSize); Key := 0; end;
 
      exit();
    end;
@@ -1877,14 +1894,56 @@ end;
 { ======= MAIN MENU ====== }
 
 procedure TFormNote.ToggleNotebook(Sender : TObject);
+var
+   i : integer;
+   s,s2 : UTF8String;
+   ok : boolean;
 begin
-
    TRlog('TFormNote.ToggleNotebook');
 
+   i := TMenuItem(Sender).Tag;
+   TRlog('tag '+IntToStr(i));
+
+   if(i>=TFormMain(mainWindow).NotebooksList.Count) then exit();
+
+   if(i<0)
+   then begin
+      note^.Tags.Clear;
+      PostBuildMenus();
+      exit();
+   end;
+
+   s := TFormMain(mainWindow).NotebooksList.Strings[i];
+
+   TRlog('got notebook "'+s+'"');
+
+   if(length(s) = 0) then exit();
+
+   if(ManyNoteBooks) then
+   begin
+      i:=0;
+      ok := true;
+      while(ok and (i<note^.Tags.Count))
+      do begin
+         s2:= note^.Tags.Strings[i];
+         inc(i);
+         if(CompareText('system:notebook:',Copy(s2,1,16)) <> 0) then continue;
+         if(CompareText(Trim(Copy(s2,17)),s) = 0) then ok:=false;
+      end;
+      if(ok) then note^.Tags.Add('system:notebook:'+s);
+   end
+   else begin
+      note^.Tags.Clear;
+      note^.Tags.Add('system:notebook:'+s);
+   end;
+   PostBuildMenus();
 
 end;
 
 procedure TFormNote.MainMenuClicked(Sender : TObject);
+var
+    s : String;
+    s2 : UTF8String;
 begin
 
    TRlog('MainMenuClicked');
@@ -1932,8 +1991,15 @@ begin
       ntBullet :            ToggleBullet(0);
 
       // NOTEBOOK
-      //ntNoNotebook :
-      //ntNewNotebook :
+      ntNewNotebook :       begin
+                                 s:='';
+                                 InputQuery(rsNotebooks,rsEnterNewNotebook ,s);
+                                 TRlog('New notebook : '+s);
+                                 s2 := Trim(CleanTitle(s));
+                                 TRlog('New notebook cleaned : '+s);
+                                 if(TFormMain(mainWindow).AddNewNotebook(s2))
+                                 then PostBuildMenus();
+                             end;
 
       //TOOLS
       ntSync :              TFormMain(mainWIndow).SnapSync();
@@ -1959,6 +2025,13 @@ var
     s : TStringList;
 begin
   TRlog('TFormNote.BuildMenus');
+
+  if(assigned(MenuBuilder)) then
+  begin
+    MenuBuilder.Enabled:=false;
+    FreeAndNil(MenuBuilder);
+  end;
+
 
   PopMenu.Items.Clear;
   PopMenu.Images := TFormMain(mainWindow).MenuIconList;
@@ -2209,11 +2282,10 @@ begin
 
   // Notebooks / None
   m1 := TMenuItem.Create(NotebooksMenu);
-  m1.Tag := ord(ntNoNotebook);
+  m1.Tag := -1;
   m1.Caption := rsNoNotebook;
-  m1.OnClick := @MainMenuClicked;
+  m1.OnClick := @ToggleNotebook;
   m1.Checked := NoteBelongs('-',note);
-  m1.ImageIndex:=39;
   NotebooksMenu.Add(m1);
 
   // Notebooks / List

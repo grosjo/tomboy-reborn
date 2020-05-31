@@ -67,6 +67,9 @@ type TFormMain = class(TForm)
         procedure SGNotebooksPrepareCanvas(sender: TObject; aCol, aRow: Integer; aState: TGridDrawState);
         procedure SGNotebooksResize(Sender: TObject);
 	procedure SGNotebooksDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
+
+        function AddNewNotebook(nb : UTF8String): boolean;
+
 private
         NotesList : TNoteInfoList;
         NewNotebooksList : TStringList;
@@ -84,7 +87,6 @@ private
         syncshallrun : boolean;
         procedure ShowLists(sender: TObject);
         function AddNotebook(nb : UTF8String) : boolean;
-        function AddNewNotebook(nb : UTF8String): boolean;
 
         function AddLastUsed(ID : UTF8String; atend : boolean = false) : boolean;
 
@@ -571,10 +573,10 @@ begin
         mtNewNotebook : begin
             s:='';
             InputQuery(rsNotebooks,rsEnterNewNotebook ,s);
-            s2 := s;
+            s2 := Trim(CleanTitle(s));
             if(AddNewNotebook(s2)) then
             begin
-               SelectedNotebook := Trim(s2);
+               SelectedNotebook := s2;
                ShowLists(Sender);
                StatusBar1.SimpleText:= 'Notebook "'+SelectedNoteBook+'" selected'
             end;
@@ -636,6 +638,8 @@ begin
     end;
 
    NewNotebooksList.Add(nb);
+   AddNotebook(nb);
+
    Result:=true;
 end;
 

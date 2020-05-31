@@ -553,28 +553,28 @@ begin
 
    i:=0;
 
-   if(CompareText(notebook,'-') =0 ) then
-       begin
-          ok := true;
-          while(ok and (i<N^.Tags.Count)) do
-          begin
-             s:= N^.Tags.Strings[i];
-             inc(i);
-             if(CompareText('system:notebook:',Copy(s,1,16)) <> 0) then continue;
-             s:= Trim(Copy(s,17));
-             if(length(s)>0) then ok:=false;
-          end;
-          exit(ok);
-       end;
+   if(CompareText(notebook,'-') =0 )
+   then begin
+      ok := true;
+      while(ok and (i<N^.Tags.Count))
+      do begin
+         s:= N^.Tags.Strings[i];
+         inc(i);
+         if(CompareText('system:notebook:',Copy(s,1,16)) <> 0) then continue;
+         s:= Trim(Copy(s,17));
+         if(length(s)>0) then ok:=false;
+      end;
+      exit(ok);
+   end;
 
    ok := false;
-   while((not ok) and (i<N^.Tags.Count)) do
-     begin
-        s:= N^.Tags.Strings[i];
-        inc(i);
-        if(CompareText('system:notebook:',Copy(s,1,16)) <> 0) then continue;
-        if(CompareText(notebook,Trim(Copy(s,17))) = 0) then ok:= true;
-     end;
+   while((not ok) and (i<N^.Tags.Count))
+   do begin
+      s:= N^.Tags.Strings[i];
+      inc(i);
+      if(CompareText('system:notebook:',Copy(s,1,16)) <> 0) then continue;
+      if(CompareText(notebook,Trim(Copy(s,17))) = 0) then ok:= true;
+   end;
    Result := ok;
 end;
 
