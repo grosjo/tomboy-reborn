@@ -6,7 +6,7 @@ interface
 
 uses
     Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
-    Buttons, Menus, ComCtrls, ExtCtrls, FileUtil, ActnList,
+    Buttons, Menus, ComCtrls, ExtCtrls, FileUtil, ActnList, DateUtils,
     Grids, lazLogger, Math, LCLType, LazFileUtils, process,
     TRcommon, TRtexts, TRsettings, TRsync, TRnote, TRabout;
 
@@ -60,7 +60,6 @@ type TFormMain = class(TForm)
         procedure SGNotesResize(Sender: TObject);
 	procedure SGNotesDblClick(Sender: TObject);
         procedure SGNotesPrepareCanvas(sender: TObject; aCol, aRow: Integer; aState: TGridDrawState);
-        procedure SGNotesDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
         procedure SGNotesClick(Sender: TObject);
 
         procedure SGNotebooksClick(Sender: TObject);
@@ -74,15 +73,18 @@ private
         NotesList : TNoteInfoList;
         NewNotebooksList : TStringList;
 
-        LastSync : TDateTime;
+        LastSync, LastClick : TDateTime;
         SyncTimer : TTimer;
         ScanTimer : TTimer;
         ShowTimer : TTimer;
         fsett,fabout : TForm;
 
         SearchCaseSensitive : boolean;      // Flag linked to the checkbox
+        FirstList : boolean;
         SelectedNotebook : UTF8String;         // Notebook selected
         SelectedNote : UTF8String;         // Note ID selected
+
+        LastClickedRow : integer;
 
         syncshallrun : boolean;
         procedure ShowLists(sender: TObject);
@@ -134,21 +136,29 @@ begin
 
     SGNotes.Clear;
     SGNotes.FixedCols := 0;
-    SGNotes.Columns.Add;
-    SGNotes.Columns[0].Title.Caption := rsName;
-    SGNotes.Columns.Add;
-    SGNotes.Columns[1].Title.Caption := rsLastChange;
-    SGNotes.FixedRows:=1;
-    SGNotes.Columns[1].Width := self.Canvas.GetTextWidth(' 2020-01-31 14:36:00 ');
-    SGNotes.Columns.Add;
-    SGNotes.Columns[2].Title.Caption := 'ID';
-    SGNotes.Columns[2].Visible := false;
     SGNotes.GridLineStyle:=TPenStyle.psDashDotDot;
     SGNotes.Options := SGNotes.Options - [goRowHighlight]; //+[goRowSelect];
-    SGNotes.ScrollBars := ssAutoVertical;
+    SGNotes.ScrollBars := ssVertical;
     SGNotes.FocusRectVisible := false;
     SGNotes.TitleStyle := tsNative;
     SGNotes.GridLineStyle:=TPenStyle.psClear;
+
+    SGNotes.Columns.Add;
+    SGNotes.Columns[0].Title.Caption := rsName;
+
+    SGNotes.Columns.Add;
+    SGNotes.Columns[1].Title.Caption := rsLastChange;
+    SGNotes.Columns[1].Width := SGNotes.Canvas.GetTextWidth(' 0000-00-30 00:00:00 ');
+
+    SGNotes.Columns.Add;
+    SGNotes.Columns[2].Title.Caption := 'ID';
+    SGNotes.Columns[2].Visible := false;
+
+    SGNotes.FixedRows:=1;
+    SGNotes.AutoFillColumns:= true;
+    SGNotes.Columns[0].SizePriority:=1;
+    SGNotes.Columns[1].SizePriority:=0;
+
 
     SGNotebooks.Clear;
     SGNotebooks.FixedCols := 0;
@@ -166,6 +176,8 @@ begin
     SGNotebooks.ScrollBars := ssAutoVertical;
     SGNotebooks.FocusRectVisible := false;
     SGNotebooks.TitleStyle := tsNative;
+
+    FirstList := false;
 
     {
     stringgrid has -
@@ -762,6 +774,7 @@ begin
         n := NotesList.FindID(ID);
         if(n = nil) then
         begin
+           TRlog('Scan note : New note ('+ID+')');
            n := EmptyNote();
            n^.ID := ID;
            NotesList.Add(n);
@@ -813,11 +826,11 @@ begin
       end;
    end;
 
-   TRlog('Found '+IntToStr(c1)+' local notes and '+IntToStr(c2) + ' notebooks');
+   TRlog('ScanNotes : Found '+IntToStr(c1)+' local notes and '+IntToStr(c2) + ' notebooks');
 
    ShowLists(Self);
 
-   StatusBar1.SimpleText:= 'Found '+IntToStr(c1)+' local notes and '+IntToStr(c2) + ' notebooks';
+   StatusBar1.SimpleText:= 'Scanning : Found '+IntToStr(c1)+' local notes and '+IntToStr(c2) + ' notebooks';
 
    syncshallrun := true;
 
@@ -1108,7 +1121,14 @@ begin
        SGNotes.InsertRowWithValues(SGNotes.RowCount, [n^.Title,GetDisplayTimeFromGMT(n^.LastChangeGMT),n^.ID]);
    end;
    SelectedNote:=s;
+   SGNotes.AutoSizeColumn(1);
+   SGNotes.columns[1].Width := SGNotes.columns[1].Width +10;
 
+   if(not FirstList) then
+   begin
+     SGNotes.SortOrder := soDescending;
+     SGNotes.SortColRow(true, 1, SGNotes.FixedRows, SGNotes.RowCount-1);
+   end;
    BuildFileMenu(Self);
 
    sl.Free;
@@ -1121,36 +1141,23 @@ var
    ID : UTF8String;
 begin
    r := SGNotes.Row;
-   TRlog('Double Clicked (Notes) on line : '+IntToStr(r));
 
-   if(r>0) then begin
+   if((r>0) and (MilliSecondsBetween(LastClick,now)<300) and (r = LastClickedRow)) then
+   begin
      ID := SGNotes.Cells[2, r];
-     TRlog('Double Clicked (Notes) -> ID = '+ID);
      n := NotesList.FindID(ID);
      if(n<>nil) then
      begin
           AddLastUsed(ID);
-          TRlog('Clicked on Note:'+n^.ID+' Title='+n^.Title);
           OpenNote(ID);
-     end
-     else TRlog('ID not found...');
+     end;
    end;
-end;
-
-procedure TFormMain.SGNotesDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
-begin
-   //TRlog('SGNotesDrawCell col='+IntToStr(Acol)+' row='+IntToStr(Arow));
-
-   //SGNotesList.Canvas.Draw(Rect.Left, Rect.Top, SGImage.Picture.Graphic);
-
 end;
 
 procedure TFormMain.SGNotebooksDrawCell(Sender: TObject; ACol, ARow: Integer; Rect: TRect; State: TGridDrawState);
 var
    bm : TBitmap;
 begin
-   TRlog('SGNotebooksDrawCell col='+IntToStr(Acol)+' row='+IntToStr(Arow));
-
    if((ACol = 0) and (ARow>0)) then
    begin
      // Put icon
@@ -1159,9 +1166,6 @@ begin
      SGNotebooks.Canvas.Draw(floor((Rect.Left+Rect.Right)/2-8), floor((Rect.Top+Rect.Bottom)/2-8),bm);
      bm.Free;
    end;
-
-   //SGNotesList.Canvas.Draw(Rect.Left, Rect.Top, SGImage.Picture.Graphic);
-
 end;
 
 procedure TFormMain.SGNotebooksClick(Sender: TObject);
@@ -1382,7 +1386,11 @@ begin
    TRlog('SGNotesClick on row '+IntToStr(SGNotes.Row));
    if(SGNotes.Row<1)
    then SelectedNote := ''
-   else SelectedNote := SGNotes.Cells[2,SGNotes.Row];
+   else begin
+      SelectedNote := SGNotes.Cells[2,SGNotes.Row];
+      LastClick := now;
+      LastClickedRow := SGNotes.Row;
+   end;
 
    SGNotes.Refresh;
 

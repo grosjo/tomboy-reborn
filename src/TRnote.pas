@@ -75,7 +75,7 @@ type
     procedure FormShow(Sender: TObject);
 
 private
-    AlreadyLoaded : boolean;
+    AlreadyLoaded, hasdata : boolean;
     Dirty : boolean;
     ProcessingChange, ProcessingTitle, isClosing : boolean;
 
@@ -92,7 +92,7 @@ private
     procedure PostFormatTitle();
     procedure PostBuildMenus();
     procedure ReceiveFormatTitle(Sender: TObject);
-    procedure MarkTitle(force : boolean);
+    function MarkTitle(force : boolean) : boolean;
 
     procedure NoteToMemo();
     procedure MemoToNote();
@@ -380,12 +380,12 @@ begin
 
       if ((Ch >= ' ') and (Ch <> '<') ) then
       begin
-          //TRlog('Adding CHR = "'+Chr+'" ; Ch = "'+Ch+'")');
+          TRlog('Adding CHR = "'+Chr+'" ; Ch = "'+IntToStr(Ord(Ch))+'")');
           Ktext := Ktext + Chr;
           inc(i);
       end;
 
-      if((length(Ktext)>0) and ((Ch < ' ') or (Ch = '<') or (i>j))) then
+      if((Length(KText)>0) and ((Ch < ' ') or (Ch = '<') or (i>j))) then
       begin
          //Trlog('Pushing block (current blocks ='+IntToStr(KMemo1.Blocks.Count)+')');
          Ktext := ReplaceAngles(Ktext); // We have to scan InStr for &lt; and &gt;  being < and >
@@ -413,7 +413,9 @@ begin
             //Trlog('Internal link on block '+ IntToStr(KMemo1.Blocks.Count-1)+' : ' + Ktext);
             hl := TKMemoHyperlink.Create;
             hl.Text := KText;
+            TRlog('NEW INT LINK '+KText);
             KMemo1.Blocks.AddHyperlink(hl);
+            TRlog('NEW EXT LINK '+KText);
             hl.URL := {'note://'+}KText;
             hl.OnDblClick := @InternalLink;
             f.Color := clBlue;
@@ -426,6 +428,7 @@ begin
             //Trlog('External link on block '+ IntToStr(KMemo1.Blocks.Count-1)+' : ' + Ktext);
             hl := TKMemoHyperlink.Create;
             hl.Text := KText;
+            TRlog('NEW EXT LINK '+KText);
             KMemo1.Blocks.AddHyperlink(hl);
             hl.URL := KText;
             hl.OnDblClick := @ExternalLink;
@@ -435,10 +438,15 @@ begin
             if HighLight then hl.TextStyle.Brush.Color := HiColour;
          end
          else begin
+            TRlog('NEW TEXT '+KText);
             ktb := KMemo1.Blocks.AddTextBlock(KText);
             ktb.TextStyle.Font := f;
             if HighLight then ktb.TextStyle.Brush.Color := HiColour;
          end;
+
+         hasdata := true;
+
+         TRlog('Blcks = '+ IntToStr(KMemo1.Blocks.Count));
 
          //Trlog('Pushing block (after blocks ='+IntToStr(KMemo1.Blocks.Count)+')');
 
@@ -450,6 +458,7 @@ begin
 
       if (Ch<' ') then // add Paragraph
       begin
+         TRlog('NEW PAR BECAUSE CHAR<" "');
          par := KMemo1.Blocks.AddParagraph;
          if InBullet then
          begin
@@ -467,6 +476,8 @@ begin
          tagtext := Copy(tagtext,0,k-1);
          k:=Pos(' ',tagtext); if(k<1) then k := length(tagtext)+1;
          tagtext := Copy(tagtext,0,k-1);
+
+         TRlog('NEW Starting TAG <'+tagtext+'>');
 
          if(CompareStr(tagtext,'bold')=0)                    then      tagtype := TTagType.TagBold
           else if(CompareStr(tagtext,'italic')=0)            then      tagtype := TTagType.TagItalic
@@ -500,7 +511,7 @@ begin
             TTagType.TagList         : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, true,     true,  linkinternal, linkexternal, FontSize, level+1);
             TTagType.TagLinkInternal : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, true,         false,        FontSize, level+1);
             TTagType.TagLinkUrl      : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, false,        true,         FontSize, level+1);
-            else TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
+                                  else TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
          end;
 
          i:=i+k+m;
@@ -513,7 +524,7 @@ begin
       //TRlog('New loop LEVEL='+IntToStr(level)+' i='+IntToStr(i)+' j='+IntToStr(j) );
    end;
    if(newpar) then begin
-      //TRlog('NEWPAR');
+      TRlog('NEWPAR');
       par := KMemo1.Blocks.AddParagraph;
       if InBullet then
       begin
@@ -544,13 +555,7 @@ begin
    if (note^.Y + (note^.Height div 3)) > Screen.Height then
         note^.Y := Screen.Height - (Height div 3);
 
-   Left := note^.X;
-   Top := note^.Y;
-   Height := note^.Height;
-   Width := note^.Width;
-
    // DEFAULT TITLE
-
    Caption := note^.Title;
 
 
@@ -559,9 +564,13 @@ begin
    KMemo1.Blocks.LockUpdate;
    KMemo1.Clear;
 
+   hasdata := false;
+
    TextToMemo(note^.Content, false, false, false, false, false, false, false, false,false,false,TFontRange.FontNormal,0);
 
-   TRlog('Dealing with content end');
+   if(hasdata) then KMemo1.Blocks.Delete(0);
+
+   TRlog('Dealing with content end : blocks = '+IntToStr(Kmemo1.Blocks.Count));
 
    KMemo1.Blocks.UnlockUpdate;
 
@@ -576,7 +585,7 @@ begin
    oldselstart := KMemo1.RealSelStart;
    oldselend := KMemo1.RealSelend;
 
-   TRlog('Done !');
+   TRlog('NtoeToMemo Done !');
 end;
 
 procedure TFormNote.MemoToNote();
@@ -585,11 +594,12 @@ var
    FT : TKMemoTextBlock;
    s,s2,partext : UTF8String;
    lines : TStringList;
+   changedtitle : boolean;
  begin
 
    lines := TStringList.Create;
 
-   MarkTitle(false);
+   changedtitle := MarkTitle(false);
 
    lines.Add(note^.Title);
    lines.Add('');
@@ -646,10 +656,16 @@ var
 
    lines.LineBreak := rsLineBreak;
 
+   i:=0;
+   while(i<lines.Count)
+      do begin
+         TRlog('Line('+IntToStr(i)+') = "'+lines.Strings[i]+'"');
+         inc(i);
+      end;
    s := lines.Text;
 
    TRlog('=================');
-   TRlog('NOTE v0 ='+s);
+   TRlog('NOTE v0 ="'+s+'"');
 
    // Delete opposite tags
    s2:='';
@@ -679,19 +695,11 @@ var
       s := StringReplace(s,'</bold>'+#10+'<bold>',#10,[rfReplaceAll]);
    end;
    TRlog('=================');
-   TRlog('NOTE v1 ='+s);
+   TRlog('NOTE v1 ="'+s+'"');
 
-   if(CompareStr(s, note^.Content) <> 0) then
+   if(changedtitle or (CompareStr(s, note^.Content) <> 0)) then
    begin
      note^.Content := s;
-     note^.LastChange:= GetCurrentTimeStr();
-     note^.LastChangeGMT:= GetGMTFromStr(note^.LastChange);
-   end;
-
-   s := Trim(KMemo1.Blocks.Items[1].Text);
-   if(CompareStr(s, note^.Title) <> 0) then
-   begin
-     note^.Title := s;
      note^.LastChange:= GetCurrentTimeStr();
      note^.LastChangeGMT:= GetGMTFromStr(note^.LastChange);
    end;
@@ -716,6 +724,7 @@ procedure TFormNote.Commit(Sender : TObject);
 var
    filename : UTF8String;
 begin
+  TRlog(' Commit');
   ProcessingChange := true;
   if(Assigned(HouseKeeper))
   then begin
@@ -727,6 +736,8 @@ begin
   begin
     MemoToNote();
     filename := GetLocalNoteFile(note^.ID);
+
+    TRlog(' Commit title='+note^.Title);
 
     NoteToFile(note,filename);
     TFormMain(mainWindow).PostScan();
@@ -1111,6 +1122,11 @@ begin
      MarkTitle(true);
    end;
 
+   Left := note^.X;
+   Top := note^.Y;
+   Height := note^.Height;
+   Width := note^.Width;
+
    KMemo1.SelStart := KMemo1.Text.Length;  // set curser pos to end
    KMemo1.SelEnd := Kmemo1.Text.Length;
 
@@ -1460,7 +1476,7 @@ begin
   UnsetPrimarySelection();
 end;
 
-procedure TFormNote.MarkTitle(force : boolean);
+function TFormNote.MarkTitle(force : boolean) : boolean;
 var
     title : UTF8String;
     ktb : TKMemoTextBlock;
@@ -1472,7 +1488,7 @@ begin
       FreeAndNil(TitleFormatter);
    end;
 
-   if(ProcessingTitle) then exit();
+   if(ProcessingTitle) then exit(false);
    ProcessingTitle:=true;
 
    KMemo1.Blocks.LockUpdate;
@@ -1490,14 +1506,15 @@ begin
 
    while ((i < Kmemo1.Blocks.Count) and ((length(Trim(Title))=0) or (Kmemo1.Blocks.Items[i].ClassName <> 'TKMemoParagraph'))) do
    begin
+     TRLog('CHECKING TITLE '+IntToStr(i)+' ; '+Kmemo1.Blocks.Items[i].Text);
       if Kmemo1.Blocks.Items[i].ClassNameIs('TKMemoTextBlock') then Title := Title + CleanTitle(Kmemo1.Blocks.Items[i].Text);
       inc(i);
    end;
 
    TRlog('Found title : "'+title + '" with '+IntToStr(i)+' blocks');
 
-   if(force) then title := CleanTitle(Trim(note^.Title))
-   else title := CleanTitle(title);
+   if(force) then title := Trim(CleanTitle(note^.Title))
+   else title := trim(CleanTitle(title));
 
    TRlog('Now title is "'+title + '"');
 
@@ -1531,6 +1548,8 @@ begin
    i:=4;
    while ((i < Kmemo1.Blocks.Count)) do
    begin
+      ktb := TKMemoTextBlock(Kmemo1.Blocks.Items[i]);
+      TRlog('Testing block2 '+IntToStr(i)+' : '+ktb.Text);
       if (KMemo1.Blocks.Items[i].ClassNameIs('TKMemoTextBlock') or KMemo1.Blocks.Items[i].ClassNameIs('TKMemoParagraph')) and (TKMemoTextBlock(KMemo1.Blocks.Items[i]).TextStyle.Font.Size = FontSizeTitle)
       then begin
            TRlog('Cleaning block '+IntToStr(i));
@@ -1542,11 +1561,14 @@ begin
       inc(i);
    end;
 
+   Result := false;
+
    // Update title
-   if(CompareStr(Trim(title), note^.Title) <>0) then
+   if(CompareStr(title, note^.Title) <>0) then
    begin
-      TRlog('NOTE TITLE NOT EQUAL');
-      note^.Title := Trim(Title);
+      TRlog('NOTE TITLE NOT EQUAL "'+title+'" vs note="'+note^.Title+'"');
+      note^.Title := Trim(CleanTitle(Title));
+      result := true;
       MarkDirty();
    end;
 
@@ -1810,7 +1832,8 @@ begin
 
    if(CompareStr(oldtext,KMemo1.Text)<>0)
    then begin
-     TRlog(' Text has changed');
+     TRlog(' Text has changed LENOLD='+IntToStr(Length(oldtext))+'  LENNEW='+IntToStr(Length(KMemo1.Text)));
+     TRlog(' Text has changed OLD='+oldtext+'  EW='+KMemo1.Text);
      CheckLinks();
      PostFormatTitle();
      MarkDirty();

@@ -119,7 +119,6 @@ object FormMain: TFormMain
       TabOrder = 2
       OnClick = SGNotesClick
       OnDblClick = SGNotesDblClick
-      OnDrawCell = SGNotesDrawCell
       OnKeyDown = FormKeyDown
       OnPrepareCanvas = SGNotesPrepareCanvas
       OnResize = SGNotesResize
