@@ -22,7 +22,7 @@ type TFontRange = (FontHuge, FontLarge, FontNormal, FontSmall, FontTitle);
 
 type TTagType = ( TagNone, TagBold, TagItalic, TagHighLight, TagUnderline,
               TagStrikeout, TagMonospace, TagSizeSmall, TagSizeLarge,
-              TagSizeHuge, TagList, TagLinkInternal, TagLinkUrl);
+              TagSizeHuge, TagList, TagListItem, TagLinkInternal, TagLinkUrl);
 
 type TNoteMenuTags = (ntCommit, ntSync, ntFind, ntSearchAll, ntSettings,
       ntAbout,ntDuplicate, ntDelete, ntMarkdown, ntRTF, ntPlain, ntPrint,
@@ -31,7 +31,8 @@ type TNoteMenuTags = (ntCommit, ntSync, ntFind, ntSearchAll, ntSettings,
       ntHighlight, ntFontPLus, ntFontMinus, ntBullet, ntNewNotebook,
       ntSpelling, ntSelectAll, ntInsertDate    );
 
-type TNoteAction = ( IncreaseSize, DecreaseSize, ToggleBold, ToggleItalic, ToggleHighlight, ToggleFont, ToggleStrikeout, ToggleUnderline);
+type TNoteAction = ( IncreaseSize, DecreaseSize, ToggleBold, ToggleItalic,
+     ToggleHighlight, ToggleFont, ToggleStrikeout, ToggleUnderline);
 
 
 type
@@ -66,13 +67,14 @@ type
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormDestroy(Sender: TObject);
 
+    procedure FormShow(Sender: TObject);
+
     procedure onMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure onKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure onMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure onKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure onChange(Sender: TObject);
 
-    procedure FormShow(Sender: TObject);
 
 private
     AlreadyLoaded, hasdata : boolean;
@@ -380,14 +382,12 @@ begin
 
       if ((Ch >= ' ') and (Ch <> '<') ) then
       begin
-          TRlog('Adding CHR = "'+Chr+'" ; Ch = "'+IntToStr(Ord(Ch))+'")');
           Ktext := Ktext + Chr;
           inc(i);
       end;
 
       if((Length(KText)>0) and ((Ch < ' ') or (Ch = '<') or (i>j))) then
       begin
-         //Trlog('Pushing block (current blocks ='+IntToStr(KMemo1.Blocks.Count)+')');
          Ktext := ReplaceAngles(Ktext); // We have to scan InStr for &lt; and &gt;  being < and >
 
          f := TFont.Create();
@@ -446,12 +446,7 @@ begin
 
          hasdata := true;
 
-         TRlog('Blcks = '+ IntToStr(KMemo1.Blocks.Count));
-
-         //Trlog('Pushing block (after blocks ='+IntToStr(KMemo1.Blocks.Count)+')');
-
          f.Free;
-
 
          Ktext := '';
       end;
@@ -466,6 +461,25 @@ begin
             par.NumberingListLevel.FirstIndent := -20;    // Note, these numbers need match SettBullet() in editbox
             par.NumberingListLevel.LeftIndent := 30;
          end;
+         f := TFont.Create();
+         f.Style := [];
+         if Bold then f.Style := f.Style + [fsBold];
+         if Italic then f.Style := f.Style + [fsItalic];
+         if Underline then f.Style := f.Style + [fsUnderline];
+         if Strikeout then f.Style := f.Style + [fsStrikeout];
+         if FixedWidth then f.Name := FixedFont else f.Name := UsualFont;
+         if FixedWidth then f.Pitch := fpFixed else f.Pitch := fpVariable;
+         f.Color := TextColour;
+
+         case FontSize of
+             TFontRange.FontSmall : f.Size:= FontSizeSmall;
+             TFontRange.FontLarge : f.Size:= FontSizeLarge;
+             TFontRange.FontHuge : f.Size:= FontSizeHuge;
+             else f.Size:= FontSizeNormal;
+         end;
+
+         par.TextStyle.Font := f;
+         f.Free;
          inc(i);
       end;
 
@@ -488,7 +502,8 @@ begin
           else if(CompareStr(tagtext,'size:small')=0)        then      tagtype := TTagType.TagSizeSmall
           else if(CompareStr(tagtext,'size:large')=0)        then      tagtype := TTagType.TagSizeLarge
           else if(CompareStr(tagtext,'size:huge')=0)         then      tagtype := TTagType.TagSizeHuge
-          else if(CompareStr(tagtext,'list-item')=0)         then      tagtype := TTagType.TagList
+          else if(CompareStr(tagtext,'list-item')=0)         then      tagtype := TTagType.TagListItem
+          else if(CompareStr(tagtext,'list')=0)              then      tagtype := TTagType.TagList
           else if(CompareStr(tagtext,'link:url')=0)          then      tagtype := TTagType.TagLinkUrl
           else if(CompareStr(tagtext,'link:internal')=0)     then      tagtype := TTagType.TagLinkInternal;
 
@@ -497,6 +512,7 @@ begin
          sub := LowerCase(Copy(s,i+k+1));
          m:= Pos('</'+tagtext,sub); if(m<1) then m:=length(sub)+1;
          sub:=Copy(s,i+k+1,m-1);
+         i:=i+k+m;
 
          case tagtype of
             TTagType.TagBold         : TextToMemo(sub, true, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
@@ -508,13 +524,26 @@ begin
             TTagType.TagSizeSmall    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, TFontRange.FontSmall, level+1);
             TTagType.TagSizeLarge    : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, TFontRange.FontLarge, level+1);
             TTagType.TagSizeHuge     : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, TFontRange.FontHuge, level+1);
-            TTagType.TagList         : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, true,     true,  linkinternal, linkexternal, FontSize, level+1);
+            TTagType.TagListItem     :
+               begin
+                                     while((KMemo1.Blocks.Count>0) and KMemo1.Blocks[KMemo1.Blocks.Count-1].ClassNameIs('TKMemoTextBlock') and (Length(Trim(TKMemoTextBlock(KMemo1.Blocks[KMemo1.Blocks.Count-1]).Text))=0))
+                                     do KMemo1.Blocks.Delete(KMemo1.Blocks.Count-1);
+                                     //
+                                     //if((KMemo1.Blocks.Count>0) and KMemo1.Blocks[KMemo1.Blocks.Count-1].ClassNameIs('TKMemoParagraph'))
+                                     //then TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, true,     false,  linkinternal, linkexternal, FontSize, level+1)
+                                     TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, true,     true,  linkinternal, linkexternal, FontSize, level+1);
+               end;
+            TTagType.TagList         :
+               begin
+                                     while((KMemo1.Blocks.Count>0) and KMemo1.Blocks[KMemo1.Blocks.Count-1].ClassNameIs('TKMemoTextBlock') and (Length(Trim(TKMemoTextBlock(KMemo1.Blocks[KMemo1.Blocks.Count-1]).Text))=0))
+                                     do KMemo1.Blocks.Delete(KMemo1.Blocks.Count-1);
+                                     TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, false,     false,  linkinternal, linkexternal, FontSize, level+1);
+               end;
             TTagType.TagLinkInternal : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, true,         false,        FontSize, level+1);
             TTagType.TagLinkUrl      : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, false,        true,         FontSize, level+1);
                                   else TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
          end;
 
-         i:=i+k+m;
          sub := Copy(s,i+1);
          k:= Pos('>', sub); if(k<1) then k := length(sub)+1;
          i:=i+k+1;
@@ -531,6 +560,27 @@ begin
          par.Numbering := pnuBullets;
          par.NumberingListLevel.FirstIndent := -20;    // Note, these numbers need match SettBullet() in editbox
          par.NumberingListLevel.LeftIndent := 30;
+
+         f := TFont.Create();
+         f.Style := [];
+         if Bold then f.Style := f.Style + [fsBold];
+         if Italic then f.Style := f.Style + [fsItalic];
+         if Underline then f.Style := f.Style + [fsUnderline];
+         if Strikeout then f.Style := f.Style + [fsStrikeout];
+         if FixedWidth then f.Name := FixedFont else f.Name := UsualFont;
+         if FixedWidth then f.Pitch := fpFixed else f.Pitch := fpVariable;
+         f.Color := TextColour;
+
+         case FontSize of
+             TFontRange.FontSmall : f.Size:= FontSizeSmall;
+             TFontRange.FontLarge : f.Size:= FontSizeLarge;
+             TFontRange.FontHuge : f.Size:= FontSizeHuge;
+             else f.Size:= FontSizeNormal;
+         end;
+
+         par.TextStyle.Font := f;
+         f.Free;
+
       end;
    end;
 end;
@@ -572,19 +622,13 @@ begin
 
    if(hasdata) then KMemo1.Blocks.Delete(0);
 
-   // Setting right font at Paragraphs
-   {
-   fs := FontSizeNormal;
    i:=0;
    while(i<KMemo1.Blocks.Count)
    do begin
-      if(KMemo1.Blocks[i].ClassNameIs('TKMemoTextBlock'))
-      then fs := TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Size
-      else TKMemoParagraph(KMemo1.Blocks[i]).TextStyle.Font.Size := fs;
-
+      TRlog('BLOCK('+IntToStr(i)+') '+KMemo1.Blocks[i].ClassName+' (size='+IntToStr(TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Size)+' '+TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Name+') : '+KMemo1.Blocks[i].Text);
       inc(i);
    end;
-   }
+
    TRlog('Dealing with content end : blocks = '+IntToStr(Kmemo1.Blocks.Count));
 
    KMemo1.Blocks.UnlockUpdate;
@@ -664,7 +708,7 @@ var
       end;
 
       if((j<KMemo1.Blocks.Count) and (TKMemoParagraph(KMemo1.Blocks[j]).Numbering = pnuBullets) )
-             then lines.Add( '<list><list-item dir="ltr">' + partext + '</list-item dir="ltr"></list>')
+             then lines.Add( '<list><list-item dir="ltr">' + partext + '</list-item></list>')
              else lines.Add(partext);
       i:=j+1;
    end;
@@ -749,13 +793,13 @@ begin
 
   if(Dirty) then
   begin
-    MemoToNote();
-    filename := GetLocalNoteFile(note^.ID);
+    //MemoToNote();
+    //filename := GetLocalNoteFile(note^.ID);
 
     TRlog(' Commit title='+note^.Title);
 
-    NoteToFile(note,filename);
-    TFormMain(mainWindow).PostScan();
+    //NoteToFile(note,filename);
+    //TFormMain(mainWindow).PostScan();
   end;
 
   ProcessingChange := false;
@@ -1551,7 +1595,7 @@ begin
    while(i<4)
    do begin
       ktb := TKMemoTextBlock(Kmemo1.Blocks[i]);
-      TRlog('Testing block '+IntToStr(i)+' : '+ktb.Text);
+      //TRlog('Testing block '+IntToStr(i)+' : '+ktb.Text);
       if(CompareStr(ktb.TextStyle.Font.Name,UsualFont)<>0) then ktb.TextStyle.Font.Name := UsualFont;
       if(ktb.TextStyle.Font.Size <> FontSizeTitle) then ktb.TextStyle.Font.Size := FontSizeTitle;
       if(ktb.TextStyle.Font.Color <> TitleColour) then ktb.TextStyle.Font.Color := TitleColour;
@@ -1848,7 +1892,7 @@ begin
    if(CompareStr(oldtext,KMemo1.Text)<>0)
    then begin
      TRlog(' Text has changed LENOLD='+IntToStr(Length(oldtext))+'  LENNEW='+IntToStr(Length(KMemo1.Text)));
-     TRlog(' Text has changed OLD='+oldtext+'  EW='+KMemo1.Text);
+     //TRlog(' Text has changed OLD='+oldtext+'  EW='+KMemo1.Text);
      CheckLinks();
      PostFormatTitle();
      MarkDirty();
@@ -1884,6 +1928,7 @@ end;
 procedure TFormNote.onKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 var
     i,j : integer;
+    par : TKMemoParagraph;
 begin
   TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key));
   i := KMemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, j);
@@ -1945,6 +1990,43 @@ begin
   // OTHER
 
   if key = VK_TAB then begin TrLog('Tab'); KMemo1.Blocks.AddTextBlock('   '); Key := 0; exit(); end;
+
+  if (Key  =  VK_BACK) and (KMemo1.RealSelStart = KMemo1.RealSelEnd)   // DEALING WITH BACKSPACE NEAR A BULLET
+  then begin
+    i := Kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, j);
+    TRlog('BACKSPCE i='+IntToStr(i)+' j='+IntToStr(j));
+    if(j>0) then exit();
+    if(i=0) then exit();
+    TRlog('BACKSPCE bis i='+IntToStr(i)+' j='+IntToStr(j));
+    if(not KMemo1.Blocks[i-1].ClassNameIs('TKMemoParagraph')) then exit();
+    TRlog('BACKSPCE ter i='+IntToStr(i)+' j='+IntToStr(j));
+    //if(KMemo1.Blocks[i].ClassNameIs('TKMemoParagraph')) then exit();
+    j:=i;
+    while((j<KMemo1.Blocks.Count) and not KMemo1.Blocks[j].ClassNameIs('TKMemoParagraph'))
+    do inc(j);
+
+    TRlog('BACKSPCE2 i='+IntToStr(i)+' j='+IntToStr(j));
+
+    if(j>=KMemo1.BLocks.Count)
+    then begin
+      par := KMemo1.Blocks.AddParagraph();
+      par.TextStyle.Font := TKMemoParagraph(KMemo1.Blocks[i-1]).TextStyle.Font;
+    end;
+
+    if(TKMemoParagraph(KMemo1.Blocks[j]).Numbering <> pnuBullets)
+    then begin
+      TRlog('BACKSPCE3BIS i='+IntToStr(i)+' j='+IntToStr(j));
+      ToggleBullet(1);
+      //Key :=0;
+      exit();
+    end;
+
+    TRlog('BACKSPCE3 i='+IntToStr(i)+' j='+IntToStr(j));
+
+
+    ToggleBullet(-1);
+    Key :=0;
+  end;
 end;
 
 
