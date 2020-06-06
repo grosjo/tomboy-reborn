@@ -216,29 +216,29 @@ var
    i:=2;
 
    tfs := TStringList.Create;
-   Block := KMemo1.Blocks.Items[1];
+   Block := KMemo1.Blocks[1];
    tfs.Add(Trim(Block.Text));
    tfs.Add('');
 
    while(i<KMemo1.Blocks.Count) do
    begin
-      Block := KMemo1.Blocks.Items[i];
+      Block := KMemo1.Blocks[i];
 
       // Search paragraph interval : [i;j[
       if Block.ClassNameIs('TKMemoParagraph')
           then j:=i+1
           else j:=i;
 
-      while( (j<KMemo1.Blocks.Count) and (not KMemo1.Blocks.Items[j].ClassNameIs('TKMemoParagraph')) )
+      while( (j<KMemo1.Blocks.Count) and (not KMemo1.Blocks[j].ClassNameIs('TKMemoParagraph')) )
          do inc(j);
 
       partext:='';
 
       while(i<j) do
       begin
-         if(KMemo1.Blocks.Items[i].ClassNameIs('TKMemoTextBlock') or KMemo1.Blocks.Items[i].ClassNameIs('TKMemoHyperlink'))
+         if(KMemo1.Blocks[i].ClassNameIs('TKMemoTextBlock') or KMemo1.Blocks[i].ClassNameIs('TKMemoHyperlink'))
          then begin
-              FT := TKMemoTextBlock(KMemo1.Blocks.Items[i]);
+              FT := TKMemoTextBlock(KMemo1.Blocks[i]);
               s2 := EncodeAngles(FT.Text);
          end else begin
             inc(i);
@@ -404,7 +404,7 @@ begin
              TFontRange.FontSmall : f.Size:= FontSizeSmall;
              TFontRange.FontLarge : f.Size:= FontSizeLarge;
              TFontRange.FontHuge : f.Size:= FontSizeHuge;
-             else f.Size:= Self.FontSizeNormal;
+             else f.Size:= FontSizeNormal;
          end;
 
 
@@ -536,6 +536,8 @@ begin
 end;
 
 procedure TFormNote.NoteToMemo();
+var
+    i,fs : integer;
 begin
 
    Trlog('NoteToMemo');
@@ -570,6 +572,19 @@ begin
 
    if(hasdata) then KMemo1.Blocks.Delete(0);
 
+   // Setting right font at Paragraphs
+   {
+   fs := FontSizeNormal;
+   i:=0;
+   while(i<KMemo1.Blocks.Count)
+   do begin
+      if(KMemo1.Blocks[i].ClassNameIs('TKMemoTextBlock'))
+      then fs := TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Size
+      else TKMemoParagraph(KMemo1.Blocks[i]).TextStyle.Font.Size := fs;
+
+      inc(i);
+   end;
+   }
    TRlog('Dealing with content end : blocks = '+IntToStr(Kmemo1.Blocks.Count));
 
    KMemo1.Blocks.UnlockUpdate;
@@ -611,21 +626,21 @@ var
    begin
       j:=i;
       // Searching Paragraph
-      while( (j<KMemo1.Blocks.Count) and (not KMemo1.Blocks.Items[j].ClassNameIs('TKMemoParagraph')) )
+      while( (j<KMemo1.Blocks.Count) and (not KMemo1.Blocks[j].ClassNameIs('TKMemoParagraph')) )
          do inc(j);
 
       partext:='';
 
       while(i<j) do
       begin
-         if(KMemo1.Blocks.Items[i].ClassNameIs('TKMemoTextBlock'))
+         if(KMemo1.Blocks[i].ClassNameIs('TKMemoTextBlock'))
          then begin
-              FT := TKMemoTextBlock(KMemo1.Blocks.Items[i]);
+              FT := TKMemoTextBlock(KMemo1.Blocks[i]);
               s2 := EncodeAngles(FT.Text);
          end else
-         if(KMemo1.Blocks.Items[i].ClassNameIs('TKMemoHyperlink'))
+         if(KMemo1.Blocks[i].ClassNameIs('TKMemoHyperlink'))
          then begin
-              FT := TKMemoTextBlock(KMemo1.Blocks.Items[i]);
+              FT := TKMemoTextBlock(KMemo1.Blocks[i]);
               if(FT.OnDblClick = @InternalLink)
                   then s2 := '<link:url>'+EncodeAngles(FT.Text)+'</link:url>'
                   else s2 := '<link:internal>'+EncodeAngles(FT.Text)+'</link:internal>';
@@ -648,7 +663,7 @@ var
          inc(i);
       end;
 
-      if((j<KMemo1.Blocks.Count) and (TKMemoParagraph(KMemo1.Blocks.Items[j]).Numbering = pnuBullets) )
+      if((j<KMemo1.Blocks.Count) and (TKMemoParagraph(KMemo1.Blocks[j]).Numbering = pnuBullets) )
              then lines.Add( '<list><list-item dir="ltr">' + partext + '</list-item dir="ltr"></list>')
              else lines.Add(partext);
       i:=j+1;
@@ -759,8 +774,8 @@ var
    BlockNo, PosInBlock: longint;
 begin
    BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
-   if(not KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
-   exit(fsBold in TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]).TextStyle.Font.Style);
+   if(not KMemo1.Blocks[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
+   exit(fsBold in TKMemoTextBlock(KMemo1.Blocks[BlockNo]).TextStyle.Font.Style);
 end;
 
 function TFormNote.isItalic() : boolean;
@@ -768,8 +783,8 @@ var
    BlockNo, PosInBlock: longint;
 begin
    BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
-   if(not KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
-   exit(fsItalic in TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]).TextStyle.Font.Style);
+   if(not KMemo1.Blocks[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
+   exit(fsItalic in TKMemoTextBlock(KMemo1.Blocks[BlockNo]).TextStyle.Font.Style);
 end;
 
 function TFormNote.isUnderlined() : boolean;
@@ -777,8 +792,8 @@ var
    BlockNo, PosInBlock: longint;
 begin
    BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
-   if(not KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
-   exit(fsUnderline in TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]).TextStyle.Font.Style);
+   if(not KMemo1.Blocks[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
+   exit(fsUnderline in TKMemoTextBlock(KMemo1.Blocks[BlockNo]).TextStyle.Font.Style);
 end;
 
 function TFormNote.isStriked() : boolean;
@@ -786,8 +801,8 @@ var
    BlockNo, PosInBlock: longint;
 begin
    BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
-   if(not KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
-   exit(fsStrikeOut in TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]).TextStyle.Font.Style);
+   if(not KMemo1.Blocks[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
+   exit(fsStrikeOut in TKMemoTextBlock(KMemo1.Blocks[BlockNo]).TextStyle.Font.Style);
 end;
 
 function TFormNote.isHighlight() : boolean;
@@ -795,8 +810,8 @@ var
    BlockNo, PosInBlock: longint;
 begin
    BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
-   if(not KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
-   exit(TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]).TextStyle.Brush.Color = HiColour);
+   if(not KMemo1.Blocks[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
+   exit(TKMemoTextBlock(KMemo1.Blocks[BlockNo]).TextStyle.Brush.Color = HiColour);
 end;
 
 function TFormNote.isFixedFont() : boolean;
@@ -804,8 +819,8 @@ var
    BlockNo, PosInBlock: longint;
 begin
    BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
-   if(not KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
-   exit(CompareText(TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]).TextStyle.Font.Name,FixedFont) = 0);
+   if(not KMemo1.Blocks[BlockNo].ClassNameIs('TKMemoTextBlock')) then exit(false);
+   exit(CompareText(TKMemoTextBlock(KMemo1.Blocks[BlockNo]).TextStyle.Font.Name,FixedFont) = 0);
 end;
 
 procedure TFormNote.ToggleBullet(forcestatus : integer);
@@ -818,13 +833,13 @@ begin
   BlockNo := Kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
   LastBlock := Kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelEnd, PosInBlock);
 
-  while( (LastBlock<KMemo1.Blocks.Count) and (not KMemo1.Blocks.Items[LastBlock].ClassNameIs('TKMemoParagraph'))) do inc(LastBlock);
+  while( (LastBlock<KMemo1.Blocks.Count) and (not KMemo1.Blocks[LastBlock].ClassNameIs('TKMemoParagraph'))) do inc(LastBlock);
   if(LastBlock = KMemo1.Blocks.Count) then Kmemo1.Blocks.AddParagraph();
 
-  while((BlockNo<=LastBlock) and (not KMemo1.Blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph'))) do inc(BlockNo);
+  while((BlockNo<=LastBlock) and (not KMemo1.Blocks[BlockNo].ClassNameIs('TKMemoParagraph'))) do inc(BlockNo);
 
   case forcestatus of
-     0 : state := (TKMemoParagraph(KMemo1.Blocks.Items[BlockNo]).Numbering <> pnuBullets) ;
+     0 : state := (TKMemoParagraph(KMemo1.Blocks[BlockNo]).Numbering <> pnuBullets) ;
      -1 : state := false;
      1 : state := true;
   end;
@@ -833,25 +848,25 @@ begin
 
   while(i<=LastBlock) do
   begin
-     if(KMemo1.Blocks.Items[i].ClassNameIs('TKMemoParagraph')) then
+     if(KMemo1.Blocks[i].ClassNameIs('TKMemoParagraph')) then
      begin
        if(state) then
        begin
           TrLog('set bullet');
-          if(TKMemoParagraph(KMemo1.Blocks.Items[i]).Numbering <> pnuBullets) then
+          if(TKMemoParagraph(KMemo1.Blocks[i]).Numbering <> pnuBullets) then
           begin
-            TKMemoParagraph(KMemo1.Blocks.Items[i]).Numbering:=pnuBullets;
-            TKMemoParagraph(KMemo1.Blocks.Items[i]).NumberingListLevel.FirstIndent:=-20;
-            TKMemoParagraph(KMemo1.Blocks.Items[i]).NumberingListLevel.LeftIndent:=30;
+            TKMemoParagraph(KMemo1.Blocks[i]).Numbering:=pnuBullets;
+            TKMemoParagraph(KMemo1.Blocks[i]).NumberingListLevel.FirstIndent:=-20;
+            TKMemoParagraph(KMemo1.Blocks[i]).NumberingListLevel.LeftIndent:=30;
           end;
        end
        else begin
           TrLog('rm bullet');
-          if(TKMemoParagraph(KMemo1.Blocks.Items[i]).Numbering=pnuBullets) then
+          if(TKMemoParagraph(KMemo1.Blocks[i]).Numbering=pnuBullets) then
           begin
-            TKMemoParagraph(KMemo1.Blocks.Items[i]).NumberingListLevel.FirstIndent:=0;
-            TKMemoParagraph(KMemo1.Blocks.Items[i]).NumberingListLevel.LeftIndent:=0;
-            TKMemoParagraph(KMemo1.Blocks.Items[i]).Numbering:=pnuNone;
+            TKMemoParagraph(KMemo1.Blocks[i]).NumberingListLevel.FirstIndent:=0;
+            TKMemoParagraph(KMemo1.Blocks[i]).NumberingListLevel.LeftIndent:=0;
+            TKMemoParagraph(KMemo1.Blocks[i]).Numbering:=pnuNone;
           end;
        end;
      end;
@@ -860,12 +875,12 @@ begin
 
   for i :=0 to KMemo1.Blocks.count-1 do
   begin
-       if(((i<BlockNo) or (i>LastBlock)) and (KMemo1.Blocks.Items[i].ClassNameIs('TKMemoParagraph')))
+       if(((i<BlockNo) or (i>LastBlock)) and (KMemo1.Blocks[i].ClassNameIs('TKMemoParagraph')))
        then begin
-         if(TKMemoParagraph(KMemo1.Blocks.Items[i]).Numbering=pnuBullets) then
+         if(TKMemoParagraph(KMemo1.Blocks[i]).Numbering=pnuBullets) then
           begin
-            TKMemoParagraph(KMemo1.Blocks.Items[i]).NumberingListLevel.FirstIndent:=-20;
-            if(TKMemoParagraph(KMemo1.Blocks.Items[i]).NumberingListLevel.LeftIndent<30) then TKMemoParagraph(KMemo1.Blocks.Items[i]).NumberingListLevel.LeftIndent := 30;
+            TKMemoParagraph(KMemo1.Blocks[i]).NumberingListLevel.FirstIndent:=-20;
+            if(TKMemoParagraph(KMemo1.Blocks[i]).NumberingListLevel.LeftIndent<30) then TKMemoParagraph(KMemo1.Blocks[i]).NumberingListLevel.LeftIndent := 30;
           end;
        end;
   end;
@@ -877,11 +892,11 @@ var
    BlockNo, PosInBlock: longint;
 begin
    BlockNo := kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, PosInBlock);
-   while((BlockNo<KMemo1.blocks.count) and (not kmemo1.blocks.Items[BlockNo].ClassNameIs('TKMemoParagraph')))
+   while((BlockNo<KMemo1.blocks.count) and (not kmemo1.Blocks[BlockNo].ClassNameIs('TKMemoParagraph')))
    do inc(BlockNo);
    if(BlockNo>=KMemo1.blocks.count) then exit(false);
 
-   Result := (TKMemoParagraph(kmemo1.blocks.Items[BlockNo]).Numbering = pnuBullets);
+   Result := (TKMemoParagraph(kmemo1.Blocks[BlockNo]).Numbering = pnuBullets);
 end;
 
 
@@ -973,7 +988,7 @@ begin
       if IntIndex <> 0 then FirstBlockNo := KMemo1.SplitAt(d);
 
       LastBlockNo := Kmemo1.Blocks.IndexToBlockIndex(f, IntIndex);
-      if IntIndex <> (length(Kmemo1.Blocks.Items[LastBlockNo].Text)) then LastBlockNo := KMemo1.SplitAt(f) - 1;
+      if IntIndex <> (length(Kmemo1.Blocks[LastBlockNo].Text)) then LastBlockNo := KMemo1.SplitAt(f) - 1;
 
       while(LastBlockNo>=FirstBlockNo) do
       begin
@@ -1007,7 +1022,7 @@ begin
    if IntIndex <> 0 then SplitStart := True;
 
    LastBlockNo := Kmemo1.Blocks.IndexToBlockIndex(LastChar, IntIndex);
-   if IntIndex <> (length(Kmemo1.Blocks.Items[LastBlockNo].Text)) then LastBlockNo := KMemo1.SplitAt(LastChar) - 1;
+   if IntIndex <> (length(Kmemo1.Blocks[LastBlockNo].Text)) then LastBlockNo := KMemo1.SplitAt(LastChar) - 1;
 
    while LastBlockNo > FirstBlockNo do
    begin
@@ -1048,8 +1063,8 @@ procedure TFormNote.AlterBlockFont(const FirstBlockNo, BlockNo : longint; const 
 var
    Block, FirstBlock : TKMemoTextBlock;
 begin
-   FirstBlock := TKMemoTextBlock(KMemo1.Blocks.Items[FirstBlockNo]);
-   Block := TKMemoTextBlock(KMemo1.Blocks.Items[BlockNo]);
+   FirstBlock := TKMemoTextBlock(KMemo1.Blocks[FirstBlockNo]);
+   Block := TKMemoTextBlock(KMemo1.Blocks[BlockNo]);
 
    case Command of
 
@@ -1504,10 +1519,10 @@ begin
    i :=0;
    title :='';
 
-   while ((i < Kmemo1.Blocks.Count) and ((length(Trim(Title))=0) or (Kmemo1.Blocks.Items[i].ClassName <> 'TKMemoParagraph'))) do
-   begin
-     TRLog('CHECKING TITLE '+IntToStr(i)+' ; '+Kmemo1.Blocks.Items[i].Text);
-      if Kmemo1.Blocks.Items[i].ClassNameIs('TKMemoTextBlock') then Title := Title + CleanTitle(Kmemo1.Blocks.Items[i].Text);
+   while ((i < Kmemo1.Blocks.Count) and ((length(Trim(Title))=0) or (not Kmemo1.Blocks[i].ClassNameIs('TKMemoParagraph'))))
+   do begin
+     TRLog('CHECKING TITLE '+IntToStr(i)+' ('+ Kmemo1.Blocks[i].ClassName+') : TExt="'+Kmemo1.Blocks[i].Text+'"');
+      if Kmemo1.Blocks[i].ClassNameIs('TKMemoTextBlock') then Title := Title + CleanTitle(Kmemo1.Blocks[i].Text);
       inc(i);
    end;
 
@@ -1518,24 +1533,24 @@ begin
 
    TRlog('Now title is "'+title + '"');
 
-   if((i<>1) or (Kmemo1.Blocks.Items[1].ClassName <> 'TKMemoParagraph') or (Kmemo1.Blocks.Items[0].ClassName <> 'TKMemoTextBlock'))
+   if((i<>1) or (Kmemo1.Blocks[1].ClassName <> 'TKMemoParagraph') or (not Kmemo1.Blocks[0].ClassNameIs('TKMemoTextBlock')))
    then begin
      while(i>0) do begin Kmemo1.Blocks.Delete(0); dec(i); end;
      KMemo1.Blocks.AddTextBlock(title,0);
      KMemo1.Blocks.AddParagraph(1);
    end
-   else TKMemoTextBlock(Kmemo1.Blocks.Items[0]).Text := title;
+   else TKMemoTextBlock(Kmemo1.Blocks[0]).Text := title;
 
-   if((Kmemo1.Blocks.Count<3) or (Kmemo1.Blocks.Items[2].ClassName <> 'TKMemoTextBlock') or (Length(Trim(TKMemoTextBlock(Kmemo1.Blocks.Items[2]).Text)) > 0))
+   if((Kmemo1.Blocks.Count<3) or (not Kmemo1.Blocks[2].ClassNameIs('TKMemoTextBlock')) or (Length(Trim(TKMemoTextBlock(Kmemo1.Blocks[2]).Text)) > 0))
    then KMemo1.Blocks.AddTextBlock('',2);
 
-   if((Kmemo1.Blocks.Count<4) or (Kmemo1.Blocks.Items[3].ClassName <> 'TKMemoParagraph'))
+   if((Kmemo1.Blocks.Count<4) or (Kmemo1.Blocks[3].ClassName <> 'TKMemoParagraph'))
    then KMemo1.Blocks.AddParagraph(3);
 
    i:=0;
    while(i<4)
    do begin
-      ktb := TKMemoTextBlock(Kmemo1.Blocks.Items[i]);
+      ktb := TKMemoTextBlock(Kmemo1.Blocks[i]);
       TRlog('Testing block '+IntToStr(i)+' : '+ktb.Text);
       if(CompareStr(ktb.TextStyle.Font.Name,UsualFont)<>0) then ktb.TextStyle.Font.Name := UsualFont;
       if(ktb.TextStyle.Font.Size <> FontSizeTitle) then ktb.TextStyle.Font.Size := FontSizeTitle;
@@ -1548,12 +1563,12 @@ begin
    i:=4;
    while ((i < Kmemo1.Blocks.Count)) do
    begin
-      ktb := TKMemoTextBlock(Kmemo1.Blocks.Items[i]);
+      ktb := TKMemoTextBlock(Kmemo1.Blocks[i]);
       TRlog('Testing block2 '+IntToStr(i)+' : '+ktb.Text);
-      if (KMemo1.Blocks.Items[i].ClassNameIs('TKMemoTextBlock') or KMemo1.Blocks.Items[i].ClassNameIs('TKMemoParagraph')) and (TKMemoTextBlock(KMemo1.Blocks.Items[i]).TextStyle.Font.Size = FontSizeTitle)
+      if (KMemo1.Blocks[i].ClassNameIs('TKMemoTextBlock') or KMemo1.Blocks[i].ClassNameIs('TKMemoParagraph')) and (TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Size = FontSizeTitle)
       then begin
            TRlog('Cleaning block '+IntToStr(i));
-           ktb := TKMemoTextBlock(KMemo1.Blocks.Items[i]);
+           ktb := TKMemoTextBlock(KMemo1.Blocks[i]);
            ktb.TextStyle.Font.Size := FontSizeNormal;
            ktb.TextStyle.Font.Color := TextColour;
            ktb.TextStyle.Font.Style := [];
@@ -1599,7 +1614,7 @@ begin
 
    n := KMemo1.Blocks.IndexToBlockIndex(b1, i);
 
-   while(CompareStr(' ',Copy(KMemo1.Blocks.Items[n].Text,i+1,1))=0)
+   while(CompareStr(' ',Copy(KMemo1.Blocks[n].Text,i+1,1))=0)
    do begin
       inc(i);
       inc(b1);
@@ -1607,11 +1622,11 @@ begin
    if(i>0) then n := KMemo1.SplitAt(b1);
 
    f := TFont.Create;
-   f.Name := TKMemoTextBlock(KMemo1.Blocks.Items[n]).TextStyle.Font.Name;
-   f.Size := TKMemoTextBlock(KMemo1.Blocks.Items[n]).TextStyle.Font.Size;
+   f.Name := TKMemoTextBlock(KMemo1.Blocks[n]).TextStyle.Font.Name;
+   f.Size := TKMemoTextBlock(KMemo1.Blocks[n]).TextStyle.Font.Size;
    f.Color := clBlue;
    f.Style := [fsUnderline];
-   f.Pitch := TKMemoTextBlock(KMemo1.Blocks.Items[n]).TextStyle.Font.Pitch;
+   f.Pitch := TKMemoTextBlock(KMemo1.Blocks[n]).TextStyle.Font.Pitch;
 
    fn := TFont.Create;
    fn.Name := f.Name;
@@ -1622,22 +1637,22 @@ begin
 
    m := KMemo1.Blocks.IndexToBlockIndex(b2, i);
 
-   while(CompareStr(' ',Copy(KMemo1.Blocks.Items[m].Text,i,1))=0)
+   while(CompareStr(' ',Copy(KMemo1.Blocks[m].Text,i,1))=0)
    do begin
       dec(i);
       dec(b2);
    end;
    if(i=0) then dec(m)
-   else if(i<Length(KMemo1.Blocks.Items[m].Text))
+   else if(i<Length(KMemo1.Blocks[m].Text))
    then m := KMemo1.SplitAt(b2)-1;
 
    i:=n;
    while(i<=m) do
    begin
 
-      if(isweb and not KMemo1.Blocks.Items[i].ClassNameIs('TKMemoParagraph') )
+      if(isweb and not KMemo1.Blocks[i].ClassNameIs('TKMemoParagraph') )
       then begin
-        k := Pos(' ', KMemo1.Blocks.Items[i].Text);
+        k := Pos(' ', KMemo1.Blocks[i].Text);
         if(k>1) then
         begin
           k := KMemo1.Blocks.BlockToIndex(KMemo1.Blocks[i]) + k-1;
@@ -1646,8 +1661,8 @@ begin
         end else
         if(k=1) then
         begin
-          while(CompareStr(' ', Copy(KMemo1.Blocks.Items[i].Text, k+1,1)) = 0 ) do inc(k);
-          if(k<Length(KMemo1.Blocks.Items[i].Text))
+          while(CompareStr(' ', Copy(KMemo1.Blocks[i].Text, k+1,1)) = 0 ) do inc(k);
+          if(k<Length(KMemo1.Blocks[i].Text))
           then begin
              k := KMemo1.Blocks.BlockToIndex(KMemo1.Blocks[i]) + k;
              KMemo1.SplitAt(k);
@@ -1662,17 +1677,17 @@ begin
    s:='';
    while(i<=m) do
    begin
-      TKMemoTextBlock(KMemo1.Blocks.Items[i]).TextStyle.Font := fn;
+      TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font := fn;
 
-      s2 := CleanTitle(KMemo1.Blocks.Items[i].Text);
+      s2 := CleanTitle(KMemo1.Blocks[i].Text);
       if(isweb) then s2 := Trim(s2);
 
-      if(not KMemo1.Blocks.Items[i].ClassNameIs('TKMemoParagraph') )
+      if(not KMemo1.Blocks[i].ClassNameIs('TKMemoParagraph') )
       then begin
         s := s + s2;
       end;
 
-      if((i = m) or KMemo1.Blocks.Items[i].ClassNameIs('TKMemoParagraph') or (Length(s2)=0))
+      if((i = m) or KMemo1.Blocks[i].ClassNameIs('TKMemoParagraph') or (Length(s2)=0))
       then begin
         if(Length(s)>0)
         then begin
@@ -1683,7 +1698,7 @@ begin
               dec(m);
            end;
 
-           if((not KMemo1.Blocks.Items[i].ClassNameIs('TKMemoParagraph')) and (Length(s2)>0)) then
+           if((not KMemo1.Blocks[i].ClassNameIs('TKMemoParagraph')) and (Length(s2)>0)) then
            begin
               KMemo1.Blocks.Delete(j);
               dec(i);
@@ -1736,9 +1751,9 @@ begin
 
    while BlockNo <= EndBlock do
    begin
-      if Kmemo1.Blocks.Items[BlockNo].ClassName = 'TKMemoHyperlink' then
+      if Kmemo1.Blocks[BlockNo].ClassNameIs('TKMemoHyperlink') then
       begin
-         LinkText := Kmemo1.Blocks.Items[BlockNo].Text;
+         LinkText := Kmemo1.Blocks[BlockNo].Text;
          Kmemo1.Blocks.Delete(BlockNo);
          tb := KMemo1.Blocks.AddTextBlock(Linktext, BlockNo);
          tb.TextStyle.Font := f;
@@ -1773,9 +1788,9 @@ begin
   i:=0;
   while(i < KMemo1.Blocks.Count) do
   begin
-     if Kmemo1.Blocks.Items[i].ClassName = 'TKMemoHyperlink' then
+     if Kmemo1.Blocks[i].ClassNameIs('TKMemoHyperlink') then
      begin
-        hl := TKMemoHyperlink(Kmemo1.Blocks.Items[i]);
+        hl := TKMemoHyperlink(Kmemo1.Blocks[i]);
         s := hl.URL;
         isweb := (hl.OnDblClick = @ExternalLink);
 
