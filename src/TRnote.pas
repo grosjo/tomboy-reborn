@@ -182,7 +182,7 @@ var
    u : UTF8String;
 begin
    u := Trim(TKMemoHyperlink(Sender).Text);
-   showmessage('External Link ' + u);
+   TRlog('External Link ' + u);
    if(not isURL(u)) then u:='http://'+u;
    OpenUrl(u);
 end;
@@ -191,8 +191,8 @@ procedure TFormNote.InternalLink(sender : TObject);
 var
    u : UTF8String;
 begin
-   u := Trim(TKMemoHyperlink(Sender).Text);
-   showmessage('Internal Link ' + u);
+   u := UTF8Trim(TKMemoHyperlink(Sender).Text);
+   TRlog('Internal Link ' + u);
    TFormMain(mainWindow).OpenNoteByTitle(u);
 end;
 
@@ -530,9 +530,6 @@ begin
                begin
                                      while((KMemo1.Blocks.Count>0) and KMemo1.Blocks[KMemo1.Blocks.Count-1].ClassNameIs('TKMemoTextBlock') and (Length(Trim(TKMemoTextBlock(KMemo1.Blocks[KMemo1.Blocks.Count-1]).Text))=0))
                                      do KMemo1.Blocks.Delete(KMemo1.Blocks.Count-1);
-                                     //
-                                     //if((KMemo1.Blocks.Count>0) and KMemo1.Blocks[KMemo1.Blocks.Count-1].ClassNameIs('TKMemoParagraph'))
-                                     //then TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, true,     false,  linkinternal, linkexternal, FontSize, level+1)
                                      TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, true,     true,  linkinternal, linkexternal, FontSize, level+1);
                end;
             TTagType.TagList         :
@@ -687,7 +684,7 @@ var
          if(KMemo1.Blocks[i].ClassNameIs('TKMemoHyperlink'))
          then begin
               FT := TKMemoTextBlock(KMemo1.Blocks[i]);
-              if(FT.OnDblClick = @InternalLink)
+              if(FT.OnDblClick = @ExternalLink)
                   then s2 := '<link:url>'+EncodeAngles(FT.Text)+'</link:url>'
                   else s2 := '<link:internal>'+EncodeAngles(FT.Text)+'</link:internal>';
          end else begin
@@ -795,13 +792,13 @@ begin
 
   if(Dirty) then
   begin
-    //MemoToNote();
-    //filename := GetLocalNoteFile(note^.ID);
+    MemoToNote();
+    filename := GetLocalNoteFile(note^.ID);
 
     TRlog(' Commit title='+note^.Title);
 
-    //NoteToFile(note,filename);
-    //TFormMain(mainWindow).PostScan();
+    NoteToFile(note,filename);
+    TFormMain(mainWindow).PostScan();
   end;
 
   ProcessingChange := false;
@@ -1587,15 +1584,14 @@ begin
 
    while ((i < Kmemo1.Blocks.Count) and ((length(Trim(Title))=0) or (not Kmemo1.Blocks[i].ClassNameIs('TKMemoParagraph'))))
    do begin
-     TRLog('CHECKING TITLE '+IntToStr(i)+' ('+ Kmemo1.Blocks[i].ClassName+') : TExt="'+Kmemo1.Blocks[i].Text+'"');
       if Kmemo1.Blocks[i].ClassNameIs('TKMemoTextBlock') then Title := Title + CleanTitle(Kmemo1.Blocks[i].Text);
       inc(i);
    end;
 
    TRlog('Found title : "'+title + '" with '+IntToStr(i)+' blocks');
 
-   if(force) then title := Trim(CleanTitle(note^.Title))
-   else title := trim(CleanTitle(title));
+   if(force) then title := UTF8Trim(CleanTitle(note^.Title))
+   else title := UTF8Trim(CleanTitle(title));
 
    TRlog('Now title is "'+title + '"');
 
@@ -1630,10 +1626,8 @@ begin
    while ((i < Kmemo1.Blocks.Count)) do
    begin
       ktb := TKMemoTextBlock(Kmemo1.Blocks[i]);
-      TRlog('Testing block2 '+IntToStr(i)+' : '+ktb.Text);
       if (KMemo1.Blocks[i].ClassNameIs('TKMemoTextBlock') or KMemo1.Blocks[i].ClassNameIs('TKMemoParagraph')) and (TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Size = FontSizeTitle)
       then begin
-           TRlog('Cleaning block '+IntToStr(i));
            ktb := TKMemoTextBlock(KMemo1.Blocks[i]);
            ktb.TextStyle.Font.Size := FontSizeNormal;
            ktb.TextStyle.Font.Color := TextColour;
@@ -1647,8 +1641,7 @@ begin
    // Update title
    if(CompareStr(title, note^.Title) <>0) then
    begin
-      TRlog('NOTE TITLE NOT EQUAL "'+title+'" vs note="'+note^.Title+'"');
-      note^.Title := Trim(CleanTitle(Title));
+      note^.Title := UTF8Trim(CleanTitle(Title));
       result := true;
       MarkDirty();
    end;

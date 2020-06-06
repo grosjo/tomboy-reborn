@@ -7,7 +7,7 @@ interface
 uses
     Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
     Buttons, Menus, ComCtrls, ExtCtrls, FileUtil, ActnList, DateUtils,
-    Grids, lazLogger, Math, LCLType, LazFileUtils, process,
+    Grids, lazLogger, Math, LCLType, LazFileUtils, process, LazUTF8,
     TRcommon, TRtexts, TRsettings, TRsync, TRnote, TRabout;
 
 
@@ -463,10 +463,12 @@ var
 begin
    TRlog('Searching Note by title : ' + t);
 
+   t:=UTF8Trim(t);
+
    b := false;
 
    for i := 0 to NotesList.Count-1 do
-      if (CompareText(NotesList.Items[i]^.Title,t) = 0)
+      if (UTF8CompareText(UTF8Trim(NotesList.Items[i]^.Title),t) = 0)
       then begin
         OpenNote(NotesList.Items[i]^.ID);
         b := true;
