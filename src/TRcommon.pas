@@ -501,7 +501,7 @@ var
 begin
    CreateGUID(GUID);
    s := copy(GUIDToString(GUID), 2, 36);
-   Result := LowerCase(s);
+   Result := UTF8LowerCase(s);
 end;
 
 function NoteIDLooksOK(const ID : UTF8String) : boolean;
@@ -525,8 +525,8 @@ begin
 
    if(not CaseSensitive) then
        begin
-            b := LowerCase(b);
-            c := LowerCase(c);
+            b := UTF8LowerCase(b);
+            c := UTF8LowerCase(c);
        end;
 
    ok := true;
@@ -536,7 +536,7 @@ begin
    do begin
       a := TermList.Strings[i];
       if(not CaseSensitive) then a:= LowerCase(a);
-      if((Pos(a,b)<1) and (Pos(a,c)<1)) then ok:=false;
+      if((UTF8Pos(a,b)<1) and (UTF8Pos(a,c)<1)) then ok:=false;
       inc(i);
    end;
    Result := ok;

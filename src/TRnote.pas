@@ -85,8 +85,7 @@ private
 
     FontSizeNormal, FontSizeLarge, FontSizeTitle, FontSizeHuge, FontSizeSmall : integer;
 
-    // Text changes
-    oldtext : UTF8String;
+    findtext, oldtext : UTF8String;
     oldselstart, oldselend : Integer;
 
     procedure SetFontSizes();
@@ -105,6 +104,9 @@ private
 
     procedure ShowSearchPanel(s : boolean);
     procedure BuildMenus(Sender: TObject);
+
+    procedure FindNext(start : integer);
+    procedure FindPrev(start : integer);
 
     function isInBullet() : boolean;
     function isBold() : boolean;
@@ -587,7 +589,7 @@ end;
 
 procedure TFormNote.NoteToMemo();
 var
-    i,fs : integer;
+    i : integer;
 begin
 
    Trlog('NoteToMemo');
@@ -1255,6 +1257,10 @@ begin
   isClosing := false;
   SetFontSizes();
 
+  findtext :='';
+  EditFindInNote.Caption:='';
+
+
   KMemo1.TextStyle.Font.Size := FontSizeNormal;
   KMemo1.TextStyle.Font.Color := TextColour;
   KMemo1.TextStyle.Font.Name := UsualFont;
@@ -1468,35 +1474,6 @@ begin
   HouseKeeper.Enabled := True;
 end;
 
-procedure TFormNote.ButtonFindPrevClick(Sender: TObject);
-var
-   s, lo: UTF8String;
-   i,j,k : integer;
-begin
-   s := LowerCase(Trim(EditFindInNote.Caption));
-   lo := LowerCase( KMemo1.Text);
-
-   if(Length(s)>0) then
-   begin
-     i :=0;
-     k :=-1;
-     while(i<KMemo1.RealSelStart) do
-     begin
-        k:= i;
-        j:=Pos(s,Copy(lo,i+2));
-        if(j>0) then
-        begin
-          i := i +j +1;
-        end;
-     end;
-     if(k>=0) then
-     begin
-       KMemo1.SelStart:=k;
-       KMemo1.SelEnd:=KMemo1.SelStart+Length(s);
-     end ;
-   end;
-end;
-
 procedure TFormNote.CheckboxFindInNoteChange(Sender: TObject);
 begin
   if(not CheckboxFindInNote.Checked) then ShowSearchPanel(false);
@@ -1504,24 +1481,69 @@ end;
 
 procedure TFormNote.EditFindInNoteChange(Sender: TObject);
 begin
-   ButtonFindNextClick(Sender)
+  if(UTF8Length(EditFindInNote.Caption)>=UTF8Length(findtext))
+  then FindNext(KMemo1.RealSelStart)
+  else FindPrev(KMemo1.RealSelStart);
+  findtext := EditFindInNote.Caption;
 end;
 
 procedure TFormNote.ButtonFindNextClick(Sender: TObject);
+begin
+   FindNext(KMemo1.RealSelStart+1);
+end;
+
+procedure TFormNote.FindNext(start : integer);
 var
     s,lo: UTF8String;
     i : integer;
 begin
-   s := LowerCase(Trim(EditFindInNote.Caption));
-   lo := Lowercase(KMemo1.Text);
-   if(Length(s)>0) then
+   s := UTF8LowerCase(EditFindInNote.Caption);
+   lo := UTF8Lowercase(KMemo1.Text);
+   TRlog('Search Next for '+s);
+   if(UTF8Length(s)>0) then
    begin
-     i := Pos(s,Copy(lo,KMemo1.RealSelStart+2));
+     i := UTF8Pos(s,lo,start + 1);
      if(i>0) then
      begin
-       KMemo1.SelStart:=KMemo1.RealSelStart + i+1;
-       KMemo1.SelEnd:=KMemo1.SelStart+Length(s);
+       KMemo1.SelStart := i -1;
+       KMemo1.SelEnd := i -1 + UTF8Length(s);
      end ;
+   end;
+end;
+
+procedure TFormNote.ButtonFindPrevClick(Sender: TObject);
+begin
+  FindPrev(KMemo1.RealSelStart);
+end;
+
+procedure TFormNote.FindPrev(start : integer);
+var
+   s, lo: UTF8String;
+   i,j,k : integer;
+begin
+   s := UTF8LowerCase(EditFindInNote.Caption);
+   lo := UTF8LowerCase( KMemo1.Text);
+   TRlog('Search Prev for '+s);
+
+   if(UTF8Length(s)>0) then
+   begin
+     i :=0;
+     k :=-1;
+     while(i<start) do
+     begin
+        j:=UTF8Pos(s,lo,i+1);
+        if(j>0) then
+        begin
+          if(j-1<KMemo1.RealSelStart) then k := j-1;
+          i := i + j;
+        end
+        else i := KMemo1.RealSelStart +1;
+     end;
+     if(k>=0) then
+     begin
+       KMemo1.SelStart:=k;
+       KMemo1.SelEnd:=k+UTF8Length(s);
+     end;
    end;
 end;
 
@@ -1913,8 +1935,11 @@ begin
 end;
 
 procedure TFormNote.onKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+    i,j : integer;
 begin
-   TRlog('TFormNote.KMemo1KeyUp '+IntToStr(Key));
+  i := KMemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, j);
+   TRlog('TFormNote.KMemo1KeyUp '+IntToStr(Key)+ ' Block='+IntToStr(i) + ' Pos='+IntToStr(KMemo1.RealSelStart)+' Tex@pos= '+Copy(KMemo1.Text, KMemo1.RealSelStart+1,10));
 
    if((oldselstart<>KMemo1.RealSelStart) or (oldselend<>KMemo1.RealSelend))
    then begin
@@ -1930,9 +1955,10 @@ var
     i,j : integer;
     par : TKMemoParagraph;
 begin
-  TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key));
+//  TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key));
   i := KMemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, j);
-  TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key)+ ' Block='+IntToStr(i) + ' Class='+KMemo1.Blocks[i].ClassName + ' Fontsize='+IntToStr(TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Size));
+  //TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key)+ ' Block='+IntToStr(i) + ' Pos='+IntToStr(KMemo1.RealSelStart)+' Tex@pos= '+Copy(KMemo1.Text, KMemo1.RealSelStart+1,10));
+  //TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key)+ ' Block='+IntToStr(i) + ' Pos='+IntToStr(KMemo1.RealSelStart)+' Tex@poaClass='+KMemo1.Blocks[i].ClassName + ' Fontsize='+IntToStr(TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Size));
 
 
   // CTRL

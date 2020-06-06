@@ -86,7 +86,7 @@ object FormNote: TFormNote
       Left = 115
       Height = 28
       Top = 6
-      Width = 413
+      Width = 405
       BorderSpacing.Left = 10
       BorderSpacing.Right = 10
       OnChange = EditFindInNoteChange
@@ -114,6 +114,7 @@ object FormNote: TFormNote
       Height = 28
       Top = 6
       Width = 21
+      Anchors = [akTop]
       BorderSpacing.Left = 10
       Caption = '<'
       DoubleBuffered = True
