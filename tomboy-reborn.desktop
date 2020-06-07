@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=tomboy-reborn
+Comment=Drop in replacement of legacy Gnome Tomboy
+GenericName=Note Taker
+Exec=tomboy-reborn
+Icon=/usr/share/icons/hicolor/256x256/apps/tomboy-reborn.png
+Terminal=false
+Type=Application
+Categories=GNOME;Utility
+
