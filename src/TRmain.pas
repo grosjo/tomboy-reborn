@@ -854,9 +854,11 @@ begin
    if(not syncshallrun) then TRlog(rsOtherSyncProcess)
    else if(SyncRepeat>0) then
    begin
-      m := Round((now-LastSync)*1440.0);
-      if(m<SyncRepeat)
-      then TRlog('Should process sync every '+IntToStr(SyncRepeat)+' min (now waiting for '+IntToStr(m)+' minutes')
+      m := Round((now-LastSync)*1440.0*60.0);
+      TRlog('DElAY '+IntToStr(m)+' / '+IntToStr(SyncRepeat*60));
+
+      if(m<SyncRepeat*60)
+      then TRlog('Should process sync every '+IntToStr(SyncRepeat*60)+' secs (now waiting for '+IntToStr(m)+' secs)')
       else begin
          // DO SYNC
          syncshallrun := false;
@@ -868,11 +870,11 @@ begin
               FormSync.SyncHidden();
               ProcessSyncUpdates(FormSync.DeletedList, FormSync.DownloadList);
               FreeAndNil(FormSync);
-              LastSync := now;
            except on E:Exception do TRlog(E.message);
            end;
          end
          else ShowMessage(rsSetupSyncFirst);
+         LastSync := now;
          syncshallrun := true;
       end;
    end
@@ -1253,6 +1255,9 @@ begin
 end;
 
 procedure TFormMain.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+var
+   ID : UTF8String;
+   n : PNoteInfo;
 begin
   TRlog('KeyDown '+IntToStr(Key));
 
@@ -1294,6 +1299,16 @@ begin
     exit();
   end;
 
+  if ((Key = VK_RETURN) and (SGNotes.Row>1))
+  then begin
+     ID := SGNotes.Cells[2, SGNotes.Row];
+     n := NotesList.FindID(ID);
+     if(n<>nil) then
+     begin
+          AddLastUsed(ID);
+          OpenNote(ID);
+     end;
+  end;
 
 end;
 

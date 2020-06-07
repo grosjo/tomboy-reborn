@@ -153,6 +153,28 @@ begin
   DeletedList := TStringList.Create;
   DownloadList := TStringList.Create;
 
+  StringGridReport.Clear;
+  StringGridReport.FixedCols := 0;
+  //StringGridReport.GridLineStyle:=TPenStyle.psDashDotDot;
+
+  StringGridReport.AutoFillColumns:= true;
+  StringGridReport.ScrollBars := ssAutoBoth;
+  StringGridReport.FocusRectVisible := false;
+
+  StringGridReport.Columns.Add;
+  StringGridReport.Columns.Add;
+  StringGridReport.Columns.Add;
+
+  StringGridReport.FixedRows:=0;
+  StringGridReport.AutoFillColumns:= true;
+  StringGridReport.Columns[0].SizePriority:=0;
+  StringGridReport.Columns[1].SizePriority:=1;
+  StringGridReport.Columns[2].SizePriority:=0;
+  StringGridReport.Columns[0].Width := 80;
+  StringGridReport.Columns[2].Width := 200;
+
+  StringGridReport.Font.Name := FixedFont;
+
   Transport := nil;
 end;
 
@@ -335,12 +357,13 @@ var
     i : integer;
     LNote, SNote : PNoteInfo;
 begin
-    TRlog('SetSystemicActions');
+    TRlog('SetSystemicActions (nbitems='+IntToStr(NoteMetaData.Count));
 
     for i := 0 to NoteMetaData.Count -1 do
     begin
         SNote := NoteMetaData.Items[i];
 
+        TRlog('SYSTEMIC '+ SNote^.ID + ' ('+IntToStr(i)+'/'+IntToStr(NoteMetaData.Count)+') Status = '+SyncActionName(SNote^.Action)+' : ' +SNote^.Title);
         if(SNote^.Action <> SynUnset) then continue; // Dont look at notes already scrutinized
         TRlog('SYSTEMIC '+ SNote^.ID + ' APPLYING RULES' );
 
@@ -369,8 +392,9 @@ begin
 
         if(LNote^.Rev <> SNote^.Rev) then
         begin
-            SNote^.Error := rsSyncRevisionError;
-            continue;
+           TRlog('Revision error');
+           SNote^.Error := rsSyncRevisionError;
+           continue;
         end;
 
         SNote^.Error := rsSyncChangeError;
@@ -734,7 +758,7 @@ begin
     c :=0;
     for j := 0 to NodeList.Count-1 do
     begin
-        TRlog('XML '+IntToStr(j));
+        //TRlog('XML '+IntToStr(j));
         Node := NodeList.Item[j].Attributes.GetNamedItem('guid');
         ID := Node.TextContent;
 
@@ -774,7 +798,7 @@ begin
         then PNote^.LastSyncGMT := GetGMTFromStr(PNote^.LastSync)
         else PNote^.LastSyncGMT := 0;
         inc(c);
-        TRlog('c = '+IntToStr(c));
+        //TRlog('c = '+IntToStr(c));
     end;
     TRlog('Found '+IntToStr(c)+' manifest notes');
 end;
@@ -806,7 +830,7 @@ begin
 
     LabelTitle.Caption:= rsTestingRepo;
     LabelStats.Caption := '';
-    StringGridReport.Clear;
+    StringGridReport.Clean;
 
     Application.ProcessMessages;
 
@@ -921,7 +945,7 @@ begin
     Application.ProcessMessages;
     if(not ProcessClashes())         // Step 6 : Process unresolved cases
     then begin
-       //ShowError(ErrorString);
+       TRlog(ErrorString);
        LabelStats.Caption := ErrorString;
        SettingsOK.Visible := false;
     end else begin
@@ -1019,19 +1043,19 @@ begin
     for i := 0 to NoteMetaData.Count -1 do
     begin
         case NoteMetaData.Items[i]^.Action of
-            SynUpLoadNew : inc(UpNew);
-            SynCopy : inc(CreateCopy);
-            SynUpLoadEdit : inc(UpEdit);
-            SynDownLoadNew : inc(DownNew);
-            SynDownLoadEdit : inc(DownEdit);
-            SynDeleteLocal : inc(DelLoc);
-            SynDeleteRemote : inc(DelRem);
-            SynNothing : inc(DoNothing);
-            SynUnset : inc(Undecided);
+            SynUpLoadNew          : inc(UpNew);
+            SynCopy               : inc(CreateCopy);
+            SynUpLoadEdit         : inc(UpEdit);
+            SynDownLoadNew        : inc(DownNew);
+            SynDownLoadEdit       : inc(DownEdit);
+            SynDeleteLocal        : inc(DelLoc);
+            SynDeleteRemote       : inc(DelRem);
+            SynNothing            : inc(DoNothing);
+            SynUnset              : inc(Undecided);
 	end;
     end;
 
-    StringGridReport.Clean;
+    while StringGridReport.RowCount > 0 do StringGridReport.DeleteRow(0);
 
     TRlog('Dump status');
 
@@ -1052,16 +1076,15 @@ begin
 
         if n^.Action = SynNothing then continue;
 
-        StringGridReport.InsertRowWithValues(j,
-           [SyncActionName(act), n^.Title, n^.ID]);
-         inc(j);
+        StringGridReport.InsertRowWithValues(j, [SyncActionName(act), n^.Title, n^.ID]);
+        inc(j);
     end;
-
-    if(Undecided>0) then ShowMessage('Real error out there... Undecided >0 !');
-
     StringGridReport.AutoSizeColumn(0);
     StringGridReport.AutoSizeColumn(1);
     StringGridReport.AutoSizeColumn(2);
+
+
+    if(Undecided>0) then ShowMessage('Real error out there... Undecided >0 !');
 
     LabelTitle.Caption := rsSyncReport;
     LabelStats.Caption := Trim(rsNewUploads)+' : '+IntToStr(UpNew)+', ' + Trim(rsEditUploads) + ' : '+IntToStr(UpEdit)
@@ -1092,7 +1115,7 @@ procedure TFormSync.SyncVisible();
 begin
     LabelTitle.Caption := rsRunningSync;
     LabelStats.Caption := rsRunningSync;
-    StringGridReport.Clear;
+    StringGridReport.Clean;
 
     LocalTimer := TTimer.Create(Nil);
     LocalTimer.OnTimer:= @PrepareSync;
@@ -1106,14 +1129,13 @@ begin
     end;
 
     DoSync();
-
 end;
 
 procedure TFormSync.SyncHidden();
 begin
     LabelTitle.Caption := rsRunningSync;
     LabelStats.Caption := rsRunningSync;
-    StringGridReport.Clear;
+    StringGridReport.Clean;
 
     PrepareSync(Self);
 

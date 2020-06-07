@@ -159,11 +159,21 @@ object FormSync: TFormSync
     OnClick = SettingsCancelClick
   end
   object LabelStats: TLabel
-    Left = 16
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = StringGridReport
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = SettingsOK
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 10
     Height = 56
-    Top = 248
-    Width = 392
+    Top = 250
+    Width = 399
+    Anchors = [akLeft, akRight, akBottom]
     AutoSize = False
+    BorderSpacing.Left = 10
+    BorderSpacing.Right = 10
+    BorderSpacing.Bottom = 10
     Caption = 'LabelStats'
     ParentColor = False
     WordWrap = True

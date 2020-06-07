@@ -269,15 +269,14 @@ end;
 
 function GetLocalNoteFile(NoteID : UTF8String; altrep : UTF8String = ''): UTF8String;
 begin
-    TRlog('GetLocalNoteFile ('+NoteID+')');
+    //TRlog('GetLocalNoteFile ('+NoteID+')');
     altrep := chomppathdelim(altrep);
     if(length(altrep)>0)
     then begin
       ForceDirectoriesUTF8(altrep);
       Result := altrep + PathDelim + NoteID + '.note';
     end else Result := NotesDir + NoteID + '.note';
-    TRlog('GetLocalNoteFile -> '+Result);
-
+    //TRlog('GetLocalNoteFile -> '+Result);
 end;
 
 function GetLocalBackupPath(): UTF8String;
@@ -668,24 +667,24 @@ function ReplaceAngles(const Str : UTF8String) : UTF8String;
 var
     s : UTF8String;
 begin
-   s := StringReplace(Str,'&lt;','<',[rfReplaceAll]);
-   s := StringReplace(s,'&gt;','>',[rfReplaceAll]);
-   s := StringReplace(s,'&#x9;',#9,[rfReplaceAll]);
-   s := StringReplace(s,'&apos;','''',[rfReplaceAll]);
-   s := StringReplace(s,'&quot;','"',[rfReplaceAll]);
-   Result := StringReplace(s,'&amp;','&',[rfReplaceAll]);
+   s := UTF8StringReplace(Str,'&lt;','<',[rfReplaceAll]);
+   s := UTF8StringReplace(s,'&gt;','>',[rfReplaceAll]);
+   s := UTF8StringReplace(s,'&#x9;',#9,[rfReplaceAll]);
+   s := UTF8StringReplace(s,'&apos;','''',[rfReplaceAll]);
+   s := UTF8StringReplace(s,'&quot;','"',[rfReplaceAll]);
+   Result := UTF8StringReplace(s,'&amp;','&',[rfReplaceAll]);
 end;
 
 function EncodeAngles(const Str : UTF8String) : UTF8String;
 var
     s : UTF8String;
 begin
-   s := StringReplace(Str,'<','&lt;',[rfReplaceAll]);
-   s := StringReplace(s,'>','&gt;',[rfReplaceAll]);
-   s := StringReplace(s,#9,'&#x9;',[rfReplaceAll]);
-   s := StringReplace(s,'''','&apos;',[rfReplaceAll]);
-   s := StringReplace(s,'"','&quot;',[rfReplaceAll]);
-   Result := StringReplace(s,'&','&amp;',[rfReplaceAll]);
+   s := UTF8StringReplace(Str,'<','&lt;',[rfReplaceAll]);
+   s := UTF8StringReplace(s,'>','&gt;',[rfReplaceAll]);
+   s := UTF8StringReplace(s,#9,'&#x9;',[rfReplaceAll]);
+   s := UTF8StringReplace(s,'''','&apos;',[rfReplaceAll]);
+   s := UTF8StringReplace(s,'"','&quot;',[rfReplaceAll]);
+   Result := UTF8StringReplace(s,'&','&amp;',[rfReplaceAll]);
 end;
 
 function NoteToFile(note : PNoteInfo; filename : UTF8String) : boolean;
@@ -737,8 +736,11 @@ var
     j : integer;
     xmlstream : TFileStream ;
     ts : TStringStream;
+    ok : boolean;
 begin
    TRlog('File to note '+filename);
+
+   ok :=true;
 
    try
       xmlstream := TFileStream.Create(trim(filename),fmOpenRead);
@@ -767,159 +769,278 @@ begin
    end;
 
    try
-
-     TRlog('Looking for last-change-date');
+     //TRlog('Looking for create-date');
      Node := Doc.DocumentElement.FindNode('create-date');
      NoteInfo^.CreateDate := '';
      if(assigned(Node)) then NoteInfo^.CreateDate := Node.FirstChild.NodeValue;
      if NoteInfo^.CreateDate = '' then NoteInfo^.CreateDate := GetCurrentTimeStr();
      NoteInfo^.CreateDateGMT := GetGMTFromStr(NoteInfo^.CreateDate);
      if(assigned(Node)) then Node.Free;
-     TRlog('Found ' + NoteInfo^.CreateDate);
-
-        TRlog('Looking for last-change-date');
-        Node := Doc.DocumentElement.FindNode('last-change-date');
-        NoteInfo^.LastChange := '';
-        if(assigned(Node)) then NoteInfo^.LastChange := Node.FirstChild.NodeValue;
-        if NoteInfo^.LastChange = '' then NoteInfo^.LastChange := GetCurrentTimeStr();
-        NoteInfo^.LastChangeGMT := GetGMTFromStr(NoteInfo^.LastChange);
-        TRlog('Found ' + NoteInfo^.LastChange);
-        if(assigned(Node)) then Node.Free;
-
-        TRlog('Looking for last-metadata-change-date');
-        Node := Doc.DocumentElement.FindNode('last-metadata-change-date');
-        NoteInfo^.LastMetaChange := '';
-        if(assigned(Node)) then NoteInfo^.LastMetaChange := Node.FirstChild.NodeValue;
-        if NoteInfo^.LastMetaChange = '' then NoteInfo^.LastMetaChange := GetCurrentTimeStr();
-        NoteInfo^.LastMetaChangeGMT := GetGMTFromStr(NoteInfo^.LastMetaChange);
-        TRlog('Found ' + NoteInfo^.LastMetaChange);
-        if(assigned(Node)) then Node.Free;
-
-        TRlog('Looking for title');
-        Node := Doc.DocumentElement.FindNode('title');
-        if(assigned(Node)) then NoteInfo^.Title := ReplaceAngles(Node.FirstChild.NodeValue)
-        else NoteInfo^.Title := 'Note ' + NoteInfo^.ID;
-        TRlog('Found ' + NoteInfo^.Title);
-        if(assigned(Node)) then Node.Free;
-
-        TRlog('Looking for cursor-position');
-        Node := Doc.DocumentElement.FindNode('cursor-position');
-        NoteInfo^.CursorPosition := 0;
-        if(assigned(Node)) then NoteInfo^.CursorPosition := StrToInt(Node.FirstChild.NodeValue);
-        TRlog('Found '+ IntToStr(NoteInfo^.CursorPosition));
-        if(assigned(Node)) then Node.Free;
-
-        TRlog('Looking for selection-bound-position');
-        Node := Doc.DocumentElement.FindNode('selection-bound-position');
-        NoteInfo^.SelectBoundPosition := 0;
-        if(assigned(Node)) then NoteInfo^.SelectBoundPosition := StrToInt(Node.FirstChild.NodeValue);
-        TRlog('Found '+ IntToStr(NoteInfo^.SelectBoundPosition));
-        if(assigned(Node)) then Node.Free;
-
-        TRlog('Looking for width');
-        Node := Doc.DocumentElement.FindNode('width');
-        NoteInfo^.Width := 0;
-        if(assigned(Node)) then NoteInfo^.Width := StrToInt(Node.FirstChild.NodeValue);
-        TRlog('Found '+ IntToStr(NoteInfo^.Width));
-        if(assigned(Node)) then Node.Free;
-
-        TRlog('Looking for height');
-        Node := Doc.DocumentElement.FindNode('height');
-        NoteInfo^.Height := 0;
-        if(assigned(Node)) then NoteInfo^.Height := StrToInt(Node.FirstChild.NodeValue);
-        TRlog('Found '+ IntToStr(NoteInfo^.Height));
-        if(assigned(Node)) then Node.Free;
-
-        TRlog('Looking for X');
-        Node := Doc.DocumentElement.FindNode('x');
-        NoteInfo^.X := 0;
-        if(assigned(Node)) then NoteInfo^.X := StrToInt(Node.FirstChild.NodeValue);
-        TRlog('Found '+ IntToStr(NoteInfo^.X));
-        if(assigned(Node)) then Node.Free;
-
-        TRlog('Looking for Y');
-        Node := Doc.DocumentElement.FindNode('y');
-        NoteInfo^.Y := 0;
-        if(assigned(Node)) then NoteInfo^.Y := StrToInt(Node.FirstChild.NodeValue);
-        TRlog('Found '+ IntToStr(NoteInfo^.Y));
-        if(assigned(Node)) then Node.Free;
-
-        TRlog('Looking for open-on-startup');
-        Node := Doc.DocumentElement.FindNode('open-on-startup');
-        NoteInfo^.OpenOnStartup := false;
-        if(assigned(Node)) then NoteInfo^.OpenOnStartup := StrToBool(Node.FirstChild.NodeValue);
-        TRlog('Found '+ BoolToStr(NoteInfo^.OpenOnStartup, true));
-        if(assigned(Node)) then Node.Free;
-
-        TRlog('Looking for pinned');
-        Node := Doc.DocumentElement.FindNode('pinned');
-        NoteInfo^.Pinned := false;
-        if(assigned(Node)) then NoteInfo^.Pinned := StrToBool(Node.FirstChild.NodeValue);
-        TRlog('Found '+ BoolToStr(NoteInfo^.Pinned, true));
-        if(assigned(Node)) then Node.Free;
-
-        TRlog('Looking for text');
-        Node := Doc.DocumentElement.FindNode('text');
-        NoteInfo^.Content := '';
-        NoteInfo^.Version := '0.3';
-        if(assigned(Node)) then
-        begin
-           Node := Node.FindNode('note-content');
-           if(assigned(Node)) then begin
-              Child := Node.Attributes.GetNamedItem('version');
-              if(Assigned(Child)) then NoteInfo^.Version := Child.NodeValue;
-              //Child := Node.FirstChild;
-              //while(assigned(Child)) do
-              //begin
-                 ts := TStringStream.Create('');
-                 writeXML(Node,ts);
-                 NoteInfo^.Content := NoteInfo^.Content + Trim(ts.DataString);
-                 //Child := Child.NextSibling;
-                 ts.Free;
-              //end;
-              TRlog('Found : '+NoteInfo^.Content);
-           end;
-        end
-        else TRlog('No text');
-        if(assigned(Node)) then Node.Free;
-
-        TRlog('Looking for tags');
-        NoteInfo^.Tags.Clear;
-        Node := Doc.DocumentElement.FindNode('tags');
-        if(assigned(Node)) then
-        begin
-           NodeList := Node.ChildNodes;
-           for j := 0 to NodeList.Count-1 do
-           begin
-             Trlog('Found : '+NodeList.Item[j].TextContent);
-             NoteInfo^.Tags.Add(NodeList.Item[j].TextContent);
-           end;
-        end
-        else TRlog('No tags');
-
-       if(assigned(Node)) then Node.Free;
-
-
-
-       NoteInfo^.Deleted := false;
-
+     //TRlog('Found ' + NoteInfo^.CreateDate);
    except on E:Exception do
        begin
-           TRlog('File to note ERROR2 '+filename);
-           NoteInfo^.Error := E.Message;
-           NoteInfo^.Action:= SynClash;
-           TRlog(E.message);
-           xmlstream.Free;
-           Doc.Free;
-           exit(false);
+         TRlog('Error CREATEDATE FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidCreateDAte+ '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
        end;
    end;
 
+   try
+     //TRlog('Looking for last-change-date');
+     Node := Doc.DocumentElement.FindNode('last-change-date');
+     NoteInfo^.LastChange := '';
+     if(assigned(Node)) then NoteInfo^.LastChange := Node.FirstChild.NodeValue;
+     if NoteInfo^.LastChange = '' then NoteInfo^.LastChange := GetCurrentTimeStr();
+     NoteInfo^.LastChangeGMT := GetGMTFromStr(NoteInfo^.LastChange);
+     //TRlog('Found ' + NoteInfo^.LastChange);
+     if(assigned(Node)) then Node.Free;
+   except on E:Exception do
+       begin
+         TRlog('Error LASTCHANGEDATE FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidLastChangeDate+ '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
+       end;
+   end;
+
+   try
+     //TRlog('Looking for last-metadata-change-date');
+     Node := Doc.DocumentElement.FindNode('last-metadata-change-date');
+     NoteInfo^.LastMetaChange := '';
+     if(assigned(Node)) then NoteInfo^.LastMetaChange := Node.FirstChild.NodeValue;
+     if NoteInfo^.LastMetaChange = '' then NoteInfo^.LastMetaChange := GetCurrentTimeStr();
+     NoteInfo^.LastMetaChangeGMT := GetGMTFromStr(NoteInfo^.LastMetaChange);
+     //TRlog('Found ' + NoteInfo^.LastMetaChange);
+     if(assigned(Node)) then Node.Free;
+   except on E:Exception do
+       begin
+         TRlog('Error LASTMETADATE FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidLastMetaChangeDate+ '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
+       end;
+   end;
+
+   try
+     //TRlog('Looking for title');
+     Node := Doc.DocumentElement.FindNode('title');
+     if(assigned(Node))
+     then NoteInfo^.Title := ReplaceAngles(Node.FirstChild.NodeValue)
+     else NoteInfo^.Title := 'Note ' + NoteInfo^.ID;
+     //TRlog('Found ' + NoteInfo^.Title);
+     if(assigned(Node)) then Node.Free;
+   except on E:Exception do
+       begin
+         TRlog('Error TITLE FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidTitle+ '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
+       end;
+   end;
+
+   try
+     //TRlog('Looking for cursor-position');
+     Node := Doc.DocumentElement.FindNode('cursor-position');
+     NoteInfo^.CursorPosition := 0;
+     if(assigned(Node)) then NoteInfo^.CursorPosition := StrToInt(Node.FirstChild.NodeValue);
+     //TRlog('Found '+ IntToStr(NoteInfo^.CursorPosition));
+     if(assigned(Node)) then Node.Free;
+   except on E:Exception do
+       begin
+         TRlog('Error CURSORPOSITION FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidCursorPosition + '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
+       end;
+   end;
+
+   try
+     //TRlog('Looking for selection-bound-position');
+     Node := Doc.DocumentElement.FindNode('selection-bound-position');
+     NoteInfo^.SelectBoundPosition := 0;
+     if(assigned(Node)) then NoteInfo^.SelectBoundPosition := StrToInt(Node.FirstChild.NodeValue);
+     //TRlog('Found '+ IntToStr(NoteInfo^.SelectBoundPosition));
+     if(assigned(Node)) then Node.Free;
+   except on E:Exception do
+       begin
+         TRlog('Error BOUDPOSITION FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidBoundPosition + '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
+       end;
+   end;
+
+   try
+     //TRlog('Looking for width');
+     Node := Doc.DocumentElement.FindNode('width');
+     NoteInfo^.Width := 0;
+     if(assigned(Node)) then NoteInfo^.Width := StrToInt(Node.FirstChild.NodeValue);
+     //TRlog('Found '+ IntToStr(NoteInfo^.Width));
+     if(assigned(Node)) then Node.Free;
+   except on E:Exception do
+       begin
+         TRlog('Error WIDTH FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidWidth + '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
+       end;
+   end;
+
+   try
+     //TRlog('Looking for height');
+     Node := Doc.DocumentElement.FindNode('height');
+     NoteInfo^.Height := 0;
+     if(assigned(Node)) then NoteInfo^.Height := StrToInt(Node.FirstChild.NodeValue);
+     //TRlog('Found '+ IntToStr(NoteInfo^.Height));
+     if(assigned(Node)) then Node.Free;
+   except on E:Exception do
+       begin
+         TRlog('Error HEIGHT FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidHeight + '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
+       end;
+   end;
+
+   try
+     //TRlog('Looking for X');
+     Node := Doc.DocumentElement.FindNode('x');
+     NoteInfo^.X := 0;
+     if(assigned(Node)) then NoteInfo^.X := StrToInt(Node.FirstChild.NodeValue);
+     //TRlog('Found '+ IntToStr(NoteInfo^.X));
+     if(assigned(Node)) then Node.Free;
+   except on E:Exception do
+       begin
+         TRlog('Error POSX FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidPosX + '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
+       end;
+   end;
+
+   try
+     //TRlog('Looking for Y');
+     Node := Doc.DocumentElement.FindNode('y');
+     NoteInfo^.Y := 0;
+     if(assigned(Node)) then NoteInfo^.Y := StrToInt(Node.FirstChild.NodeValue);
+     //TRlog('Found '+ IntToStr(NoteInfo^.Y));
+     if(assigned(Node)) then Node.Free;
+   except on E:Exception do
+       begin
+         TRlog('Error POSY FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidPosY + '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
+       end;
+   end;
+
+   try
+     //TRlog('Looking for open-on-startup');
+     Node := Doc.DocumentElement.FindNode('open-on-startup');
+     NoteInfo^.OpenOnStartup := false;
+     if(assigned(Node)) then NoteInfo^.OpenOnStartup := StrToBool(Node.FirstChild.NodeValue);
+     //TRlog('Found '+ BoolToStr(NoteInfo^.OpenOnStartup, true));
+     if(assigned(Node)) then Node.Free;
+   except on E:Exception do
+       begin
+         TRlog('Error OPENSTART FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidOpenOnStartup + '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
+       end;
+   end;
+
+   try
+     //TRlog('Looking for pinned');
+     Node := Doc.DocumentElement.FindNode('pinned');
+     NoteInfo^.Pinned := false;
+     if(assigned(Node)) then NoteInfo^.Pinned := StrToBool(Node.FirstChild.NodeValue);
+     //TRlog('Found '+ BoolToStr(NoteInfo^.Pinned, true));
+     if(assigned(Node)) then Node.Free;
+   except on E:Exception do
+       begin
+         TRlog('Error PINNED FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidPinned + '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
+       end;
+   end;
+
+   try
+     //TRlog('Looking for text');
+     Node := Doc.DocumentElement.FindNode('text');
+     NoteInfo^.Content := '';
+     NoteInfo^.Version := '0.3';
+     if(assigned(Node)) then
+     begin
+        Node := Node.FindNode('note-content');
+        if(assigned(Node)) then
+        begin
+           Child := Node.Attributes.GetNamedItem('version');
+           if(Assigned(Child)) then NoteInfo^.Version := Child.NodeValue;
+           ts := TStringStream.Create('');
+           writeXML(Node,ts);
+           NoteInfo^.Content := NoteInfo^.Content + Trim(ts.DataString);
+           ts.Free;
+           //TRlog('Found : '+NoteInfo^.Content);
+        end;
+     end
+     else TRlog('No text');
+     if(assigned(Node)) then Node.Free;
+   except on E:Exception do
+       begin
+         TRlog('Error CONTENT FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidNoteContent + '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
+       end;
+   end;
+
+   try
+     //TRlog('Looking for tags');
+     NoteInfo^.Tags.Clear;
+     Node := Doc.DocumentElement.FindNode('tags');
+     if(assigned(Node)) then
+     begin
+        NodeList := Node.ChildNodes;
+        for j := 0 to NodeList.Count-1 do
+        begin
+           //Trlog('Found : '+NodeList.Item[j].TextContent);
+           NoteInfo^.Tags.Add(NodeList.Item[j].TextContent);
+        end;
+     end
+     //else TRlog('No tags')
+     ;
+     if(assigned(Node)) then Node.Free;
+   except on E:Exception do
+       begin
+         TRlog('Error TAGS FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidTags + '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
+       end;
+   end;
+
+   NoteInfo^.Deleted := false;
    xmlstream.Free;
    Doc.Free;
-   TRlog('File to note DONE '+filename);
 
-   Result := true;
+   Result := ok;
 end;
 
 function NoteTimeOrder(Item1: Pointer;Item2: Pointer):Integer;
@@ -1045,10 +1166,7 @@ var
 begin
     if DateStr = '' then exit(0);
 
-    if length(DateStr) <> 33 then begin
-        TRlog('ERROR received invalid date string - [' + DateStr + ']');
-        exit(0);
-    end;
+    if length(DateStr) <> 33 then exit(0);
 
     try
        if not TryEncodeTimeInterval( strtoint(copy(DateStr, 29, 2)),strtoint(copy(DateStr, 32, 2)),0,0,TimeZone)
@@ -1088,7 +1206,7 @@ begin
        exit(0.0);
        end;
     end;
-    TRlog('GetGMTFromStr : "' + DateStr + '"  -> ' + DatetoStr(Result) + ' '+ TimetoStr(Result));
+    //TRlog('GetGMTFromStr : "' + DateStr + '"  -> ' + DatetoStr(Result) + ' '+ TimetoStr(Result));
 end;
 
 
@@ -1501,23 +1619,23 @@ end;
 
 function SyncActionName(Act: TSyncAction): UTF8String;
 begin
-    Result := ' Unknown ';
+    Result := ' Unknown (Error) ';
     case Act of
-        SynUnset : Result := rsUndecided;
-        SynNothing : Result := rsDoNothing;
-        SynUploadNew  : Result := rsNewUploads;   // we differentiate in case of a write to remote fail.
-        SynUpLoadEdit : Result := rsEditUploads;
-        SynDownloadNew: Result := rsNewDownloads;
-        SynDownloadEdit: Result := rsEditDownloads;
-        SynCopy: Result := rsSynCopies;
-        SynDeleteLocal  : Result := rsLocalDeletes;
-        SynDeleteRemote : Result := rsRemoteDeletes;
-        SynError : Result := ' ** ERROR **';
-        SynAllLocal : Result := ' AllLocal ';
-        SynAllCopy : Result := ' AllCopy ';
-        SynAllRemote : Result := ' AllRemote ';
-        SynAllNewest : Result := ' AllNewest ';
-        SynAllOldest : Result := ' AllOldest ';
+        TSyncAction.SynUnset          : Result := rsUndecided;
+        TSyncAction.SynNothing        : Result := rsDoNothing;
+        TSyncAction.SynUploadNew      : Result := rsNewUploads;
+        TSyncAction.SynUpLoadEdit     : Result := rsEditUploads;
+        TSyncAction.SynDownloadNew    : Result := rsNewDownloads;
+        TSyncAction.SynDownloadEdit   : Result := rsEditDownloads;
+        TSyncAction.SynCopy           : Result := rsSynCopies;
+        TSyncAction.SynDeleteLocal    : Result := rsLocalDeletes;
+        TSyncAction.SynDeleteRemote   : Result := rsRemoteDeletes;
+        TSyncAction.SynError          : Result := ' ** ERROR **';
+        TSyncAction.SynAllLocal       : Result := ' AllLocal ';
+        TSyncAction.SynAllCopy        : Result := ' AllCopy ';
+        TSyncAction.SynAllRemote      : Result := ' AllRemote ';
+        TSyncAction.SynAllNewest      : Result := ' AllNewest ';
+        TSyncAction.SynAllOldest      : Result := ' AllOldest ';
     end;
     while length(result) < 15 do Result := Result + ' ';
 end;

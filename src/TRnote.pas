@@ -342,13 +342,13 @@ begin
 
    suggestions.Clear;
 
-   if(length(DictLibrary)=0) then begin suggestions.Add('Spelling libray not setup (found : "'+DictLibrary+'")'); exit(); end;
-   if(length(DictFile)=0) then begin suggestions.Add('Spelling dictionnary file incorrect (found : "'+DictFile+'")'); exit(); end;
+   if(length(DictLibrary)=0) then begin suggestions.Add(rsDictNotSetup +' (found : "'+DictLibrary+'")'); exit(); end;
+   if(length(DictFile)=0) then begin suggestions.Add(rsDictNotFound + ' (found : "'+DictFile+'")'); exit(); end;
    spell :=  THunspell.Create(DictLibrary);
    if (Spell.ErrorMessage <> '') then begin suggestions.Add(Spell.ErrorMessage); exit(); end;
    if not Spell.SetDictionary(DictFile) then begin suggestions.Add(Spell.ErrorMessage); exit(); end;
 
-   if not Spell.Spell(word) then begin suggestions.Add('Word "'+word+'" can not be processed'); exit(); end;
+   if not Spell.Spell(word) then begin suggestions.Add('"'+word+'" '+rsWordInvalid); exit(); end;
 
    spell.Suggest(word, suggestions);
    suggestions.Add(word);
@@ -370,7 +370,7 @@ begin
 
    Ktext := '';
 
-   TRlog('TFormNote.TextToMemo (j='+IntToStr(j)+') LEVEL='+IntToStr(Level));
+   //TRlog('TFormNote.TextToMemo (j='+IntToStr(j)+') LEVEL='+IntToStr(Level));
 
    while (i<=j) do
    begin
@@ -415,10 +415,8 @@ begin
             //Trlog('Internal link on block '+ IntToStr(KMemo1.Blocks.Count-1)+' : ' + Ktext);
             hl := TKMemoHyperlink.Create;
             hl.Text := KText;
-            TRlog('NEW INT LINK '+KText);
             KMemo1.Blocks.AddHyperlink(hl);
-            TRlog('NEW EXT LINK '+KText);
-            hl.URL := {'note://'+}KText;
+            hl.URL := KText;
             hl.OnDblClick := @InternalLink;
             f.Color := clBlue;
             f.Style := f.Style + [fsUnderline];
@@ -430,7 +428,6 @@ begin
             //Trlog('External link on block '+ IntToStr(KMemo1.Blocks.Count-1)+' : ' + Ktext);
             hl := TKMemoHyperlink.Create;
             hl.Text := KText;
-            TRlog('NEW EXT LINK '+KText);
             KMemo1.Blocks.AddHyperlink(hl);
             hl.URL := KText;
             hl.OnDblClick := @ExternalLink;
@@ -440,7 +437,6 @@ begin
             if HighLight then hl.TextStyle.Brush.Color := HiColour;
          end
          else begin
-            TRlog('NEW TEXT '+KText);
             ktb := KMemo1.Blocks.AddTextBlock(KText);
             ktb.TextStyle.Font := f;
             if HighLight then ktb.TextStyle.Brush.Color := HiColour;
@@ -455,12 +451,12 @@ begin
 
       if (Ch<' ') then // add Paragraph
       begin
-         TRlog('NEW PAR BECAUSE CHAR<" "');
+         //TRlog('NEW PAR BECAUSE CHAR<" "');
          par := KMemo1.Blocks.AddParagraph;
          if InBullet then
          begin
             par.Numbering := pnuBullets;
-            par.NumberingListLevel.FirstIndent := -20;    // Note, these numbers need match SettBullet() in editbox
+            par.NumberingListLevel.FirstIndent := -20;
             par.NumberingListLevel.LeftIndent := 30;
          end;
          f := TFont.Create();
@@ -493,7 +489,7 @@ begin
          k:=Pos(' ',tagtext); if(k<1) then k := length(tagtext)+1;
          tagtext := Copy(tagtext,0,k-1);
 
-         TRlog('NEW Starting TAG <'+tagtext+'>');
+         //TRlog('NEW Starting TAG <'+tagtext+'>');
 
          if(CompareStr(tagtext,'bold')=0)                    then      tagtype := TTagType.TagBold
           else if(CompareStr(tagtext,'italic')=0)            then      tagtype := TTagType.TagItalic
@@ -552,12 +548,12 @@ begin
       //TRlog('New loop LEVEL='+IntToStr(level)+' i='+IntToStr(i)+' j='+IntToStr(j) );
    end;
    if(newpar) then begin
-      TRlog('NEWPAR');
+      //TRlog('NEWPAR');
       par := KMemo1.Blocks.AddParagraph;
       if InBullet then
       begin
          par.Numbering := pnuBullets;
-         par.NumberingListLevel.FirstIndent := -20;    // Note, these numbers need match SettBullet() in editbox
+         par.NumberingListLevel.FirstIndent := -20;
          par.NumberingListLevel.LeftIndent := 30;
 
          f := TFont.Create();
@@ -643,7 +639,7 @@ begin
    oldselstart := KMemo1.RealSelStart;
    oldselend := KMemo1.RealSelend;
 
-   TRlog('NtoeToMemo Done !');
+   TRlog('NoteToMemo Done !');
 end;
 
 procedure TFormNote.MemoToNote();
@@ -687,7 +683,8 @@ var
               if(FT.OnDblClick = @ExternalLink)
                   then s2 := '<link:url>'+EncodeAngles(FT.Text)+'</link:url>'
                   else s2 := '<link:internal>'+EncodeAngles(FT.Text)+'</link:internal>';
-         end else begin
+         end else
+         begin
             inc(i);
             continue;
          end;
@@ -707,8 +704,8 @@ var
       end;
 
       if((j<KMemo1.Blocks.Count) and (TKMemoParagraph(KMemo1.Blocks[j]).Numbering = pnuBullets) )
-             then lines.Add( '<list><list-item dir="ltr">' + partext + '</list-item></list>')
-             else lines.Add(partext);
+         then lines.Add( '<list><list-item dir="ltr">' + partext + '</list-item></list>')
+         else lines.Add(partext);
       i:=j+1;
    end;
 

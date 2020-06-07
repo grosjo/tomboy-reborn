@@ -1,7 +1,7 @@
 object FormClash: TFormClash
-  Left = 126
+  Left = 502
   Height = 489
-  Top = 130
+  Top = 174
   Width = 645
   VertScrollBar.Visible = False
   Caption = 'A Note Sync Clash has been Detected'

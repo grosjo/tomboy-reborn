@@ -86,6 +86,22 @@ RESOURCESTRING
 
   rsMenuPrint = 'Print';
 
+  // Errors
+  rsInvalidCreateDate = 'Invalid create date';
+  rsInvalidLastChangeDate = 'Invalid last change date';
+  rsInvalidLastMetaChangeDate = 'Invalid last meta change date';
+  rsInvalidTitle = 'Invalid Note title';
+  rsInvalidCursorPosition = 'Invalid cusor position';
+  rsInvalidBoundPosition = 'Invalid bound position';
+  rsInvalidWidth = 'Invalid width';
+  rsInvalidHeight = 'Invalid height';
+  rsInvalidPosX = 'Invalid horizontal position';
+  rsInvalidPosY = 'Invalid vertical position';
+  rsInvalidOpenOnStartup = 'Invalid open-on-startup flag';
+  rsInvalidPinned = 'Invalid pinned flag';
+  rsInvalidNoteContent = 'Invalid note-content';
+  rsInvalidTags = 'Invalid tags';
+
   // Tray Menu
   rsTrayNewNote = 'New note';
   rsTrayNotebooks = 'Notebooks';
@@ -170,6 +186,9 @@ RESOURCESTRING
   rsSetUp = 'Setup';                               // means configure something, eg, one of the Sync modules.
   rsDoubleclickNote = 'double click a note ...';
 
+  rsDictNotSetup = 'Spelling libray not setup';
+  rsDictNotFound = 'Spelling dictionnary file incorrect';
+  rsWordInvalid = 'can not be processed';
   rsSelectLibrary = 'Select your hunspell library';
   rsSelectDictionary = 'Select the dictionary you want to use';
   rsCanNotHideSearch = 'As there is no Tray, Default window can not be hidden';

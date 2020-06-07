@@ -117,7 +117,7 @@ var
     Node : TDOMNode;
     j : integer;
     NoteInfo : PNoteInfo;
-    manifest,note : UTF8String;
+    manifest,filename : UTF8String;
 begin
     TRlog(#10 + '******* TransportFile : Get Notes');
 
@@ -152,7 +152,8 @@ begin
     for j := 0 to NodeList.Count-1 do
     begin
          TRlog('new Note '+IntToStr(j));
-         new(NoteInfo);
+
+         NoteInfo := EmptyNote();
 
          NoteInfo^.Action:=SynUnset;
          Node := NodeList.Item[j].Attributes.GetNamedItem('guid');
@@ -184,10 +185,10 @@ begin
          end
          else NoteInfo^.Rev := strtoint(Node.NodeValue);
 
-         note := GetRemoteNotePath(NoteInfo^.Rev, NoteInfo^.ID);
+         filename := GetRemoteNotePath(NoteInfo^.Rev, NoteInfo^.ID);
 
-         TRlog('TRANSPORT File to note from '+note);
-         FileToNote(note, NoteInfo );
+         TRlog('TRANSPORT File to note from '+filename);
+         FileToNote(filename, NoteInfo );
 
          NoteMeta.Add(NoteInfo)
     end;
