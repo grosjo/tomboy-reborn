@@ -23,8 +23,8 @@ Tomboy Reborn is built on Linux, Windows or Mac using
 
     Free Pascal Compiler - https://freepascal.org/ - version 3.0.4 or later.
     Lazarus - https://www.lazarus-ide.org/ - version 2.0.6 or later
-    kcontrols - https://bitbucket.org/tomkrysl/kcontrols - included in the default "plugs-ins" of lazarus
-
+    kcontrols - to be installed via the Online Package Manager of Lazarus
+    UniqueInstance - to be installed via the Online Package Manager of Lazarus
 
 Compiling
 ---------
