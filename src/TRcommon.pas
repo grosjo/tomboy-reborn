@@ -733,17 +733,24 @@ var
     Doc : TXMLDocument;
     Node,Child : TDOMNode;
     NodeList : TDOMNodeList;
-    j : integer;
-    xmlstream : TFileStream ;
+    i,j,k : integer;
+    xmlstream : TFileStream;
     ts : TStringStream;
     ok : boolean;
+    data : UTF8String;
 begin
    TRlog('File to note '+filename);
 
    ok :=true;
 
+   filename := UTF8Trim(filename);
+
    try
-      xmlstream := TFileStream.Create(trim(filename),fmOpenRead);
+      xmlstream := TFileStream.Create(filename,fmOpenRead);
+      i := xmlstream.Size;
+      SetLength(data, i);
+      xmlstream.Read(data[1], i);
+      xmlstream.Free;
    except on E:Exception do
        begin
            TRlog('File to note : Error Reading '+filename);
@@ -754,8 +761,28 @@ begin
        end;
    end;
 
-   try
-       ReadXMLFile(Doc,xmlstream);
+   i := UTF8Pos('<note-content',data);
+   j := UTF8Pos('>',data,i+1);
+   k := UTF8RPos('</note-content>',data);
+
+   if((i<1) or (k<1) or (j>k))
+   then begin
+      data := 'Invalid data from '+filename;
+      TRlog(data);
+      NoteInfo^.Error := data;
+      NoteInfo^.Action:= SynClash;
+      exit(false);
+  end;
+
+  NoteInfo^.Content:= UTF8Copy(data,j+1,k-j-1);
+  NoteInfo^.Version := '0.3';
+
+  data := UTF8Copy(data,1,j) + UTF8Copy(data,k,UTF8Length(data)-k+1);
+
+  ts := TStringStream.Create(data);
+
+  try
+       ReadXMLFile(Doc,ts);
    except on E:Exception do
        begin
            TRlog('File to note : XML data wrong from '+filename);
@@ -767,6 +794,30 @@ begin
            exit(false);
        end;
    end;
+
+   try
+     //TRlog('Looking for text');
+     Node := Doc.DocumentElement.FindNode('text');
+     if(assigned(Node)) then
+     begin
+        Node := Node.FindNode('note-content');
+        if(assigned(Node)) then
+        begin
+           Child := Node.Attributes.GetNamedItem('version');
+           if(Assigned(Child)) then NoteInfo^.Version := Child.NodeValue;
+        end;
+     end;
+     if(assigned(Node)) then Node.Free;
+   except on E:Exception do
+       begin
+         TRlog('Error CONTENT FileToNote '+filename);
+         NoteInfo^.Error := rsInvalidNoteContent + '('+E.Message+')';
+         NoteInfo^.Action:= SynClash;
+         TRlog(E.message);
+         ok := false;
+       end;
+   end;
+
 
    try
      //TRlog('Looking for create-date');
@@ -980,37 +1031,6 @@ begin
    end;
 
    try
-     //TRlog('Looking for text');
-     Node := Doc.DocumentElement.FindNode('text');
-     NoteInfo^.Content := '';
-     NoteInfo^.Version := '0.3';
-     if(assigned(Node)) then
-     begin
-        Node := Node.FindNode('note-content');
-        if(assigned(Node)) then
-        begin
-           Child := Node.Attributes.GetNamedItem('version');
-           if(Assigned(Child)) then NoteInfo^.Version := Child.NodeValue;
-           ts := TStringStream.Create('');
-           writeXML(Node,ts);
-           NoteInfo^.Content := NoteInfo^.Content + Trim(ts.DataString);
-           ts.Free;
-           //TRlog('Found : '+NoteInfo^.Content);
-        end;
-     end
-     else TRlog('No text');
-     if(assigned(Node)) then Node.Free;
-   except on E:Exception do
-       begin
-         TRlog('Error CONTENT FileToNote '+filename);
-         NoteInfo^.Error := rsInvalidNoteContent + '('+E.Message+')';
-         NoteInfo^.Action:= SynClash;
-         TRlog(E.message);
-         ok := false;
-       end;
-   end;
-
-   try
      //TRlog('Looking for tags');
      NoteInfo^.Tags.Clear;
      Node := Doc.DocumentElement.FindNode('tags');
@@ -1037,7 +1057,7 @@ begin
    end;
 
    NoteInfo^.Deleted := false;
-   xmlstream.Free;
+   ts.Free;
    Doc.Free;
 
    Result := ok;
