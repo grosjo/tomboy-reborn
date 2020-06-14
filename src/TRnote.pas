@@ -981,7 +981,19 @@ end;
 
 procedure TFormNote.onMouseDown(Sender: TObject; Button: TMouseButton;
 		Shift: TShiftState; X, Y: Integer);
+var
+    Point : TPoint;
+    LinePos : TKmemoLinePosition;
+    pos : integer;
 begin
+   Point := TPoint.Create(X, Y);
+   pos := KMemo1.PointToIndex(Point, true, true, LinePos);
+   if((KMemo1.RealSelStart <> pos) and (KMemo1.RealSelStart = KMemo1.RealSelEnd))
+   then begin
+     KMemo1.SelStart:=pos;
+     KMemo1.SelEnd:=pos;
+   end;
+
    BuildMenus(Sender);
    if ((ssCtrl in Shift) or (Button = mbRight)) then PopMenu.PopUp;
 end;
