@@ -129,7 +129,7 @@ private
     procedure SpellSuggest(word : UTF8String; suggestions : TStrings);
     procedure ReplaceSel(s : UTF8String);
 
-    procedure TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange );
+    procedure TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange ; addblank : boolean);
     procedure TextToMemo(s : UTF8String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
 
     procedure AlterFont(const Command : TNoteAction);
@@ -355,18 +355,13 @@ begin
    suggestions.Add(word);
 end;
 
-procedure TFormNote.TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange );
+procedure TFormNote.TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange ; addblank : boolean );
 var
     f : TFont;
     par : TKMemoParagraph;
+    ktb : TKMemoTextBlock;
 begin
-   par := KMemo1.Blocks.AddParagraph;
-   if InBullet then
-   begin
-      par.Numbering := pnuBullets;
-      par.NumberingListLevel.FirstIndent := -20;
-      par.NumberingListLevel.LeftIndent := 30;
-   end;
+   TRlog('Adding actual par');
    f := TFont.Create();
    f.Style := [];
    if Bold then f.Style := f.Style + [fsBold];
@@ -384,7 +379,21 @@ begin
         else f.Size:= FontSizeNormal;
    end;
 
+   if(addblank)
+   then begin
+     ktb := KMemo1.Blocks.AddTextBlock('');
+     ktb.TextStyle.Font := f;
+   end;
+
+   par := KMemo1.Blocks.AddParagraph;
+   if InBullet then
+   begin
+      par.Numbering := pnuBullets;
+      par.NumberingListLevel.FirstIndent := -20;
+      par.NumberingListLevel.LeftIndent := 30;
+   end;
    par.TextStyle.Font := f;
+
    f.Free;
 end;
 
@@ -413,6 +422,9 @@ begin
       TRlog('i= '+IntToStr(i)+' j= '+IntToStr(j)+' LEVEL='+IntToStr(Level));
       chr := UTF8Copy(s,i,1);
       ch := chr.Chars[0];
+
+      TRlog('CHAR = '+chr+' ORD='+IntToStr(Ord(Ch))+' SUB= "'+UTF8Copy(s,i,10)+'"');
+
       if Ch = #13 then begin inc(i); continue; end; // Micro$ bug
       if Ch = #9 then begin Ch := ' ';  Chr := '   '; end; // Tabs
 
@@ -423,14 +435,14 @@ begin
       begin
           if(needpar)
           then begin
-            TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
+            TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize, false);
             needpar := false;
           end;
           Ktext := Ktext + Chr;
           inc(i);
       end;
 
-      if((Length(KText)>0) and ((Ch < ' ') or (Ch = '<') or (i>j))) then
+      if((UTF8Length(KText)>0) and ((Ch < ' ') or (Ch = '<') or (i>j))) then
       begin
          Ktext := ReplaceAngles(Ktext); // We have to scan InStr for &lt; and &gt;  being < and >
 
@@ -492,14 +504,18 @@ begin
 
       if (Ch<' ') then
       begin
-        if(needpar) then TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
+        TRlog('NEEDPAR');
+
+         if(needpar)
+        then  TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize,true);
+
         inc(i);
         needpar := true;
       end;
 
       if (Ch = '<') then  // new tag
       begin
-         if(needpar) then TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
+         if(needpar) then TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize, false);
          needpar := false;
 
          tagtext:= UTF8LowerCase(UTF8Trim(UTF8Copy(s,i+1,20)));
@@ -578,7 +594,7 @@ begin
    end;
 
    if(newpar or needpar)
-   then TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
+   then TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize,false);
 
 end;
 
@@ -622,7 +638,7 @@ begin
    i:=0;
    while(i<KMemo1.Blocks.Count)
    do begin
-      TRlog('BLOCK('+IntToStr(i)+') '+KMemo1.Blocks[i].ClassName+' (size='+IntToStr(TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Size)+' '+TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Name+') : '+KMemo1.Blocks[i].Text);
+      TRlog('BLOCK('+IntToStr(i)+') '+KMemo1.Blocks[i].ClassName+' (size='+IntToStr(TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Size)+' '+TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Name+') : "'+KMemo1.Blocks[i].Text+'"');
       inc(i);
    end;
 
@@ -648,6 +664,7 @@ procedure TFormNote.MemoToNote();
 var
    i,j : integer;
    FT : TKMemoTextBlock;
+   FL : TKMemoHyperlink;
    s,s2,partext : UTF8String;
    lines : TStringList;
    changedtitle : boolean;
@@ -678,13 +695,15 @@ var
          then begin
               FT := TKMemoTextBlock(KMemo1.Blocks[i]);
               s2 := EncodeAngles(FT.Text);
-         end else
-         if(KMemo1.Blocks[i].ClassNameIs('TKMemoHyperlink'))
+              if(fsUnderline in FT.TextStyle.Font.Style) then s2:= '<underline>'+s2+'</underline>';
+         end
+         else if(KMemo1.Blocks[i].ClassNameIs('TKMemoHyperlink'))
          then begin
-              FT := TKMemoTextBlock(KMemo1.Blocks[i]);
-              if(FT.OnDblClick = @ExternalLink)
+              FL := TKMemoHyperlink(KMemo1.Blocks[i]);
+              if(FL.OnDblClick = @ExternalLink)
                   then s2 := '<link:url>'+EncodeAngles(FT.Text)+'</link:url>'
                   else s2 := '<link:internal>'+EncodeAngles(FT.Text)+'</link:internal>';
+              FT := TKMemoTextBlock(FL);
          end else
          begin
             inc(i);
@@ -693,7 +712,6 @@ var
 
          if(fsBold in FT.TextStyle.Font.Style) then s2:= '<bold>'+s2+'</bold>';
          if(fsItalic in FT.TextStyle.Font.Style) then s2:= '<italic>'+s2+'</italic>';
-         if(fsUnderline in FT.TextStyle.Font.Style) then s2:= '<underline>'+s2+'</underline>';
          if(fsStrikeout in FT.TextStyle.Font.Style) then s2:= '<strikeout>'+s2+'</strikeout>';
          if(CompareText(FT.TextStyle.Font.Name,FixedFont)=0) then s2:= '<monospace>'+s2+'</monospace>';
          if(FT.TextStyle.Brush.Color = HiColour) then s2:='<highlight>'+s2+'</highlight>';
@@ -706,8 +724,11 @@ var
       end;
 
       if((j<KMemo1.Blocks.Count) and (TKMemoParagraph(KMemo1.Blocks[j]).Numbering = pnuBullets) )
-         then lines.Add( '<list><list-item dir="ltr">' + partext + '</list-item></list>')
-         else lines.Add(partext);
+         then partext := '<list><list-item dir="ltr">' + partext + '</list-item></list>';
+
+      TRlog('MemotoNote : Adding line : "'+partext+'"');
+      lines.Add(partext);
+
       i:=j+1;
    end;
 
