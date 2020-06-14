@@ -1611,7 +1611,7 @@ begin
    i :=0;
    title :='';
 
-   while ((i < Kmemo1.Blocks.Count) and ((length(Trim(Title))=0) or (not Kmemo1.Blocks[i].ClassNameIs('TKMemoParagraph'))))
+   while ((i < Kmemo1.Blocks.Count) and ((UTF8Length(UTF8Trim(Title))=0) or (not Kmemo1.Blocks[i].ClassNameIs('TKMemoParagraph'))))
    do begin
       if Kmemo1.Blocks[i].ClassNameIs('TKMemoTextBlock') then Title := Title + CleanTitle(Kmemo1.Blocks[i].Text);
       inc(i);
@@ -1626,17 +1626,26 @@ begin
 
    if((i<>1) or (Kmemo1.Blocks[1].ClassName <> 'TKMemoParagraph') or (not Kmemo1.Blocks[0].ClassNameIs('TKMemoTextBlock')))
    then begin
+     TRlog('wrong block1');
      while(i>0) do begin Kmemo1.Blocks.Delete(0); dec(i); end;
      KMemo1.Blocks.AddTextBlock(title,0);
      KMemo1.Blocks.AddParagraph(1);
    end
    else TKMemoTextBlock(Kmemo1.Blocks[0]).Text := title;
 
-   if((Kmemo1.Blocks.Count<3) or (not Kmemo1.Blocks[2].ClassNameIs('TKMemoTextBlock')) or (Length(Trim(TKMemoTextBlock(Kmemo1.Blocks[2]).Text)) > 0))
-   then KMemo1.Blocks.AddTextBlock('',2);
+   if((Kmemo1.Blocks.Count<3) or (not Kmemo1.Blocks[2].ClassNameIs('TKMemoTextBlock')) or (Length(UTF8Trim(Kmemo1.Blocks[2].Text)) > 0))
+   then begin
+      TRlog('wrong block2 : adding empty text');
+      KMemo1.Blocks.AddTextBlock('',2);
+   end;
 
    if((Kmemo1.Blocks.Count<4) or (Kmemo1.Blocks[3].ClassName <> 'TKMemoParagraph'))
-   then KMemo1.Blocks.AddParagraph(3);
+   then begin
+     TRlog('wrong block3 : Adding par');
+      KMemo1.Blocks.AddParagraph(3);
+   end;
+
+   TKMemoTextBlock(Kmemo1.Blocks[2]).Text := '';
 
    i:=0;
    while(i<4)
@@ -2042,18 +2051,14 @@ begin
   if (Key  =  VK_BACK) and (KMemo1.RealSelStart = KMemo1.RealSelEnd)   // DEALING WITH BACKSPACE NEAR A BULLET
   then begin
     i := Kmemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, j);
-    TRlog('BACKSPCE i='+IntToStr(i)+' j='+IntToStr(j));
     if(j>0) then exit();
     if(i=0) then exit();
-    TRlog('BACKSPCE bis i='+IntToStr(i)+' j='+IntToStr(j));
+
     if(not KMemo1.Blocks[i-1].ClassNameIs('TKMemoParagraph')) then exit();
-    TRlog('BACKSPCE ter i='+IntToStr(i)+' j='+IntToStr(j));
-    //if(KMemo1.Blocks[i].ClassNameIs('TKMemoParagraph')) then exit();
+
     j:=i;
     while((j<KMemo1.Blocks.Count) and not KMemo1.Blocks[j].ClassNameIs('TKMemoParagraph'))
     do inc(j);
-
-    TRlog('BACKSPCE2 i='+IntToStr(i)+' j='+IntToStr(j));
 
     if(j>=KMemo1.BLocks.Count)
     then begin
@@ -2063,14 +2068,9 @@ begin
 
     if(TKMemoParagraph(KMemo1.Blocks[j]).Numbering <> pnuBullets)
     then begin
-      TRlog('BACKSPCE3BIS i='+IntToStr(i)+' j='+IntToStr(j));
-      ToggleBullet(1);
-      //Key :=0;
+      if (TKMemoParagraph(KMemo1.Blocks[i-1]).Numbering = pnuBullets) then ToggleBullet(1);
       exit();
     end;
-
-    TRlog('BACKSPCE3 i='+IntToStr(i)+' j='+IntToStr(j));
-
 
     ToggleBullet(-1);
     Key :=0;
