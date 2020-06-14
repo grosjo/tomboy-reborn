@@ -401,16 +401,17 @@ var
     needpar : boolean;
     ch : Char;
 begin
-   i:=1; j:= length(s);
+   i:=1; j:= UTF8length(s);
 
    Ktext := '';
    needpar := false;
 
-   //TRlog('TFormNote.TextToMemo (j='+IntToStr(j)+') LEVEL='+IntToStr(Level));
+   TRlog('TFormNote.TextToMemo (j='+IntToStr(j)+') LEVEL='+IntToStr(Level));
 
    while (i<=j) do
    begin
-      chr := Copy(s,i,1);
+      TRlog('i= '+IntToStr(i)+' j= '+IntToStr(j)+' LEVEL='+IntToStr(Level));
+      chr := UTF8Copy(s,i,1);
       ch := chr.Chars[0];
       if Ch = #13 then begin inc(i); continue; end; // Micro$ bug
       if Ch = #9 then begin Ch := ' ';  Chr := '   '; end; // Tabs
@@ -492,6 +493,7 @@ begin
       if (Ch<' ') then
       begin
         if(needpar) then TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
+        inc(i);
         needpar := true;
       end;
 
@@ -500,34 +502,36 @@ begin
          if(needpar) then TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
          needpar := false;
 
-         tagtext:= LowerCase(Trim(Copy(s,i+1,20)));
-         k:=Pos('>',tagtext); if(k<1) then k := length(tagtext)+1;
-         tagtext := Copy(tagtext,0,k-1);
-         k:=Pos(' ',tagtext); if(k<1) then k := length(tagtext)+1;
-         tagtext := Copy(tagtext,0,k-1);
+         tagtext:= UTF8LowerCase(UTF8Trim(UTF8Copy(s,i+1,20)));
+         k:=UTF8Pos('>',tagtext); if(k<1) then k := UTF8Length(tagtext)+1;
+         tagtext := UTF8Trim(UTF8Copy(tagtext,1,k-1));
+         k:=UTF8Pos(' ',tagtext); if(k<1) then k := UTF8Length(tagtext)+1;
+         tagtext := UTF8Copy(tagtext,1,k-1);
 
-         //TRlog('NEW Starting TAG <'+tagtext+'>');
+         TRlog('NEW Starting TAG 4 <'+tagtext+'>');
 
-         if(CompareStr(tagtext,'bold')=0)                    then      tagtype := TTagType.TagBold
-          else if(CompareStr(tagtext,'italic')=0)            then      tagtype := TTagType.TagItalic
-          else if(CompareStr(tagtext,'highlight')=0)         then      tagtype := TTagType.TagHighLight
-          else if(CompareStr(tagtext,'underline')=0)         then      tagtype := TTagType.TagUnderline
-          else if(CompareStr(tagtext,'strikeout')=0)         then      tagtype := TTagType.TagStrikeout
-          else if(CompareStr(tagtext,'monospace')=0)         then      tagtype := TTagType.TagMonospace
-          else if(CompareStr(tagtext,'size:small')=0)        then      tagtype := TTagType.TagSizeSmall
-          else if(CompareStr(tagtext,'size:large')=0)        then      tagtype := TTagType.TagSizeLarge
-          else if(CompareStr(tagtext,'size:huge')=0)         then      tagtype := TTagType.TagSizeHuge
-          else if(CompareStr(tagtext,'list-item')=0)         then      tagtype := TTagType.TagListItem
-          else if(CompareStr(tagtext,'list')=0)              then      tagtype := TTagType.TagList
-          else if(CompareStr(tagtext,'link:url')=0)          then      tagtype := TTagType.TagLinkUrl
-          else if(CompareStr(tagtext,'link:internal')=0)     then      tagtype := TTagType.TagLinkInternal;
+         if(UTF8CompareStr(tagtext,'bold')=0)                    then      tagtype := TTagType.TagBold
+          else if(UTF8CompareStr(tagtext,'italic')=0)            then      tagtype := TTagType.TagItalic
+          else if(UTF8CompareStr(tagtext,'highlight')=0)         then      tagtype := TTagType.TagHighLight
+          else if(UTF8CompareStr(tagtext,'underline')=0)         then      tagtype := TTagType.TagUnderline
+          else if(UTF8CompareStr(tagtext,'strikeout')=0)         then      tagtype := TTagType.TagStrikeout
+          else if(UTF8CompareStr(tagtext,'monospace')=0)         then      tagtype := TTagType.TagMonospace
+          else if(UTF8CompareStr(tagtext,'size:small')=0)        then      tagtype := TTagType.TagSizeSmall
+          else if(UTF8CompareStr(tagtext,'size:large')=0)        then      tagtype := TTagType.TagSizeLarge
+          else if(UTF8CompareStr(tagtext,'size:huge')=0)         then      tagtype := TTagType.TagSizeHuge
+          else if(UTF8CompareStr(tagtext,'list-item')=0)         then      tagtype := TTagType.TagListItem
+          else if(UTF8CompareStr(tagtext,'list')=0)              then      tagtype := TTagType.TagList
+          else if(UTF8CompareStr(tagtext,'link:url')=0)          then      tagtype := TTagType.TagLinkUrl
+          else if(UTF8CompareStr(tagtext,'link:internal')=0)     then      tagtype := TTagType.TagLinkInternal;
 
-         sub := Copy(s,i+1);
-         k:= Pos('>', sub); if(k<1) then k := length(sub)+1;
-         sub := LowerCase(Copy(s,i+k+1));
-         m:= Pos('</'+tagtext,sub); if(m<1) then m:=length(sub)+1;
-         sub:=Copy(s,i+k+1,m-1);
+         sub := UTF8Copy(s,i+1,j);
+         k:= UTF8Pos('>', sub); if(k<1) then k := UTF8length(sub)+1;
+         sub := UTF8LowerCase(UTF8Copy(s,i+k+1,j));
+         m:= UTF8Pos('</'+tagtext,sub); if(m<1) then m:=UTF8length(sub)+1;
+         sub := UTF8Copy(s,i+k+1,m-1);
          i:=i+k+m;
+
+         //TRlog('TAG <'+tagtext+'>  SUB='+UTF8Copy(sub,1,30));
 
          case tagtype of
             TTagType.TagBold         : TextToMemo(sub, true, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
@@ -541,13 +545,13 @@ begin
             TTagType.TagSizeHuge     : TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, TFontRange.FontHuge, level+1);
             TTagType.TagListItem     :
                begin
-                                     while((KMemo1.Blocks.Count>0) and KMemo1.Blocks[KMemo1.Blocks.Count-1].ClassNameIs('TKMemoTextBlock') and (Length(Trim(TKMemoTextBlock(KMemo1.Blocks[KMemo1.Blocks.Count-1]).Text))=0))
+                                     while((KMemo1.Blocks.Count>0) and KMemo1.Blocks[KMemo1.Blocks.Count-1].ClassNameIs('TKMemoTextBlock') and (Length(UTF8Trim(TKMemoTextBlock(KMemo1.Blocks[KMemo1.Blocks.Count-1]).Text))=0))
                                      do KMemo1.Blocks.Delete(KMemo1.Blocks.Count-1);
                                      TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, true,     true,  linkinternal, linkexternal, FontSize, level+1);
                end;
             TTagType.TagList         :
                begin
-                                     while((KMemo1.Blocks.Count>0) and KMemo1.Blocks[KMemo1.Blocks.Count-1].ClassNameIs('TKMemoTextBlock') and (Length(Trim(TKMemoTextBlock(KMemo1.Blocks[KMemo1.Blocks.Count-1]).Text))=0))
+                                     while((KMemo1.Blocks.Count>0) and KMemo1.Blocks[KMemo1.Blocks.Count-1].ClassNameIs('TKMemoTextBlock') and (Length(UTF8Trim(TKMemoTextBlock(KMemo1.Blocks[KMemo1.Blocks.Count-1]).Text))=0))
                                      do KMemo1.Blocks.Delete(KMemo1.Blocks.Count-1);
                                      TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, false,     false,  linkinternal, linkexternal, FontSize, level+1);
                end;
@@ -556,14 +560,16 @@ begin
                                   else TextToMemo(sub, Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
          end;
 
-         sub := Copy(s,i+1);
-         k:= Pos('>', sub); if(k<1) then k := length(sub)+1;
+         sub := UTF8Copy(s,i+1,j);
+         TRlog('ENDTAG <'+tagtext+'>  SUB='+UTF8Copy(sub,1,30));
+
+         k:= UTF8Pos('>', sub); if(k<1) then k := UTF8length(sub)+1;
          i:=i+k+1;
 
          if(i<=j)
          then begin
-           chr := Copy(s,i,1);
-           if chr.Chars[0] < ' ' then inc(i);
+           chr := UTF8Copy(s,i,1);
+           if (((tagtype = TTagType.TagListItem) or (tagtype = TTagType.TagList)) and (chr.Chars[0] < ' ')) then inc(i);
          end;
          TRlog('After tag : '+Copy(s,i,30)+' ...');
       end;
