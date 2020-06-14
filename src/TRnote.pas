@@ -423,7 +423,7 @@ begin
       chr := UTF8Copy(s,i,1);
       ch := chr.Chars[0];
 
-      TRlog('CHAR = '+chr+' ORD='+IntToStr(Ord(Ch))+' SUB= "'+UTF8Copy(s,i,10)+'"');
+      //TRlog('CHAR = '+chr+' ORD='+IntToStr(Ord(Ch))+' SUB= "'+UTF8Copy(s,i,10)+'"');
 
       if Ch = #13 then begin inc(i); continue; end; // Micro$ bug
       if Ch = #9 then begin Ch := ' ';  Chr := '   '; end; // Tabs
@@ -506,7 +506,7 @@ begin
       begin
         TRlog('NEEDPAR');
 
-         if(needpar)
+        if(needpar)
         then  TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize,true);
 
         inc(i);
@@ -700,10 +700,11 @@ var
          else if(KMemo1.Blocks[i].ClassNameIs('TKMemoHyperlink'))
          then begin
               FL := TKMemoHyperlink(KMemo1.Blocks[i]);
-              if(FL.OnDblClick = @ExternalLink)
-                  then s2 := '<link:url>'+EncodeAngles(FT.Text)+'</link:url>'
-                  else s2 := '<link:internal>'+EncodeAngles(FT.Text)+'</link:internal>';
               FT := TKMemoTextBlock(FL);
+              s2 := EncodeAngles(FT.Text);
+              if(FL.OnDblClick = @ExternalLink)
+                  then s2 := '<link:url>'+s2+'</link:url>'
+                  else s2 := '<link:internal>'+s2+'</link:internal>';
          end else
          begin
             inc(i);
