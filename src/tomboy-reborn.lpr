@@ -4,7 +4,7 @@ program Tomboy_Reborn;
 
 uses
     Interfaces, Classes, Forms, SysUtils, StdCtrls, LazFileUtils, LazLogger,
-    ExtCtrls,
+    ExtCtrls, UniqueInstanceRaw, Dialogs,
     TRcommon, TRtexts , TRmain, TRsettings;
 
 {$R *.res}
@@ -12,11 +12,19 @@ uses
 var
     CmdLineErrorMsg : String;
     fs : TFormSettings;
+
 begin
     Application.Scaled:=True;
-  Application.Title:='TomboyReborn';
+    Application.Title:='TomboyReborn';
     RequireDerivedFormResource:=True;
     Application.Initialize;
+
+    if(InstanceRunning())
+    then begin
+       ShowMessage('Another Tomboy Reborn is already running');
+       debugln('Another Tomboy Reborn is already running');
+       exit();
+    end;
 
     ConfigDir := GetDefaultConfigDir();
     ConfigFile := ConfigDir + 'tomboy-reborn.cfg';

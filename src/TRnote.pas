@@ -79,7 +79,7 @@ type
 private
     AlreadyLoaded, hasdata : boolean;
     Dirty : boolean;
-    ProcessingChange, ProcessingTitle, isClosing : boolean;
+    ProcessingChange, ProcessingTitle, isClosing, manualClosing : boolean;
 
     HouseKeeper, TitleFormatter, MenuBuilder : TTimer;
 
@@ -129,6 +129,7 @@ private
     procedure SpellSuggest(word : UTF8String; suggestions : TStrings);
     procedure ReplaceSel(s : UTF8String);
 
+    procedure TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange );
     procedure TextToMemo(s : UTF8String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
 
     procedure AlterFont(const Command : TNoteAction);
@@ -354,6 +355,39 @@ begin
    suggestions.Add(word);
 end;
 
+procedure TFormNote.TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange );
+var
+    f : TFont;
+    par : TKMemoParagraph;
+begin
+   par := KMemo1.Blocks.AddParagraph;
+   if InBullet then
+   begin
+      par.Numbering := pnuBullets;
+      par.NumberingListLevel.FirstIndent := -20;
+      par.NumberingListLevel.LeftIndent := 30;
+   end;
+   f := TFont.Create();
+   f.Style := [];
+   if Bold then f.Style := f.Style + [fsBold];
+   if Italic then f.Style := f.Style + [fsItalic];
+   if Underline then f.Style := f.Style + [fsUnderline];
+   if Strikeout then f.Style := f.Style + [fsStrikeout];
+   if FixedWidth then f.Name := FixedFont else f.Name := UsualFont;
+   if FixedWidth then f.Pitch := fpFixed else f.Pitch := fpVariable;
+   f.Color := TextColour;
+
+   case FontSize of
+        TFontRange.FontSmall : f.Size:= FontSizeSmall;
+        TFontRange.FontLarge : f.Size:= FontSizeLarge;
+        TFontRange.FontHuge : f.Size:= FontSizeHuge;
+        else f.Size:= FontSizeNormal;
+   end;
+
+   par.TextStyle.Font := f;
+   f.Free;
+end;
+
 procedure TFormNote.TextToMemo(s : UTF8String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
 var
     i,j,k,m : integer;
@@ -364,11 +398,13 @@ var
     f : TFont;
     hl : TKMemoHyperlink;
     chr : AnsiString;
+    needpar : boolean;
     ch : Char;
 begin
    i:=1; j:= length(s);
 
    Ktext := '';
+   needpar := false;
 
    //TRlog('TFormNote.TextToMemo (j='+IntToStr(j)+') LEVEL='+IntToStr(Level));
 
@@ -384,6 +420,11 @@ begin
 
       if ((Ch >= ' ') and (Ch <> '<') ) then
       begin
+          if(needpar)
+          then begin
+            TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
+            needpar := false;
+          end;
           Ktext := Ktext + Chr;
           inc(i);
       end;
@@ -408,7 +449,6 @@ begin
              TFontRange.FontHuge : f.Size:= FontSizeHuge;
              else f.Size:= FontSizeNormal;
          end;
-
 
          if(linkinternal) then
          begin
@@ -449,40 +489,17 @@ begin
          Ktext := '';
       end;
 
-      if (Ch<' ') then // add Paragraph
+      if (Ch<' ') then
       begin
-         //TRlog('NEW PAR BECAUSE CHAR<" "');
-         par := KMemo1.Blocks.AddParagraph;
-         if InBullet then
-         begin
-            par.Numbering := pnuBullets;
-            par.NumberingListLevel.FirstIndent := -20;
-            par.NumberingListLevel.LeftIndent := 30;
-         end;
-         f := TFont.Create();
-         f.Style := [];
-         if Bold then f.Style := f.Style + [fsBold];
-         if Italic then f.Style := f.Style + [fsItalic];
-         if Underline then f.Style := f.Style + [fsUnderline];
-         if Strikeout then f.Style := f.Style + [fsStrikeout];
-         if FixedWidth then f.Name := FixedFont else f.Name := UsualFont;
-         if FixedWidth then f.Pitch := fpFixed else f.Pitch := fpVariable;
-         f.Color := TextColour;
-
-         case FontSize of
-             TFontRange.FontSmall : f.Size:= FontSizeSmall;
-             TFontRange.FontLarge : f.Size:= FontSizeLarge;
-             TFontRange.FontHuge : f.Size:= FontSizeHuge;
-             else f.Size:= FontSizeNormal;
-         end;
-
-         par.TextStyle.Font := f;
-         f.Free;
-         inc(i);
+        if(needpar) then TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
+        needpar := true;
       end;
 
       if (Ch = '<') then  // new tag
       begin
+         if(needpar) then TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
+         needpar := false;
+
          tagtext:= LowerCase(Trim(Copy(s,i+1,20)));
          k:=Pos('>',tagtext); if(k<1) then k := length(tagtext)+1;
          tagtext := Copy(tagtext,0,k-1);
@@ -542,42 +559,21 @@ begin
          sub := Copy(s,i+1);
          k:= Pos('>', sub); if(k<1) then k := length(sub)+1;
          i:=i+k+1;
+
+         if(i<=j)
+         then begin
+           chr := Copy(s,i,1);
+           if chr.Chars[0] < ' ' then inc(i);
+         end;
          TRlog('After tag : '+Copy(s,i,30)+' ...');
       end;
 
       //TRlog('New loop LEVEL='+IntToStr(level)+' i='+IntToStr(i)+' j='+IntToStr(j) );
    end;
-   if(newpar) then begin
-      //TRlog('NEWPAR');
-      par := KMemo1.Blocks.AddParagraph;
-      if InBullet then
-      begin
-         par.Numbering := pnuBullets;
-         par.NumberingListLevel.FirstIndent := -20;
-         par.NumberingListLevel.LeftIndent := 30;
 
-         f := TFont.Create();
-         f.Style := [];
-         if Bold then f.Style := f.Style + [fsBold];
-         if Italic then f.Style := f.Style + [fsItalic];
-         if Underline then f.Style := f.Style + [fsUnderline];
-         if Strikeout then f.Style := f.Style + [fsStrikeout];
-         if FixedWidth then f.Name := FixedFont else f.Name := UsualFont;
-         if FixedWidth then f.Pitch := fpFixed else f.Pitch := fpVariable;
-         f.Color := TextColour;
+   if(newpar or needpar)
+   then TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
 
-         case FontSize of
-             TFontRange.FontSmall : f.Size:= FontSizeSmall;
-             TFontRange.FontLarge : f.Size:= FontSizeLarge;
-             TFontRange.FontHuge : f.Size:= FontSizeHuge;
-             else f.Size:= FontSizeNormal;
-         end;
-
-         par.TextStyle.Font := f;
-         f.Free;
-
-      end;
-   end;
 end;
 
 procedure TFormNote.NoteToMemo();
@@ -759,18 +755,15 @@ var
      note^.LastChangeGMT:= GetGMTFromStr(note^.LastChange);
    end;
 
-   if((Left <> note^.X) or (Top <> note^.Y) or (KMemo1.RealSelStart <> note^.SelectBoundPosition)
-            or (not note^.OpenOnStartup) or (Height <> note^.Height) or (Width <> note^.Width))
-   then begin
-      note^.X := Left;
-      note^.Y := Top;
-      note^.SelectBoundPosition := KMemo1.SelStart;
-      note^.OpenOnStartup := true;
-      note^.Height := Height;
-      note^.Width := Width;
-      note^.LastMetaChange := GetCurrentTimeStr();
-      note^.LastMetaChangeGMT := GetGMTFromStr(note^.LastMetaChange);
-   end;
+   note^.X := Left;
+   note^.Y := Top;
+   note^.CursorPosition := KMemo1.RealSelStart;
+   note^.SelectBoundPosition := KMemo1.RealSelEnd;
+   note^.Height := Height;
+   note^.Width := Width;
+   note^.OpenOnStartup := not manualClosing;
+   note^.LastMetaChange := GetCurrentTimeStr();
+   note^.LastMetaChangeGMT := GetGMTFromStr(note^.LastMetaChange);
 
    MarkClean();
 end;
@@ -787,8 +780,15 @@ begin
      FreeAndNil(HouseKeeper);
   end;
 
-  if(Dirty) then
-  begin
+  if(Dirty or (KMemo1.RealSelStart<> note^.CursorPosition)
+   or (KMemo1.RealSelEnd<> note^.SelectBoundPosition)
+    or (Self.Left<> note^.X)
+    or (Self.Top<> note^.Y)
+    or (Self.Width<> note^.Width)
+    or (Self.Height<> note^.Height)
+    or (not manualClosing <> note^.OpenOnStartup)
+  )
+  then begin
     MemoToNote();
     filename := GetLocalNoteFile(note^.ID);
 
@@ -1171,6 +1171,8 @@ begin
 
    ProcessingChange := true;
 
+   note^.OpenOnStartup := true;
+
    if not AlreadyLoaded then
    begin
      NoteToMemo();
@@ -1211,6 +1213,7 @@ procedure TFormNote.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
   TRlog('TFormNote.FormCloseQuery');
   isClosing := true;
+  manualClosing := true;
   Commit(Sender);
   CanClose := True;
 end;
@@ -1218,8 +1221,8 @@ end;
 procedure TFormNote.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
   TRlog('TFormNote.FormClose');
+  isClosing := true;
   note^.Display:=nil;
-
 end;
 
 procedure TFormNote.ShowSearchPanel(s : boolean);
@@ -1249,6 +1252,7 @@ begin
   ProcessingChange := false;
   ProcessingTitle := false;
   isClosing := false;
+  manualClosing := false;
   SetFontSizes();
 
   findtext :='';
