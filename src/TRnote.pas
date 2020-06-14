@@ -129,7 +129,7 @@ private
     procedure SpellSuggest(word : UTF8String; suggestions : TStrings);
     procedure ReplaceSel(s : UTF8String);
 
-    procedure TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange ; addblank : boolean);
+    procedure TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange {; addblank : boolean});
     procedure TextToMemo(s : UTF8String; Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, newpar, linkinternal, linkexternal : boolean; FontSize : TFontRange; level : integer);
 
     procedure AlterFont(const Command : TNoteAction);
@@ -355,7 +355,7 @@ begin
    suggestions.Add(word);
 end;
 
-procedure TFormNote.TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange ; addblank : boolean );
+procedure TFormNote.TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet : boolean; FontSize : TFontRange  );
 var
     f : TFont;
     par : TKMemoParagraph;
@@ -379,12 +379,12 @@ begin
         else f.Size:= FontSizeNormal;
    end;
 
-   if(addblank)
+{   if(addblank)
    then begin
      ktb := KMemo1.Blocks.AddTextBlock('');
      ktb.TextStyle.Font := f;
    end;
-
+}
    par := KMemo1.Blocks.AddParagraph;
    if InBullet then
    begin
@@ -435,7 +435,7 @@ begin
       begin
           if(needpar)
           then begin
-            TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize, false);
+            TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
             needpar := false;
           end;
           Ktext := Ktext + Chr;
@@ -504,18 +504,15 @@ begin
 
       if (Ch<' ') then
       begin
-        TRlog('NEEDPAR');
-
         if(needpar)
-        then  TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize,true);
-
+        then  TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
         inc(i);
         needpar := true;
       end;
 
       if (Ch = '<') then  // new tag
       begin
-         if(needpar) then TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize, false);
+         if(needpar) then TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
          needpar := false;
 
          tagtext:= UTF8LowerCase(UTF8Trim(UTF8Copy(s,i+1,20)));
@@ -594,7 +591,7 @@ begin
    end;
 
    if(newpar or needpar)
-   then TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize,false);
+   then TextToMemo_addpar(Bold, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, FontSize);
 
 end;
 
