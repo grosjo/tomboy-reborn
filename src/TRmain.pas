@@ -260,6 +260,8 @@ begin
     SyncTimer.Enabled := True;
 
     Application.ProcessMessages;
+
+    TRlog('Checking searchatstart '+BoolToStr(SearchAtStart));
     if(not SearchAtStart) then Hide();
 end;
 
@@ -1314,13 +1316,17 @@ end;
 
 procedure TFormMain.FormShow(Sender: TObject);
 begin
-    Left := random(250)+50;
-    Top := random(250)+50;
 
-    ShowLists(Self);
-    BuildFileMenu(Self);
-    BuildTrayMenu(Self);
+  TRlog('FormShow with searchatstart '+BoolToStr(SearchAtStart));
 
+  Left := random(250)+50;
+  Top := random(250)+50;
+
+  ShowLists(Self);
+  BuildFileMenu(Self);
+  BuildTrayMenu(Self);
+
+  if(not SearchAtStart) then self.Hide();
 
 end;
 
