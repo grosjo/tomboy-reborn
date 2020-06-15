@@ -260,6 +260,8 @@ begin
     SyncTimer.Enabled := True;
 
     Application.ProcessMessages;
+
+    TRlog('Checking searchatstart '+BoolToStr(SearchAtStart));
     if(not SearchAtStart) then Hide();
 end;
 
@@ -493,7 +495,11 @@ begin
 
    try
        n := PNoteInfo(TMenuItem(Sender).Tag);
-       ShowMessage('DEBUG (TBD) : Shall show note '+n^.ID);
+       if(n<>nil) then
+       begin
+          AddLastUsed(n^.ID);
+          OpenNote(n^.ID);
+       end;
    except on E:Exception do TRlog(E.message);
    end;
 end;
@@ -542,6 +548,8 @@ begin
 end;
 
 procedure TFormMain.TrayMenuClicked(Sender : TObject);
+var
+    sats : boolean;
 begin
 
    TRlog('TrayMenuClicked');
@@ -558,7 +566,7 @@ begin
 
         ttAbout : ShowAbout();
 
-        ttSearch : begin Show(); end;
+        ttSearch : begin sats:= SearchAtStart; SearchAtStart := true; Show(); SearchAtStart := sats; end;
 
         ttQuit : begin ConfigWrite('TrayMenu Quit'); Application.terminate; end;
 
@@ -1314,13 +1322,17 @@ end;
 
 procedure TFormMain.FormShow(Sender: TObject);
 begin
-    Left := random(250)+50;
-    Top := random(250)+50;
 
-    ShowLists(Self);
-    BuildFileMenu(Self);
-    BuildTrayMenu(Self);
+  TRlog('FormShow with searchatstart '+BoolToStr(SearchAtStart));
 
+  Left := random(250)+50;
+  Top := random(250)+50;
+
+  ShowLists(Self);
+  BuildFileMenu(Self);
+  BuildTrayMenu(Self);
+
+  if(not SearchAtStart) then self.Hide();
 
 end;
 
