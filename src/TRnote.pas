@@ -540,7 +540,7 @@ begin
          sub := UTF8Copy(s,i+1,j);
          k:= UTF8Pos('>', sub); if(k<1) then k := UTF8length(sub)+1;
          sub := UTF8LowerCase(UTF8Copy(s,i+k+1,j));
-         m:= UTF8Pos('</'+tagtext,sub); if(m<1) then m:=UTF8length(sub)+1;
+         m:= UTF8Pos('</'+tagtext+'>',sub); if(m<1) then m:=UTF8length(sub)+1;
          sub := UTF8Copy(s,i+k+1,m-1);
          i:=i+k+m;
 
@@ -579,10 +579,16 @@ begin
          k:= UTF8Pos('>', sub); if(k<1) then k := UTF8length(sub)+1;
          i:=i+k+1;
 
+         TRlog('ENDTAG 2 SUB="'+UTF8Copy(s,i,30)+'"');
+
          if(i<=j)
          then begin
            chr := UTF8Copy(s,i,1);
-           if (((tagtype = TTagType.TagListItem) or (tagtype = TTagType.TagList)) and (chr.Chars[0] < ' ')) then inc(i);
+           if (((tagtype = TTagType.TagListItem) or (tagtype = TTagType.TagList)) and (chr.Chars[0] < ' '))
+           then begin
+             TRlog('Removing extra par');
+             inc(i);
+           end;
          end;
          TRlog('After tag : '+Copy(s,i,30)+' ...');
       end;
