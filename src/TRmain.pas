@@ -495,7 +495,11 @@ begin
 
    try
        n := PNoteInfo(TMenuItem(Sender).Tag);
-       ShowMessage('DEBUG (TBD) : Shall show note '+n^.ID);
+       if(n<>nil) then
+       begin
+          AddLastUsed(n^.ID);
+          OpenNote(n^.ID);
+       end;
    except on E:Exception do TRlog(E.message);
    end;
 end;
@@ -544,6 +548,8 @@ begin
 end;
 
 procedure TFormMain.TrayMenuClicked(Sender : TObject);
+var
+    sats : boolean;
 begin
 
    TRlog('TrayMenuClicked');
@@ -560,7 +566,7 @@ begin
 
         ttAbout : ShowAbout();
 
-        ttSearch : begin Show(); end;
+        ttSearch : begin sats:= SearchAtStart; SearchAtStart := true; Show(); SearchAtStart := sats; end;
 
         ttQuit : begin ConfigWrite('TrayMenu Quit'); Application.terminate; end;
 
