@@ -647,18 +647,11 @@ begin
 
    TRlog('Dealing with content end : blocks = '+IntToStr(Kmemo1.Blocks.Count));
 
-   KMemo1.Blocks.UnlockUpdate;
-
    Dirty := False;
 
-   TRlog('Cursor position '+IntToStr(note^.CursorPosition));
+   KMemo1.Blocks.UnlockUpdate;
 
-   KMemo1.SelStart := note^.CursorPosition;
-   KMemo1.SelEnd := note^.CursorPosition;
-
-   oldtext := KMemo1.Text;
-   oldselstart := KMemo1.RealSelStart;
-   oldselend := KMemo1.RealSelend;
+   Application.ProcessMessages;
 
    TRlog('NoteToMemo Done !');
 end;
@@ -1227,9 +1220,6 @@ begin
    Height := note^.Height;
    Width := note^.Width;
 
-   KMemo1.SelStart := KMemo1.Text.Length;  // set curser pos to end
-   KMemo1.SelEnd := Kmemo1.Text.Length;
-
    KMemo1.SetFocus;
 
    {$ifdef windows}
@@ -1249,6 +1239,19 @@ begin
    ProcessingChange := false;
 
    KMemo1.Blocks.UnLockUpdate;
+
+   TRlog('Cursor position '+IntToStr(note^.CursorPosition));
+
+   KMemo1.SelStart := note^.CursorPosition;
+   KMemo1.SelEnd := note^.CursorPosition;
+
+   oldtext := KMemo1.Text;
+   oldselstart := KMemo1.RealSelStart;
+   oldselend := KMemo1.RealSelend;
+
+   TRlog('Cursor position actual '+IntToStr(KMemo1.RealSelStart));
+
+
 
 end;
 
@@ -1560,30 +1563,21 @@ end;
 procedure TFormNote.FindPrev(start : integer);
 var
    s, lo: UTF8String;
-   i,j,k : integer;
+   i : integer;
 begin
    s := UTF8LowerCase(EditFindInNote.Caption);
-   lo := UTF8LowerCase( KMemo1.Text);
    TRlog('Search Prev for '+s);
 
    if(UTF8Length(s)>0) then
    begin
-     i :=0;
-     k :=-1;
-     while(i<start) do
+     lo := UTF8Copy(KMemo1.Text,1,start-1);
+     lo := UTF8LowerCase( lo);
+
+     i := UTF8RPos(s,lo);
+     if(i>0) then
      begin
-        j:=UTF8Pos(s,lo,i+1);
-        if(j>0) then
-        begin
-          if(j-1<KMemo1.RealSelStart) then k := j-1;
-          i := i + j;
-        end
-        else i := KMemo1.RealSelStart +1;
-     end;
-     if(k>=0) then
-     begin
-       KMemo1.SelStart:=k;
-       KMemo1.SelEnd:=k+UTF8Length(s);
+       KMemo1.SelStart:=i-1;
+       KMemo1.SelEnd:=i+UTF8Length(s)-1;
      end;
    end;
 end;
