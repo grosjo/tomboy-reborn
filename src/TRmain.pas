@@ -51,6 +51,7 @@ type TFormMain = class(TForm)
         procedure MainMenuClicked(Sender : TObject);
         procedure MenuNewNotebookNote(Sender : TObject);
 
+        procedure OpenNote(ID : UTF8String = ''; Notebook : UTF8String = '' ; Title : UTF8String = '');
         procedure OpenNoteByTitle(t : UTF8String);
         procedure PostScan();
 
@@ -96,7 +97,6 @@ private
         procedure ProcessSync(Sender: TObject);
         procedure ProcessSyncUpdates(const DeletedList, DownList: TStringList);
 
-        procedure OpenNote(ID : UTF8String = ''; Notebook : UTF8String = '' ; Title : UTF8String = '');
         function DeleteNote(ID: UTF8String) : boolean;
         function SaveNote(ID: UTF8String) : boolean;
 
@@ -105,6 +105,7 @@ private
 
 public
         NotebooksList : TStringList;
+        ToBeOpened : String;
 
         procedure SnapSync();
         procedure ShowSettings();
@@ -125,6 +126,8 @@ begin
    TRlog('TFormMain.FormCreate');
 
    syncshallrun := true;
+
+   ToBeOpened := '';
 
    NotesList := TNoteInfoList.Create;
     NotesList.Lname := 'TSearch list';
@@ -755,6 +758,7 @@ Var
     i,c1,c2 : integer;
     Info : TSearchRec;
     s : UTF8String;
+    dt : TDateTime;
 begin
    TRlog('ScanNotes');
 
@@ -777,6 +781,7 @@ begin
    NotebooksList.Clear;
 
    c1:=0; c2:=0;
+   dt := now;
 
    if FindFirstUTF8(GetLocalNoteFile('*'), faAnyFile, Info)=0 then
    repeat
@@ -806,8 +811,21 @@ begin
             if(AddNotebook(Copy(s,17))) then inc(c2);
             inc(i);
         end;
+        n^.Scan:= dt;
    until FindNext(Info) <> 0;
    FindClose(Info);
+
+   i:=0;
+   while(i<NotesList.Count)
+   do begin
+      if(NotesList.Items[i]^.Scan = dt)
+      then inc(i)
+      else begin
+        n := NotesList.Items[i];
+        NotesList.Delete(i);
+        Dispose(n);
+      end;
+   end;
 
    i:=0;
    while(i<NewNotebooksList.Count) do
@@ -844,6 +862,12 @@ begin
 
    syncshallrun := true;
 
+   if(Length(ToBeOpened)>0)
+   then begin
+      ID := ToBeOpened;
+      ToBeOpened := '';
+      OpenNote(ID);
+   end;
 end;
 
 procedure TFormMain.ProcessSync(Sender : TObject);

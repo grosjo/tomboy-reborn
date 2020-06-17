@@ -76,6 +76,7 @@ type TNoteInfo =
         Error : UTF8String;
         Deleted : boolean;
         Display : ^TForm;
+        Scan : TDateTime;
   end;
 
 type PNoteInfo=^TNoteInfo;
@@ -660,6 +661,7 @@ begin
    n^.Deleted := false;
    n^.Display := nil;
 
+   n^.Scan := 0;
    Result := n;
 end;
 

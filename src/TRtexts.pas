@@ -17,6 +17,7 @@ RESOURCESTRING
   rsAboutCPU = 'TargetCPU';
   rsAboutOperatingSystem = 'OS';
   rsCannotFind = 'Can not find ';
+  rsAreYouSure = 'Are you sure ?';
 
 // notebook.pas
 

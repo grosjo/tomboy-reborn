@@ -100,7 +100,9 @@ private
     procedure MarkDirty();
     procedure MarkClean();
 
-    procedure Commit(Sender : TObject);
+    procedure NoteDuplicate();
+    procedure NoteDelete();
+    procedure NoteCommit(Sender : TObject);
 
     procedure ShowSearchPanel(s : boolean);
     procedure BuildMenus(Sender: TObject);
@@ -402,7 +404,6 @@ var
     i,j,k,m : integer;
     Ktext,tagtext,sub : UTF8String;
     tagtype : TTagType;
-    par : TKMemoParagraph;
     ktb : TKMemoTextBlock;
     f : TFont;
     hl : TKMemoHyperlink;
@@ -739,9 +740,6 @@ var
       end;
    s := lines.Text;
 
-   TRlog('=================');
-   TRlog('NOTE v0 ="'+s+'"');
-
    // Delete opposite tags
    s2:='';
    while(CompareStr(s,s2)<>0) do
@@ -769,8 +767,6 @@ var
       s := StringReplace(s,'</italic>'+#10+'<italic>',#10,[rfReplaceAll]);
       s := StringReplace(s,'</bold>'+#10+'<bold>',#10,[rfReplaceAll]);
    end;
-   TRlog('=================');
-   TRlog('NOTE v1 ="'+s+'"');
 
    if(changedtitle or (CompareStr(s, note^.Content) <> 0)) then
    begin
@@ -792,7 +788,63 @@ var
    MarkClean();
 end;
 
-procedure TFormNote.Commit(Sender : TObject);
+procedure TFormNote.NoteDelete();
+var
+   filename : UTF8String;
+begin
+   if(Application.MessageBox(PChar(rsMenuDeleteNote+' '+note^.ID), PChar(rsAreYouSure),  MB_ICONQUESTION + MB_YESNO ) = IDYES)
+   then begin
+     TRlog('NoteDelete '+note^.ID);
+     isClosing := true;
+     manualClosing := true;
+     NoteCommit(self);
+     filename := GetLocalNoteFile(note^.ID);
+     TRlog('NoteDelete '+filename);
+     if(not DeleteFileUTF8(filename))
+     then TRLog('Error deleteing file '+filename);
+     TFormMain(mainWindow).PostScan();
+     self.Close;
+   end;
+end;
+
+procedure TFormNote.NoteDuplicate();
+var
+   filename,ID : UTF8String;
+   n2 : PNoteInfo;
+begin
+  TRlog(' Duplicate');
+  if(Assigned(HouseKeeper))
+  then begin
+     HouseKeeper.Enabled := False;
+     FreeAndNil(HouseKeeper);
+  end;
+
+  MemoToNote();
+  n2 := EmptyNote();
+  ID := n2^.ID;
+  CopyNote(note,n2);
+  TRlog('Duplicate '+note^.Title +' to '+ n2^.Title);
+  n2^.ID := ID;
+  n2^.Title := n2^.Title + ' (dup)';
+  n2^.X := n2^.X + 30;
+  n2^.Y := n2^.Y + 30;
+  filename := GetLocalNoteFile(ID);
+
+  NoteToFile(n2,filename);
+  Dispose(n2);
+  TFormMain(mainWindow).ToBeOpened := ID;
+  TFormMain(mainWindow).PostScan();
+
+  if(not isClosing) then
+  begin
+     HouseKeeper := TTimer.Create(nil);
+     HouseKeeper.OnTimer := @NoteCommit;
+     HouseKeeper.Interval := 30000;
+     HouseKeeper.Enabled := True;
+  end;
+end;
+
+procedure TFormNote.NoteCommit(Sender : TObject);
 var
    filename : UTF8String;
 begin
@@ -827,7 +879,7 @@ begin
   if(not isClosing) then
   begin
      HouseKeeper := TTimer.Create(nil);
-     HouseKeeper.OnTimer := @Commit;
+     HouseKeeper.OnTimer := @NoteCommit;
      HouseKeeper.Interval := 30000;
      HouseKeeper.Enabled := True;
   end;
@@ -1260,7 +1312,7 @@ begin
   TRlog('TFormNote.FormCloseQuery');
   isClosing := true;
   manualClosing := true;
-  Commit(Sender);
+  NoteCommit(Sender);
   CanClose := True;
 end;
 
@@ -1459,7 +1511,7 @@ begin
 
   // Housekeeping
   HouseKeeper := TTimer.Create(nil);
-  HouseKeeper.OnTimer := @Commit;
+  HouseKeeper.OnTimer := @NoteCommit;
   HouseKeeper.Interval := 30000;
   HouseKeeper.Enabled := True;
 
@@ -1513,7 +1565,7 @@ begin
   end;
 
   HouseKeeper := TTimer.Create(nil);
-  HouseKeeper.OnTimer := @Commit;
+  HouseKeeper.OnTimer := @NoteCommit;
   HouseKeeper.Interval := 100;
   HouseKeeper.Enabled := True;
 end;
@@ -2140,6 +2192,7 @@ procedure TFormNote.MainMenuClicked(Sender : TObject);
 var
     s : String;
     s2 : UTF8String;
+    sats : boolean;
 begin
 
    TRlog('MainMenuClicked');
@@ -2147,15 +2200,15 @@ begin
    case TNoteMenuTags(TMenuItem(Sender).Tag) of
 
       // FILE
-      ntSearchAll : mainWindow.Show();
+      ntSearchAll :         begin sats:= SearchAtStart; SearchAtStart := true; TFormMain(mainWindow).Show(); SearchAtStart := sats; end;
 
-      ntFind : begin CheckboxFindInNote.Checked := true; ShowSearchPanel(true); EditFindInNote.SetFocus; end;
+      ntFind :              begin CheckboxFindInNote.Checked := true; ShowSearchPanel(true); EditFindInNote.SetFocus; end;
 
-      //ntDuplicate :
+      ntDuplicate :         NoteDuplicate();
 
       ntCommit :            PostCommit();
 
-      //ntDelete :
+      ntDelete :            NoteDelete();
 
       // EDIT
       ntRedo :              begin KMemo1.ExecuteCommand(TKEditCommand.ecRedo); MarkDirty(); end;
