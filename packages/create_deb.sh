@@ -5,4 +5,4 @@ echo "RPM"
 alien -r -c -v tomboy-reborn_1.0-beta2_amd64.deb
 echo "ARCH"
 debtap tomboy-reborn_1.0-beta2_amd64.deb
-
+makepkg --printsrcinfo > .SRCINFO
