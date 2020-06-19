@@ -5,9 +5,9 @@ unit TRmain;
 interface
 
 uses
-    Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
-    Buttons, Menus, ComCtrls, ExtCtrls, FileUtil, ActnList, DateUtils,
-    Grids, lazLogger, Math, LCLType, LazFileUtils, process, LazUTF8,
+    Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, Buttons,
+    Menus, ComCtrls, ExtCtrls, FileUtil, ActnList, DateUtils, Grids, lazLogger,
+    Math, LCLType, LazFileUtils, process, LazUTF8,
     TRcommon, TRtexts, TRsettings, TRsync, TRnote, TRabout;
 
 

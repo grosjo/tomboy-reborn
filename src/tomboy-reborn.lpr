@@ -3,6 +3,8 @@ program Tomboy_Reborn;
 {$mode objfpc}{$H+}
 
 uses
+    {$DEFINE UseCThreads}
+    {$IFDEF UNIX} cthreads, cmem, {$ENDIF}
     Interfaces, Classes, Forms, SysUtils, StdCtrls, LazFileUtils, LazLogger,
     ExtCtrls, UniqueInstanceRaw, Dialogs,
     TRcommon, TRtexts , TRmain, TRsettings;
@@ -15,7 +17,7 @@ var
 
 begin
     Application.Scaled:=True;
-    Application.Title:='TomboyReborn';
+  Application.Title:='TomboyReborn';
     RequireDerivedFormResource:=True;
     Application.Initialize;
 
@@ -65,11 +67,14 @@ begin
 	     exit();
            end;
         0 : begin
-             Application.CreateForm(TFormSettings, fs);
+             debugln('Reading config done');
+	     Application.CreateForm(TFormSettings, fs);
              fs.ShowModal;
              FreeAndNil(fs);
            end;
     end;
+
+    debugln('Starting....');
 
     UseTrayIcon := true;
 
@@ -78,7 +83,11 @@ begin
         SearchAtStart := true;
     end;
 
+    debugln('Creating main form....');
+
     Application.CreateForm(TFormMain, mainWindow);
+
+    debugln('Running ....');
 
     Application.Run;
 

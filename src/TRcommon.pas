@@ -3,6 +3,10 @@ unit TRcommon;
 interface
 
 uses
+    {$ifdef unix}
+    cthreads,
+    cmem,
+    {$endif}
     Classes, Forms, SysUtils, Dialogs, StdCtrls, LazFileUtils, laz2_DOM,
     ExtCtrls, laz2_XMLRead, laz2_XMLWrite,DateUtils, fphttpclient, ssockets, sslsockets,
     fpopenssl, openssl, hmac, strutils, IniFiles, LazLogger, Graphics,
@@ -1161,16 +1165,14 @@ end;
 
 function GetCurrentTimeStr(): UTF8String;
 var
-   ThisMoment : TDateTime;
+   n : TDateTime;
    Res : UTF8String;
    Off : longint;
 begin
-    {$ifdef LINUX}
-    ReReadLocalTime();    // in case we are near daylight saving time changeover
-    {$endif}
-    ThisMoment:=Now;
-    Result := FormatDateTime('YYYY-MM-DD',ThisMoment) + 'T'
-                   + FormatDateTime('hh:mm:ss.zzz"0000"',ThisMoment);
+    n:=Now;
+    Result := FormatDateTime('YYYY-MM-DD',n) + 'T'
+                   + FormatDateTime('hh:mm:ss.zzz"0000"',n);
+    TRlog('GetCurrentTimeStr 2');
     Off := GetLocalTimeOffset();
     if (Off div -60) >= 0 then Res := '+'
         else Res := '-';
