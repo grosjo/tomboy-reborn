@@ -75,7 +75,6 @@ begin
 
     try
        json := GetJSON(res);
-       TRlog('JSON= '+json.AsJSON);
 
        json := json.Items[4];
        jObject := TJSONObject(json);
@@ -96,14 +95,11 @@ begin
     OauthParamsSort(p);
     OauthSign(res, 'GET', p,Key,TokenSecret);
     res := WebGet(res,p);
-    TRlog(res);
     FreeAndNil(p);
     ok := true;
     ErrorString := '';
     try
        json := GetJSON(res);
-       TRlog('JSON OAUTH = ' + json.FormatJSON());
-
        jObject := TJSONObject(json);
        sid := jObject.Get('current-sync-guid');
        rev := StrToInt(jObject.Get('latest-sync-revision'));
@@ -158,7 +154,6 @@ begin
 
     // HTTP REQUEST
     res := getParam('URLNOTES');
-    TRlog(res);
     p := TstringList.Create();
     OauthBaseParams(p,Key,Token);
     p.Add('include_notes');
@@ -168,7 +163,6 @@ begin
     res := WebGet(res,p);
     FreeAndNil(p);
 
-    TRlog('RESPONSE=') ; TRlog(res);
     if (res = '') then begin ErrorString :=  'Next-GetNotes: Unable to get initial data'; exit(false); end;
 
     ok := true;
@@ -205,12 +199,9 @@ begin
           json := jnotes.Items[i];
           jObject := TJSONObject(json);
 
-          TRlog(json.FormatJSON());
-
           NoteInfo^.Action:=SynUnset;
           NoteInfo^.ID := jObject.Get('guid');
           NoteInfo^.Rev := jObject.Get('last-sync-revision',-1);
-          if(NoteInfo^.Rev>ServerRev) then ServerRev :=NoteInfo^.Rev;
 
           NoteInfo^.CreateDate:=jObject.Get('create-date','');
           if NoteInfo^.CreateDate <> '' then
@@ -228,7 +219,6 @@ begin
           j := round(d*10);
           d := j * 0.1;
           NoteInfo^.Version := Format('%0.1f',[d]);
-          TRlog('Version = '+ NoteInfo^.Version);
 
           NoteInfo^.Deleted := false;
           NoteInfo^.Title := jObject.Get('title','');
@@ -248,14 +238,12 @@ begin
           NoteInfo^.Y := jObject.Get('y',-1);
 
           jtags := jObject.Get('tags',jtags);
-          TRlog('Found '+IntToStr(jtags.Count) + ' tags');
 
           NoteInfo^.Tags := TStringList.Create;
           j:=0;
           while(j< jtags.Count) do
           begin
              res:= jtags.Items[j].AsString;
-             TRlog('New Tag = '+res);
              NoteInfo^.Tags.Add(res);
              inc(j);
           end;
@@ -288,8 +276,6 @@ begin
     Double quote is replaced with \"
     Backslash is replaced with \\
 }
-    TRlog('OLD');
-    TRlog(s);
     r:='';
 
     for i := 1 to Length (s) do
@@ -302,8 +288,6 @@ begin
        else r:=r + S[i];
     end;
 
-    TRlog('NEW');
-    TRlog(r);
     Result := r;
 end;
 
@@ -316,6 +300,7 @@ var
     p : TStrings;
     jObject : TJSONObject;
 begin
+    //res := '{ "note-changes": [';
     res := '{ "latest-sync-revision": "'+IntToStr(ServerRev+1)+'", "note-changes": [';
 
     for i := 0 to notes.Count -1 do
@@ -353,18 +338,13 @@ begin
     end;
     res := res + ' ] } ';
 
-    TRlog('Checking format');
     try
        json := GetJSON(res);
-       TRlog(json.FormatJSON());
     except on E:Exception do begin ErrorString := E.message; TRlog(E.message); exit(false); end;
     end;
 
-    TRlog('Posting');
-
     // HTTP REQUEST
     res := getParam('URLNOTES');
-    TRlog(res);
     p := TstringList.Create();
     OauthBaseParams(p,Key,Token);
     OauthParamsSort(p);
@@ -377,7 +357,6 @@ begin
 
     if (res = '') then begin ErrorString :=  'Push CHanges: Unable to push data'; exit(false); end;
 
-    TRlog('Checking result');
     try
        json := GetJSON(res);
        TRlog(json.FormatJSON());

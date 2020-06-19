@@ -758,7 +758,6 @@ begin
     c :=0;
     for j := 0 to NodeList.Count-1 do
     begin
-        //TRlog('XML '+IntToStr(j));
         Node := NodeList.Item[j].Attributes.GetNamedItem('guid');
         ID := Node.TextContent;
 
@@ -798,7 +797,6 @@ begin
         then PNote^.LastSyncGMT := GetGMTFromStr(PNote^.LastSync)
         else PNote^.LastSyncGMT := 0;
         inc(c);
-        //TRlog('c = '+IntToStr(c));
     end;
     TRlog('Found '+IntToStr(c)+' manifest notes');
 end;

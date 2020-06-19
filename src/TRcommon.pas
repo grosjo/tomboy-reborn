@@ -274,14 +274,12 @@ end;
 
 function GetLocalNoteFile(NoteID : UTF8String; altrep : UTF8String = ''): UTF8String;
 begin
-    //TRlog('GetLocalNoteFile ('+NoteID+')');
     altrep := chomppathdelim(altrep);
     if(length(altrep)>0)
     then begin
       ForceDirectoriesUTF8(altrep);
       Result := altrep + PathDelim + NoteID + '.note';
     end else Result := NotesDir + NoteID + '.note';
-    //TRlog('GetLocalNoteFile -> '+Result);
 end;
 
 function GetLocalBackupPath(): UTF8String;
@@ -802,7 +800,6 @@ begin
    end;
 
    try
-     //TRlog('Looking for text');
      Node := Doc.DocumentElement.FindNode('text');
      if(assigned(Node)) then
      begin
@@ -812,8 +809,8 @@ begin
            Child := Node.Attributes.GetNamedItem('version');
            if(Assigned(Child)) then NoteInfo^.Version := Child.NodeValue;
         end;
+        Node.Free;
      end;
-     if(assigned(Node)) then Node.Free;
    except on E:Exception do
        begin
          TRlog('Error CONTENT FileToNote '+filename);
@@ -826,14 +823,12 @@ begin
 
 
    try
-     //TRlog('Looking for create-date');
      Node := Doc.DocumentElement.FindNode('create-date');
      NoteInfo^.CreateDate := '';
      if(assigned(Node)) then NoteInfo^.CreateDate := Node.FirstChild.NodeValue;
      if NoteInfo^.CreateDate = '' then NoteInfo^.CreateDate := GetCurrentTimeStr();
      NoteInfo^.CreateDateGMT := GetGMTFromStr(NoteInfo^.CreateDate);
      if(assigned(Node)) then Node.Free;
-     //TRlog('Found ' + NoteInfo^.CreateDate);
    except on E:Exception do
        begin
          TRlog('Error CREATEDATE FileToNote '+filename);
@@ -845,13 +840,11 @@ begin
    end;
 
    try
-     //TRlog('Looking for last-change-date');
      Node := Doc.DocumentElement.FindNode('last-change-date');
      NoteInfo^.LastChange := '';
      if(assigned(Node)) then NoteInfo^.LastChange := Node.FirstChild.NodeValue;
      if NoteInfo^.LastChange = '' then NoteInfo^.LastChange := GetCurrentTimeStr();
      NoteInfo^.LastChangeGMT := GetGMTFromStr(NoteInfo^.LastChange);
-     //TRlog('Found ' + NoteInfo^.LastChange);
      if(assigned(Node)) then Node.Free;
    except on E:Exception do
        begin
@@ -864,13 +857,11 @@ begin
    end;
 
    try
-     //TRlog('Looking for last-metadata-change-date');
      Node := Doc.DocumentElement.FindNode('last-metadata-change-date');
      NoteInfo^.LastMetaChange := '';
      if(assigned(Node)) then NoteInfo^.LastMetaChange := Node.FirstChild.NodeValue;
      if NoteInfo^.LastMetaChange = '' then NoteInfo^.LastMetaChange := GetCurrentTimeStr();
      NoteInfo^.LastMetaChangeGMT := GetGMTFromStr(NoteInfo^.LastMetaChange);
-     //TRlog('Found ' + NoteInfo^.LastMetaChange);
      if(assigned(Node)) then Node.Free;
    except on E:Exception do
        begin
@@ -883,13 +874,10 @@ begin
    end;
 
    try
-     //TRlog('Looking for title');
      Node := Doc.DocumentElement.FindNode('title');
      if(assigned(Node))
-     then NoteInfo^.Title := ReplaceAngles(Node.FirstChild.NodeValue)
+     then begin NoteInfo^.Title := ReplaceAngles(Node.FirstChild.NodeValue); Node.Free; end
      else NoteInfo^.Title := 'Note ' + NoteInfo^.ID;
-     //TRlog('Found ' + NoteInfo^.Title);
-     if(assigned(Node)) then Node.Free;
    except on E:Exception do
        begin
          TRlog('Error TITLE FileToNote '+filename);
@@ -901,12 +889,10 @@ begin
    end;
 
    try
-     //TRlog('Looking for cursor-position');
      Node := Doc.DocumentElement.FindNode('cursor-position');
      NoteInfo^.CursorPosition := 0;
-     if(assigned(Node)) then NoteInfo^.CursorPosition := StrToInt(Node.FirstChild.NodeValue);
-     //TRlog('Found '+ IntToStr(NoteInfo^.CursorPosition));
-     if(assigned(Node)) then Node.Free;
+     if(assigned(Node))
+     then begin NoteInfo^.CursorPosition := StrToInt(Node.FirstChild.NodeValue); Node.Free; end;
    except on E:Exception do
        begin
          TRlog('Error CURSORPOSITION FileToNote '+filename);
@@ -918,12 +904,10 @@ begin
    end;
 
    try
-     //TRlog('Looking for selection-bound-position');
      Node := Doc.DocumentElement.FindNode('selection-bound-position');
      NoteInfo^.SelectBoundPosition := 0;
-     if(assigned(Node)) then NoteInfo^.SelectBoundPosition := StrToInt(Node.FirstChild.NodeValue);
-     //TRlog('Found '+ IntToStr(NoteInfo^.SelectBoundPosition));
-     if(assigned(Node)) then Node.Free;
+     if(assigned(Node))
+     then begin NoteInfo^.SelectBoundPosition := StrToInt(Node.FirstChild.NodeValue); Node.Free; end;
    except on E:Exception do
        begin
          TRlog('Error BOUDPOSITION FileToNote '+filename);
@@ -935,12 +919,10 @@ begin
    end;
 
    try
-     //TRlog('Looking for width');
      Node := Doc.DocumentElement.FindNode('width');
      NoteInfo^.Width := 0;
-     if(assigned(Node)) then NoteInfo^.Width := StrToInt(Node.FirstChild.NodeValue);
-     //TRlog('Found '+ IntToStr(NoteInfo^.Width));
-     if(assigned(Node)) then Node.Free;
+     if(assigned(Node))
+     then begin NoteInfo^.Width := StrToInt(Node.FirstChild.NodeValue); Node.Free; end;
    except on E:Exception do
        begin
          TRlog('Error WIDTH FileToNote '+filename);
@@ -952,12 +934,10 @@ begin
    end;
 
    try
-     //TRlog('Looking for height');
      Node := Doc.DocumentElement.FindNode('height');
      NoteInfo^.Height := 0;
-     if(assigned(Node)) then NoteInfo^.Height := StrToInt(Node.FirstChild.NodeValue);
-     //TRlog('Found '+ IntToStr(NoteInfo^.Height));
-     if(assigned(Node)) then Node.Free;
+     if(assigned(Node))
+     then begin NoteInfo^.Height := StrToInt(Node.FirstChild.NodeValue); Node.Free; end;
    except on E:Exception do
        begin
          TRlog('Error HEIGHT FileToNote '+filename);
@@ -969,12 +949,10 @@ begin
    end;
 
    try
-     //TRlog('Looking for X');
      Node := Doc.DocumentElement.FindNode('x');
      NoteInfo^.X := 0;
-     if(assigned(Node)) then NoteInfo^.X := StrToInt(Node.FirstChild.NodeValue);
-     //TRlog('Found '+ IntToStr(NoteInfo^.X));
-     if(assigned(Node)) then Node.Free;
+     if(assigned(Node))
+     then begin NoteInfo^.X := StrToInt(Node.FirstChild.NodeValue); Node.Free; end;
    except on E:Exception do
        begin
          TRlog('Error POSX FileToNote '+filename);
@@ -986,12 +964,10 @@ begin
    end;
 
    try
-     //TRlog('Looking for Y');
      Node := Doc.DocumentElement.FindNode('y');
      NoteInfo^.Y := 0;
-     if(assigned(Node)) then NoteInfo^.Y := StrToInt(Node.FirstChild.NodeValue);
-     //TRlog('Found '+ IntToStr(NoteInfo^.Y));
-     if(assigned(Node)) then Node.Free;
+     if(assigned(Node))
+     then begin NoteInfo^.Y := StrToInt(Node.FirstChild.NodeValue); Node.Free; end;
    except on E:Exception do
        begin
          TRlog('Error POSY FileToNote '+filename);
@@ -1003,12 +979,10 @@ begin
    end;
 
    try
-     //TRlog('Looking for open-on-startup');
      Node := Doc.DocumentElement.FindNode('open-on-startup');
      NoteInfo^.OpenOnStartup := false;
-     if(assigned(Node)) then NoteInfo^.OpenOnStartup := StrToBool(Node.FirstChild.NodeValue);
-     //TRlog('Found '+ BoolToStr(NoteInfo^.OpenOnStartup, true));
-     if(assigned(Node)) then Node.Free;
+     if(assigned(Node))
+     then begin NoteInfo^.OpenOnStartup := StrToBool(Node.FirstChild.NodeValue); Node.Free; end;
    except on E:Exception do
        begin
          TRlog('Error OPENSTART FileToNote '+filename);
@@ -1020,12 +994,10 @@ begin
    end;
 
    try
-     //TRlog('Looking for pinned');
      Node := Doc.DocumentElement.FindNode('pinned');
      NoteInfo^.Pinned := false;
-     if(assigned(Node)) then NoteInfo^.Pinned := StrToBool(Node.FirstChild.NodeValue);
-     //TRlog('Found '+ BoolToStr(NoteInfo^.Pinned, true));
-     if(assigned(Node)) then Node.Free;
+     if(assigned(Node))
+     then begin NoteInfo^.Pinned := StrToBool(Node.FirstChild.NodeValue); Node.Free; end;
    except on E:Exception do
        begin
          TRlog('Error PINNED FileToNote '+filename);
@@ -1037,7 +1009,6 @@ begin
    end;
 
    try
-     //TRlog('Looking for tags');
      NoteInfo^.Tags.Clear;
      Node := Doc.DocumentElement.FindNode('tags');
      if(assigned(Node)) then
@@ -1048,10 +1019,8 @@ begin
            //Trlog('Found : '+NodeList.Item[j].TextContent);
            NoteInfo^.Tags.Add(NodeList.Item[j].TextContent);
         end;
-     end
-     //else TRlog('No tags')
-     ;
-     if(assigned(Node)) then Node.Free;
+        Node.Free;
+     end;
    except on E:Exception do
        begin
          TRlog('Error TAGS FileToNote '+filename);
@@ -1172,7 +1141,6 @@ begin
     n:=Now;
     Result := FormatDateTime('YYYY-MM-DD',n) + 'T'
                    + FormatDateTime('hh:mm:ss.zzz"0000"',n);
-    TRlog('GetCurrentTimeStr 2');
     Off := GetLocalTimeOffset();
     if (Off div -60) >= 0 then Res := '+'
         else Res := '-';
@@ -1230,7 +1198,6 @@ begin
        exit(0.0);
        end;
     end;
-    //TRlog('GetGMTFromStr : "' + DateStr + '"  -> ' + DatetoStr(Result) + ' '+ TimetoStr(Result));
 end;
 
 
@@ -1698,15 +1665,7 @@ destructor TNoteInfoList.Destroy;
 var
 I : integer;
 begin
-  TRlog('Destroy NoteInfoList ' + LName);
-  for I := 0 to Count-1 do
-  begin
-       //TRlog('Destroy NoteInfoList FreeAndNil '+IntToStr(I) + ' ID='+Items[I]^.ID);
-       //Items[I]^.tags.Free;
-       TRlog('Destroy NoteInfoList Disposing '+IntToStr(I)+' '+Items[I]^.ID);
-       dispose(Items[I]);
-  end;
-  TRlog('Destroy NoteInfoList '+LName+' done');
+  for I := 0 to Count-1 do dispose(Items[I]);
   inherited;
 end;
 

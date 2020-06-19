@@ -424,8 +424,6 @@ begin
       chr := UTF8Copy(s,i,1);
       ch := chr.Chars[0];
 
-      //TRlog('CHAR = '+chr+' ORD='+IntToStr(Ord(Ch))+' SUB= "'+UTF8Copy(s,i,10)+'"');
-
       if Ch = #13 then begin inc(i); continue; end; // Micro$ bug
       if Ch = #9 then begin Ch := ' ';  Chr := '   '; end; // Tabs
 
@@ -545,8 +543,6 @@ begin
          sub := UTF8Copy(s,i+k+1,m-1);
          i:=i+k+m;
 
-         //TRlog('TAG <'+tagtext+'>  SUB='+UTF8Copy(sub,1,30));
-
          case tagtype of
             TTagType.TagBold         : TextToMemo(sub, true, Italic, HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
             TTagType.TagItalic       : TextToMemo(sub, Bold, true,   HighLight, Underline, Strikeout, FixedWidth, InBullet, false, linkinternal, linkexternal, FontSize, level+1);
@@ -594,7 +590,6 @@ begin
          TRlog('After tag : '+Copy(s,i,30)+' ...');
       end;
 
-      //TRlog('New loop LEVEL='+IntToStr(level)+' i='+IntToStr(i)+' j='+IntToStr(j) );
    end;
 
    if(newpar or needpar)
@@ -1712,7 +1707,6 @@ begin
    while(i<4)
    do begin
       ktb := TKMemoTextBlock(Kmemo1.Blocks[i]);
-      //TRlog('Testing block '+IntToStr(i)+' : '+ktb.Text);
       if(CompareStr(ktb.TextStyle.Font.Name,UsualFont)<>0) then ktb.TextStyle.Font.Name := UsualFont;
       if(ktb.TextStyle.Font.Size <> FontSizeTitle) then ktb.TextStyle.Font.Size := FontSizeTitle;
       if(ktb.TextStyle.Font.Color <> TitleColour) then ktb.TextStyle.Font.Color := TitleColour;
@@ -2005,8 +1999,6 @@ begin
 
    if(CompareStr(oldtext,KMemo1.Text)<>0)
    then begin
-     TRlog(' Text has changed LENOLD='+IntToStr(Length(oldtext))+'  LENNEW='+IntToStr(Length(KMemo1.Text)));
-     //TRlog(' Text has changed OLD='+oldtext+'  EW='+KMemo1.Text);
      CheckLinks();
      PostFormatTitle();
      MarkDirty();
@@ -2014,11 +2006,9 @@ begin
      oldselstart := KMemo1.RealSelStart;
      oldselend := KMemo1.RealSelend;
      PostBuildMenus();
-     TRlog('New text length = '+IntToStr(Length(oldtext)));
    end else
    if((oldselstart<>KMemo1.RealSelStart) or (oldselend<>KMemo1.RealSelend))
    then begin
-      TRlog(' Selection has changed (mouseup)');
       oldselstart := KMemo1.RealSelStart;
       oldselend := KMemo1.RealSelend;
       PostBuildMenus();
@@ -2047,11 +2037,7 @@ var
     i,j : integer;
     par : TKMemoParagraph;
 begin
-//  TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key));
   i := KMemo1.Blocks.IndexToBlockIndex(KMemo1.RealSelStart, j);
-  //TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key)+ ' Block='+IntToStr(i) + ' Pos='+IntToStr(KMemo1.RealSelStart)+' Tex@pos= '+Copy(KMemo1.Text, KMemo1.RealSelStart+1,10));
-  //TRlog('TFormNote.KMemo1KeyDown '+IntToStr(Key)+ ' Block='+IntToStr(i) + ' Pos='+IntToStr(KMemo1.RealSelStart)+' Tex@poaClass='+KMemo1.Blocks[i].ClassName + ' Fontsize='+IntToStr(TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Size));
-
 
   // CTRL
   if {$ifdef DARWIN}ssMeta{$else}ssCtrl{$endif} in Shift then
