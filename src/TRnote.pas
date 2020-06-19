@@ -97,7 +97,7 @@ private
 
     procedure NoteToMemo();
     procedure MemoToNote();
-    procedure MarkDirty();
+    procedure MarkDirty(s : String);
     procedure MarkClean();
 
     procedure NoteDuplicate();
@@ -624,7 +624,7 @@ begin
 
 
    // KMEMO
-   TRlog('Dealing with content');
+   //TRlog('Dealing with content');
    KMemo1.Blocks.LockUpdate;
    KMemo1.Clear;
 
@@ -634,6 +634,7 @@ begin
 
    if(hasdata) then KMemo1.Blocks.Delete(0);
 
+   {
    i:=0;
    while(i<KMemo1.Blocks.Count)
    do begin
@@ -642,8 +643,11 @@ begin
    end;
 
    TRlog('Dealing with content end : blocks = '+IntToStr(Kmemo1.Blocks.Count));
+   }
 
    Dirty := False;
+
+   oldtext := KMemo1.Text;
 
    KMemo1.Blocks.UnlockUpdate;
 
@@ -1090,7 +1094,7 @@ begin
       KMemo1.Blocks.InsertPlainText(i, Buff);
       KMemo1.SelStart := i;
       Kmemo1.SelEnd := i + length(Buff);
-      MarkDirty();
+      MarkDirty('PrimaryPaste');
    end;
 end;
 
@@ -1123,7 +1127,7 @@ begin
    KMemo1.blocks.InsertPlainText(d,FormatDateTime(' YYYY-MM-DD hh:mm:ss ', now()));
 
    KMemo1.blocks.UnLockUpdate;
-   MarkDirty();
+   MarkDirty('InsertDate');
 
    Kmemo1.SelStart := d+21;
    Kmemo1.SelEnd := d+21;
@@ -1163,7 +1167,7 @@ begin
    KMemo1.SelEnd := LastChar;
    KMemo1.SelStart := FirstChar;
 
-   MarkDirty();
+   MarkDirty('AlterFont');
 end;
 
 function TFormNote.IncFontSize(n : integer) : integer;
@@ -1234,8 +1238,9 @@ begin
 
 end;
 
-procedure TFormNote.MarkDirty();
+procedure TFormNote.MarkDirty(s : String);
 begin
+    TRlog('MarkDirty ('+s+')');
     Dirty := true;
     Caption := '* ' + note^.Title;
 end;
@@ -1292,7 +1297,7 @@ begin
    KMemo1.SelStart := note^.CursorPosition;
    KMemo1.SelEnd := note^.CursorPosition;
 
-   oldtext := KMemo1.Text;
+   //oldtext := KMemo1.Text;
    oldselstart := KMemo1.RealSelStart;
    oldselend := KMemo1.RealSelend;
 
@@ -1736,7 +1741,7 @@ begin
    begin
       note^.Title := UTF8Trim(CleanTitle(Title));
       result := true;
-      MarkDirty();
+      MarkDirty('MarkTitle');
    end;
 
    KMemo1.Blocks.UnLockUpdate;
@@ -2001,7 +2006,7 @@ begin
    then begin
      CheckLinks();
      PostFormatTitle();
-     MarkDirty();
+     MarkDirty('onChange new text');
      oldtext := KMemo1.Text;
      oldselstart := KMemo1.RealSelStart;
      oldselend := KMemo1.RealSelend;
@@ -2054,8 +2059,8 @@ begin
 
      if key = VK_D then begin TrLog('Ctrl-D'); InsertDate(); Key := 0; end;
 
-     if key = VK_C then begin TrLog('Ctrl-C'); KMemo1.ExecuteCommand(TKEditCommand.ecCopy); MarkDirty(); Key := 0; end;
-     if key = VK_X then begin TrLog('Ctrl-X'); KMemo1.ExecuteCommand(TKEditCommand.ecCut); MarkDirty(); Key := 0; end;
+     if key = VK_C then begin TrLog('Ctrl-C'); KMemo1.ExecuteCommand(TKEditCommand.ecCopy); MarkDirty('onKeyDownCtrlC'); Key := 0; end;
+     if key = VK_X then begin TrLog('Ctrl-X'); KMemo1.ExecuteCommand(TKEditCommand.ecCut); MarkDirty('onKeyDownCtrlX'); Key := 0; end;
      if key = VK_V then begin TrLog('Ctrl-V'); PrimaryPaste(); {KMemo1.ExecuteCommand(TKEditCommand.ecPaste); MarkDirty(); } Key := 0; end;
 
      if key = VK_W then begin TrLog('Ctrl-W'); PostCommit(); Key := 0; end;
@@ -2197,11 +2202,11 @@ begin
       ntDelete :            NoteDelete();
 
       // EDIT
-      ntRedo :              begin KMemo1.ExecuteCommand(TKEditCommand.ecRedo); MarkDirty(); end;
-      ntUndo :              begin KMemo1.ExecuteCommand(TKEditCommand.ecUndo); MarkDirty(); end;
+      ntRedo :              begin KMemo1.ExecuteCommand(TKEditCommand.ecRedo); MarkDirty('Redo'); end;
+      ntUndo :              begin KMemo1.ExecuteCommand(TKEditCommand.ecUndo); MarkDirty('Undo'); end;
       ntSelectAll :         KMemo1.ExecuteCommand(ecSelectAll);
-      ntCopy :              begin KMemo1.ExecuteCommand(TKEditCommand.ecCopy); MarkDirty(); end;
-      ntCut :               begin KMemo1.ExecuteCommand(TKEditCommand.ecCut); MarkDirty(); end;
+      ntCopy :              begin KMemo1.ExecuteCommand(TKEditCommand.ecCopy); end;
+      ntCut :               begin KMemo1.ExecuteCommand(TKEditCommand.ecCut); MarkDirty('Cut'); end;
       ntPaste :             begin PrimaryPaste(); { KMemo1.ExecuteCommand(TKEditCommand.ecPaste); MarkDirty();} end;
       ntInsertDate :        InsertDate();
 
