@@ -1327,7 +1327,7 @@ begin
   // OTHER
   if((Key = VK_DELETE) and (Sender<>SearchBox)) then
   begin
-    if(DeleteNote(SelectedNote)) then Key := 0;
+    if(DeleteNote(SelectedNote)) then Begin PostScan(); Key := 0; end;
     exit();
   end;
 
