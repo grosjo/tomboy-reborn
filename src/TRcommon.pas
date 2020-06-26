@@ -695,6 +695,7 @@ function NoteToFile(note : PNoteInfo; filename : UTF8String) : boolean;
 var
    f : TStringList;
    ok : boolean;
+   i : integer;
 begin
    TRlog('Note to file ' + note^.ID + ' into ' + filename );
 
@@ -717,6 +718,15 @@ begin
    f.Add('<pinned>' + BoolToStr(note^.Pinned) + '</pinned>');
    f.Add('<open-on-startup>' + BoolToStr(note^.OpenOnStartup) + '</open-on-startup>');
    f.Add('<text xml:space="preserve"><note-content version="' + note^.Version + '">' + note^.Content + '</note-content></text>');
+   f.Add('<tags>');
+   i:=0;
+   while(i<note^.Tags.Count)
+   do begin
+      TRlog('Adding tag : '+note^.Tags[i]);
+      f.Add('<tag>'+note^.Tags[i]+'</tag>');
+      inc(i);
+   end;
+   f.Add('</tags>');
    f.Add('</note>');
 
    f.LineBreak := rsLineBreak;
@@ -728,7 +738,7 @@ begin
    end;
 
    f.Free;
-
+   TRlog('Note to file end');
    result := ok;
 end;
 

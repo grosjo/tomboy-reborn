@@ -1321,6 +1321,7 @@ begin
   TRlog('TFormNote.FormClose');
   isClosing := true;
   note^.Display:=nil;
+  self.Release;
 end;
 
 procedure TFormNote.ShowSearchPanel(s : boolean);
@@ -1639,8 +1640,11 @@ procedure TFormNote.FormDestroy(Sender: TObject);
     ARec : TNoteUpdateRec; }
 begin
   TrLog('TFormNote.FormDestroy');
-  HouseKeeper.Enabled := False;
-  FreeAndNil(HouseKeeper);
+  if(assigned(HouseKeeper))
+  then begin
+    HouseKeeper.Enabled := False;
+    FreeAndNil(HouseKeeper);
+  end;
   UnsetPrimarySelection();
 end;
 
@@ -2134,9 +2138,8 @@ end;
 
 procedure TFormNote.ToggleNotebook(Sender : TObject);
 var
-   i : integer;
-   s,s2 : UTF8String;
-   ok : boolean;
+   i,j : integer;
+   s : UTF8String;
 begin
    TRlog('TFormNote.ToggleNotebook');
 
@@ -2152,31 +2155,31 @@ begin
       exit();
    end;
 
-   s := TFormMain(mainWindow).NotebooksList.Strings[i];
+   s := UTF8Trim(TFormMain(mainWindow).NotebooksList.Strings[i]);
 
    TRlog('got notebook "'+s+'"');
 
-   if(length(s) = 0) then exit();
+   if(UTF8Length(s) = 0) then exit();
+
+   i:=0;
+   j := -1;
+   while((j<0) and (i<note^.Tags.Count))
+   do begin
+      if(UTF8CompareText(note^.Tags.Strings[i],'system:notebook:'+s) = 0) then j := i;
+      inc(i);
+   end;
+
 
    if(ManyNoteBooks) then
    begin
-      i:=0;
-      ok := true;
-      while(ok and (i<note^.Tags.Count))
-      do begin
-         s2:= note^.Tags.Strings[i];
-         inc(i);
-         if(CompareText('system:notebook:',Copy(s2,1,16)) <> 0) then continue;
-         if(CompareText(Trim(Copy(s2,17)),s) = 0) then ok:=false;
-      end;
-      if(ok) then note^.Tags.Add('system:notebook:'+s);
+      if(j<0) then note^.Tags.Add('system:notebook:'+s)
+      else note^.Tags.Delete(j);
    end
    else begin
       note^.Tags.Clear;
-      note^.Tags.Add('system:notebook:'+s);
+      if(j<0) then note^.Tags.Add('system:notebook:'+s);
    end;
    PostBuildMenus();
-
 end;
 
 procedure TFormNote.MainMenuClicked(Sender : TObject);
