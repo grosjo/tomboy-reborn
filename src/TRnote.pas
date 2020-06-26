@@ -2102,7 +2102,7 @@ begin
 
   // OTHER
 
-  if key = VK_TAB then begin TrLog('Tab'); KMemo1.Blocks.AddTextBlock('   '); Key := 0; exit(); end;
+  if key = VK_TAB then begin TrLog('Tab'); KMemo1.Blocks.InsertPlainText(KMemo1.RealSelStart,'   '); i := KMemo1.RealSelStart +3; KMemo1.SelStart := i; KMemo1.SelEnd:= i; Key := 0; exit(); end;
 
   if (Key  =  VK_BACK) and (KMemo1.RealSelStart = KMemo1.RealSelEnd)   // DEALING WITH BACKSPACE NEAR A BULLET
   then begin

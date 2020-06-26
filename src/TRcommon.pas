@@ -1060,8 +1060,8 @@ begin
   d1 := n1^.LastChangeGMT; if (d1 = 0) then d1 := n1^.CreateDateGMT;
   d2 := n2^.LastChangeGMT; if (d2 = 0) then d2 := n2^.CreateDateGMT;
 
-  if(d1<d2) then exit(-1);
-  if(d1>d2) then exit(1);
+  if(d1<d2) then exit(1);
+  if(d1>d2) then exit(-1);
 
   Result := 0;
 end;

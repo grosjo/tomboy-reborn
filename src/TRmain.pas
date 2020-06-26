@@ -281,9 +281,11 @@ procedure TFormMain.TrayIconClick(Sender: TObject);
 var
     p : TPoint;
 begin
+    TRlog('TFormMain.TrayIconClick');
     BuildTrayMenu(Sender);
     p := TrayIcon.GetPosition;
     TrayMenu.PopUp(p.x,p.y+24);
+    Trlog('TFormMain.TrayIconClick end ');
 end;
 
 
@@ -380,11 +382,12 @@ var
 begin
    TRlog('BuildTrayMenu');
 
-   if(not UseTrayIcon) then exit();
+   if(not UseTrayIcon) then Begin Trlog('BuildTrayMenu end becuse not use'); exit(); end;
 
 
    TrayMenu.Items.Clear;
    TrayMenu.Images := MenuIconList;
+   TRlog('BuildTrayMenu New Note');
    // New Note
    m1 := TMenuItem.Create(TrayMenu);
    m1.Tag := ord(ttNewNote);
@@ -393,6 +396,7 @@ begin
    m1.ImageIndex:=3;
    TrayMenu.Items.Add(m1);
 
+   TRlog('BuildTrayMenu Search');
    // Search
    m1 := TMenuItem.Create(TrayMenu);
    m1.Tag := ord(ttSearch);
@@ -401,23 +405,27 @@ begin
    m1.OnClick := @TrayMenuClicked;
    TrayMenu.Items.Add(m1);
 
+   TRlog('BuildTrayMenu Notebooks');
    // Notebooks
    m1 := TMenuItem.Create(TrayMenu);
    m1.Caption := rsTrayNotebooks;
    m1.ImageIndex:=39;
    TrayMenu.Items.Add(m1);
 
+   TRlog('BuildTrayMenu List notebook');
    // List notebooks
    m2 := TMenuItem.Create(m1);
    m2.Caption := 'test NB';
-   //m2.OnClick := nil;
+   m2.OnClick := nil;
    m1.Add(m2);
 
+   TRlog('BuildTrayMenu App Menu');
    // App menu
    m1 := TMenuItem.Create(TrayMenu);
    m1.Caption := rsMenuTools;
    TrayMenu.Items.Add(m1);
 
+   TRlog('BuildTrayMenu App Sync');
    // Sync
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttSync);
@@ -425,6 +433,8 @@ begin
    m2.Caption := rsTraySync;
    m2.OnClick := @TrayMenuClicked;
    m1.Add(m2);
+
+   TRlog('BuildTrayMenu App Settings');
    // Settings
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttSettings);
@@ -432,6 +442,8 @@ begin
    m2.ImageIndex:=8;
    m2.OnClick := @TrayMenuClicked;
    m1.Add(m2);
+
+   TRlog('BuildTrayMenu App About');
    // About
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttAbout);
@@ -439,6 +451,8 @@ begin
    m2.OnClick := @TrayMenuClicked;
    m2.ImageIndex:=9;
    m1.Add(m2);
+
+   TRlog('BuildTrayMenu App Quit');
    // Quit
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttQuit);
@@ -449,10 +463,13 @@ begin
 
    TrayMenu.Items.AddSeparator;
 
+   TRlog('BuildTrayMenu Add latest notes');
+
    // Add latest notes
    i:=0;
    while(i<LastUsed.Count) do
    begin
+      TRlog('BuildTrayMenu Loop '+IntToStr(i));
       n := NotesList.FindID(LastUsed.Strings[i]);
       if(n<>nil) then
       begin
@@ -630,10 +647,10 @@ var
 begin
    i:=0;
 
-   if(atend) then
-   begin
-      while(i<LastUsed.Count) do
-      begin
+   if(atend)
+   then begin
+      while(i<LastUsed.Count)
+      do begin
         if(CompareText(LastUsed.Strings[i],ID) = 0) then exit(false);
         inc(i);
       end;
@@ -641,13 +658,13 @@ begin
       exit(true);
    end;
 
-   while(i<LastUsed.Count) do
-    begin
-        if(CompareText(LastUsed.Strings[i],ID) = 0) then LastUsed.Delete(i)
-        else inc(i);
-    end;
+   while(i<LastUsed.Count)
+   do begin
+      if(CompareText(LastUsed.Strings[i],ID) = 0)
+      then LastUsed.Delete(i)
+      else inc(i);
+   end;
 
-   TrLog('Insert at first');
    LastUsed.Insert(0,ID);
 
    Result := true;
