@@ -1111,6 +1111,7 @@ end;
 
 procedure TFormSync.SyncVisible();
 begin
+    TRlog('SyncVisible');
     LabelTitle.Caption := rsRunningSync;
     LabelStats.Caption := rsRunningSync;
     StringGridReport.Clean;
@@ -1127,10 +1128,13 @@ begin
     end;
 
     DoSync();
+    TRlog('SyncVisible End');
 end;
 
 procedure TFormSync.SyncHidden();
 begin
+    TRlog('SyncHidden');
+
     LabelTitle.Caption := rsRunningSync;
     LabelStats.Caption := rsRunningSync;
     StringGridReport.Clean;
@@ -1151,12 +1155,15 @@ begin
     end;
 
     DoSync();
+    TRlog('SyncHidden');
 end;
 
 procedure TFormSync.FormShow(Sender: TObject);
-    begin
+begin
+    TRlog('FormSync Show');
     Left := 100 + random(55);
     Top := 100 + random(55);
+    TRlog('FormSync End');
 end;
 
 

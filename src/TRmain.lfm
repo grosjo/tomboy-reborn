@@ -91,6 +91,7 @@ object FormMain: TFormMain
       OnKeyDown = FormKeyDown
       OnPrepareCanvas = SGNotebooksPrepareCanvas
       OnResize = SGNotebooksResize
+      OnSelection = SGNotebooksSelection
     end
     object SGNotes: TStringGrid
       AnchorSideLeft.Control = Splitter1
@@ -122,6 +123,7 @@ object FormMain: TFormMain
       OnKeyDown = FormKeyDown
       OnPrepareCanvas = SGNotesPrepareCanvas
       OnResize = SGNotesResize
+      OnSelection = SGNotesSelection
     end
   end
   object CheckCaseSensitive: TCheckBox

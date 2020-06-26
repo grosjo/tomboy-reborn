@@ -8,7 +8,7 @@ uses
     Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, Buttons,
     Menus, ComCtrls, ExtCtrls, FileUtil, ActnList, DateUtils, Grids, lazLogger,
     Math, LCLType, LazFileUtils, process, LazUTF8,
-    TRcommon, TRtexts, TRsettings, TRsync, TRnote, TRabout;
+    TRcommon, TRtexts, TRsettings, TRsync, TRnote, TRabout, Types;
 
 
 type TTrayTags = (ttNewNote, ttSearch, ttAbout, ttSync, ttSettings, ttQuit);
@@ -17,7 +17,11 @@ type TTrayTags = (ttNewNote, ttSearch, ttAbout, ttSync, ttSettings, ttQuit);
 type TMenuTags = (mtNewNote, mtNewNotebook, mtDeleteNote, mtDeleteNotebook, mtQuit, mtSync, mtExport1, mtSettings, mtAbout);
 
 
-type TFormMain = class(TForm)
+type
+
+{ TFormMain }
+
+ TFormMain = class(TForm)
 
         CheckCaseSensitive: TCheckBox;
         MenuIconList: TImageList;
@@ -41,6 +45,8 @@ type TFormMain = class(TForm)
         procedure FormDestroy(Sender: TObject);
         procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 	procedure FormShow(Sender: TObject);
+        procedure SGNotebooksSelection(Sender: TObject; aCol, aRow: Integer);
+        procedure SGNotesSelection(Sender: TObject; aCol, aRow: Integer);
 
         procedure TrayIconClick(Sender: TObject);
         procedure BuildTrayMenu(Sender: TObject);
@@ -459,6 +465,7 @@ begin
       end;
       inc(i);
    end;
+   TRlog('BuildTrayMenu End');
 end;
 
 procedure TFormMain.OpenNoteByTitle(t : UTF8String);
@@ -493,7 +500,6 @@ procedure TFormMain.TrayNoteClicked(Sender : TObject);
 var
     n : PNoteInfo;
 begin
-
    TRlog('TrayNoteClicked');
 
    try
@@ -554,7 +560,6 @@ procedure TFormMain.TrayMenuClicked(Sender : TObject);
 var
     sats : boolean;
 begin
-
    TRlog('TrayMenuClicked');
 
    case TTrayTags(TMenuItem(Sender).Tag) of
@@ -1360,8 +1365,35 @@ begin
 
 end;
 
+procedure TFormMain.SGNotebooksSelection(Sender: TObject; aCol, aRow: Integer);
+begin
+  TRlog('SGNotebooksSelection  Col='+IntToStr(aCol)+' Row='+IntToStr(aRow));
+  if(aRow>0)
+  then begin
+    SGNotebooks.Row := aRow;
+    SelectedNotebook := SGNotebooks.Cells[2,aRow];
+    SGNotebooks.Selection:=TGridRect(Rect(0,aRow ,1 ,aRow));
+    SGNotebooks.SetFocus;
+    SGNotebooks.Refresh;
+  end;
+end;
+
+procedure TFormMain.SGNotesSelection(Sender: TObject; aCol, aRow: Integer);
+begin
+  TRlog('SGNotesSelection  Col='+IntToStr(aCol)+' Row='+IntToStr(aRow));
+  if(aRow>0)
+  then begin
+    SGNotes.Row := aRow;
+    SelectedNote := SGNotes.Cells[2,aRow];
+    SGNotes.Selection:=TGridRect(Rect(0,aRow ,2 ,aRow));
+    SGNotes.SetFocus;
+    SGNotes.Refresh;
+  end;
+end;
+
 procedure TFormMain.CheckCaseSensitiveChange(Sender: TObject);
 begin
+    TRlog('CheckCaseSensitiveChange');
     SearchCaseSensitive := CheckCaseSensitive.Checked;
 
     if(assigned(ShowTimer)) then
