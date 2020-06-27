@@ -222,6 +222,8 @@ RESOURCESTRING
   rsHelpSingleNote = 'Open indicated note, switch is optional';
   rsHelpSaveExit = 'After import single note, save & exit';
 
+  rsVersion = '1.0-beta6';
+
   rsLineBreak = {$IFDEF LINUX} AnsiChar(#10) {$ENDIF}
                {$IFDEF MSWINDOWS} AnsiUTF8String(#13#10) {$ENDIF};
 implementation

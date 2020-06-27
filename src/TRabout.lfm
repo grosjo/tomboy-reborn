@@ -3410,11 +3410,11 @@ object FormAbout: TFormAbout
   object Label2: TLabel
     AnchorSideLeft.Control = Owner
     AnchorSideLeft.Side = asrCenter
-    AnchorSideTop.Control = Label1
+    AnchorSideTop.Control = Label4
     AnchorSideTop.Side = asrBottom
     Left = 113
     Height = 15
-    Top = 141
+    Top = 166
     Width = 145
     BorderSpacing.Top = 10
     Caption = 'Coded by Joan Moreau'
@@ -3430,20 +3430,33 @@ object FormAbout: TFormAbout
     AnchorSideTop.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 52
-    Height = 45
-    Top = 185
-    Width = 266
+    Left = 69
+    Height = 36
+    Top = 194
+    Width = 233
     Alignment = taCenter
     Anchors = [akLeft, akBottom]
     BorderSpacing.Top = 10
     BorderSpacing.Bottom = 15
     Caption = 'Please use'#10'https://github.com/grosjo/tomboy-reborn/'#10'for issues/bugs/questions'
-    Font.Height = 13
+    Font.Height = -11
     Font.Name = 'Sans'
     Font.Style = [fsItalic]
     Layout = tlCenter
     ParentColor = False
     ParentFont = False
+  end
+  object Label4: TLabel
+    AnchorSideLeft.Control = Label1
+    AnchorSideLeft.Side = asrCenter
+    AnchorSideTop.Control = Label1
+    AnchorSideTop.Side = asrBottom
+    Left = 167
+    Height = 15
+    Top = 141
+    Width = 37
+    BorderSpacing.Top = 10
+    Caption = 'Label4'
+    ParentColor = False
   end
 end
