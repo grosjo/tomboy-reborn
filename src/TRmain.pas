@@ -252,12 +252,10 @@ begin
     m1.Add(m2);
 
 
-    if UseTrayIcon then
-    begin
-        TrayMenu := TPopupMenu.Create(Self);
-        TrayIcon.PopUpMenu := TrayMenu;
-        MenuIconList.GetIcon(2, TrayIcon.Icon);
-        TrayIcon.Show;
+    if UseTrayIcon
+    then begin
+      MenuIconList.GetIcon(2, TrayIcon.Icon);
+      TrayIcon.Show;
     end;
 
     LastSync := now;
@@ -384,8 +382,11 @@ begin
 
    if(not UseTrayIcon) then Begin Trlog('BuildTrayMenu end becuse not use'); exit(); end;
 
+   if(assigned(TrayMenu)) then FreeAndNil(TrayMenu);
 
-   TrayMenu.Items.Clear;
+   TrayMenu := TPopupMenu.Create(Self);
+   TrayIcon.PopUpMenu := TrayMenu;
+
    TrayMenu.Images := MenuIconList;
    TRlog('BuildTrayMenu New Note');
    // New Note
