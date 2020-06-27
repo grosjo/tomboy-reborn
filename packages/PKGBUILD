@@ -20,7 +20,7 @@ package() {
 	tar xf "$srcdir/data.tar.xz"
 
 	mkdir -p "$pkgdir/usr/share"
-	for dir in man applications icons; do
+	for dir in applications icons; do
 		cp -r "usr/share/$dir" "$pkgdir/usr/share"
 	done
 

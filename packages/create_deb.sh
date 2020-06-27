@@ -4,5 +4,6 @@ checkinstall --pkgname=tomboy-reborn --maintainer="\"Joan Moreau <jom@grosjo.net
 echo "RPM"
 alien -r -c -v tomboy-reborn_1.0-beta4_amd64.deb
 echo "ARCH"
-debtap tomboy-reborn_1.0-beta4_amd64.deb
 makepkg --printsrcinfo > .SRCINFO
+makepkg
+
