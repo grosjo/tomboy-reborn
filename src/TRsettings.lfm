@@ -1,7 +1,7 @@
 object FormSettings: TFormSettings
-  Left = 367
+  Left = 518
   Height = 410
-  Top = 183
+  Top = 203
   Width = 630
   BorderIcons = []
   Caption = 'Tomboy Reborn Settings'
@@ -286,11 +286,11 @@ object FormSettings: TFormSettings
           Left = 10
           Height = 23
           Top = 15
-          Width = 109
+          Width = 149
           BorderSpacing.Left = 10
           BorderSpacing.Top = 15
           BorderSpacing.Bottom = 15
-          Caption = 'Search at Start'
+          Caption = 'Show main list at start'
           OnChange = CheckShowSearchAtStartChange
           TabOrder = 0
         end

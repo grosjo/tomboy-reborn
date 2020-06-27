@@ -1662,7 +1662,7 @@ var
     Index : longint;
 begin
     Result := Nil;
-    TRlog('Searching TNoteList ' + LName + ' for ID=' + ID);
+    //TRlog('Searching TNoteList ' + LName + ' for ID=' + ID);
     for Index := 0 to Count-1 do begin
         if Items[Index]^.ID = ID then begin
             Result := Items[Index];

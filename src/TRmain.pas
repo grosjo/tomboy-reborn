@@ -382,13 +382,14 @@ begin
 
    if(not UseTrayIcon) then Begin Trlog('BuildTrayMenu end becuse not use'); exit(); end;
 
-   if(assigned(TrayMenu)) then FreeAndNil(TrayMenu);
+   if(not assigned(TrayMenu)) then TrayMenu := TPopupMenu.Create(Self);
 
-   TrayMenu := TPopupMenu.Create(Self);
    TrayIcon.PopUpMenu := TrayMenu;
 
+   Application.ProcessMessages;
+   TrayMenu.Items.Clear;
+
    TrayMenu.Images := MenuIconList;
-   TRlog('BuildTrayMenu New Note');
    // New Note
    m1 := TMenuItem.Create(TrayMenu);
    m1.Tag := ord(ttNewNote);
@@ -397,7 +398,6 @@ begin
    m1.ImageIndex:=3;
    TrayMenu.Items.Add(m1);
 
-   TRlog('BuildTrayMenu Search');
    // Search
    m1 := TMenuItem.Create(TrayMenu);
    m1.Tag := ord(ttSearch);
@@ -406,27 +406,23 @@ begin
    m1.OnClick := @TrayMenuClicked;
    TrayMenu.Items.Add(m1);
 
-   TRlog('BuildTrayMenu Notebooks');
    // Notebooks
    m1 := TMenuItem.Create(TrayMenu);
    m1.Caption := rsTrayNotebooks;
    m1.ImageIndex:=39;
    TrayMenu.Items.Add(m1);
 
-   TRlog('BuildTrayMenu List notebook');
    // List notebooks
    m2 := TMenuItem.Create(m1);
    m2.Caption := 'test NB';
    m2.OnClick := nil;
    m1.Add(m2);
 
-   TRlog('BuildTrayMenu App Menu');
    // App menu
    m1 := TMenuItem.Create(TrayMenu);
    m1.Caption := rsMenuTools;
    TrayMenu.Items.Add(m1);
 
-   TRlog('BuildTrayMenu App Sync');
    // Sync
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttSync);
@@ -435,7 +431,6 @@ begin
    m2.OnClick := @TrayMenuClicked;
    m1.Add(m2);
 
-   TRlog('BuildTrayMenu App Settings');
    // Settings
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttSettings);
@@ -444,7 +439,6 @@ begin
    m2.OnClick := @TrayMenuClicked;
    m1.Add(m2);
 
-   TRlog('BuildTrayMenu App About');
    // About
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttAbout);
@@ -453,7 +447,6 @@ begin
    m2.ImageIndex:=9;
    m1.Add(m2);
 
-   TRlog('BuildTrayMenu App Quit');
    // Quit
    m2 := TMenuItem.Create(m1);
    m2.Tag := ord(ttQuit);
@@ -464,13 +457,10 @@ begin
 
    TrayMenu.Items.AddSeparator;
 
-   TRlog('BuildTrayMenu Add latest notes');
-
    // Add latest notes
    i:=0;
    while(i<LastUsed.Count) do
    begin
-      TRlog('BuildTrayMenu Loop '+IntToStr(i));
       n := NotesList.FindID(LastUsed.Strings[i]);
       if(n<>nil) then
       begin
@@ -597,9 +587,6 @@ begin
         ttQuit : begin ConfigWrite('TrayMenu Quit'); Application.terminate; end;
 
    end;
-
-   BuildTrayMenu(Self);
-
 end;
 
 { ======= MAIN MENU ====== }
@@ -1377,7 +1364,6 @@ begin
 
   ShowLists(Self);
   BuildFileMenu(Self);
-  BuildTrayMenu(Self);
 
   if(not SearchAtStart) then self.Hide();
 
