@@ -8,9 +8,9 @@ uses
     cmem,
     {$endif}
     Classes, Forms, SysUtils, Dialogs, StdCtrls, LazFileUtils, laz2_DOM,
-    ExtCtrls, laz2_XMLRead, laz2_XMLWrite,DateUtils, fphttpclient, ssockets, sslsockets,
-    fpopenssl, openssl, hmac, strutils, IniFiles, LazLogger, Graphics,
-    {$ifdef LINUX} Unix, {$endif} LazUTF8,
+    ExtCtrls, laz2_XMLRead, DateUtils, sslbase, openssl, fphttpclient,
+    ssockets, hmac, strutils, IniFiles, LazLogger, Graphics,
+    {$ifdef LINUX} Unix, {$endif} LazUTF8, opensslsockets,
     FileInfo, TRAutoStartCtrl, Trtexts;
 
 
@@ -1278,10 +1278,10 @@ end;
 procedure TRSockecktHandler.HttpClientGetSocketHandler(Sender: TObject; const UseSSL: Boolean; out AHandler: TSocketHandler);
 begin
   If UseSSL then begin
-    AHandler:=TSSLSocketHandler.Create;
-    TSSLSocketHandler(AHandler).SSLType:=stTLSv1_2;
-  end else
-      AHandler := TSocketHandler.Create;
+    AHandler:=TOpenSSLSocketHandler.Create;
+    TOpenSSLSocketHandler(AHandler).SSLType := stTLSv1_2;
+
+  end else AHandler := TSocketHandler.Create;
 end;
 
 function URLDecode(s: UTF8String): UTF8String;

@@ -217,16 +217,16 @@ object FormMain: TFormMain
   end
   object TrayIcon: TTrayIcon
     OnClick = TrayIconClick
-    left = 344
-    top = 224
+    Left = 344
+    Top = 224
   end
   object MainMenu: TMainMenu
-    left = 32
-    top = 32
+    Left = 32
+    Top = 32
   end
   object MenuIconList: TImageList
-    left = 126
-    top = 40
+    Left = 126
+    Top = 40
     Bitmap = {
       4C692A0000001000000010000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

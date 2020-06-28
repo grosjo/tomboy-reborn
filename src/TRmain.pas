@@ -900,7 +900,7 @@ begin
       TRlog('DElAY '+IntToStr(m)+' / '+IntToStr(SyncRepeat*60));
 
       if(m<SyncRepeat*60)
-      then TRlog('Should process sync every '+IntToStr(SyncRepeat*60)+' secs (now waiting for '+IntToStr(m)+' secs)')
+      then TRlog('Should process sync every '+IntToStr(SyncRepeat*60)+' secs (only '+IntToStr(m)+' secs passed)')
       else begin
          // DO SYNC
          syncshallrun := false;
