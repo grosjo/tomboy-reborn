@@ -645,12 +645,12 @@ begin
 
    n^.Version := '0.3';
    n^.Title := 'New Note '+ n^.CreateDate;
-   n^.Content := 'Empty note';
+   n^.Content := n^.Title + rsLineBreak + rsLineBreak + 'Empty note';
 
    n^.X := 0;
    n^.Y := 0;
 
-   n^.width := 300;
+   n^.width := 400;
    n^.height := 300;
 
    n^.CursorPosition := 0;

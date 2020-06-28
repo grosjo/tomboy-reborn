@@ -175,8 +175,8 @@ begin
     FontSizeNormal   := round(12.0*FontScale/100.0);
 
     FontSizeLarge    := Max(round(14.0*FontScale/100.0),FontSizeNormal+1);
-    FontSizeTitle    := Max(round(16.0*FontScale/100.0),FontSizeLarge+1);
-    FontSizeHuge     := Max(round(18.0*FontScale/100.0),FontSizeTitle+1);
+    FontSizeTitle    := Max(round(15.0*FontScale/100.0),FontSizeLarge+1);
+    FontSizeHuge     := Max(round(17.0*FontScale/100.0),FontSizeTitle+1);
     FontSizeSmall    := Min(round(10.0*FontScale/100.0),FontSizeNormal-1);
 end;
 
@@ -600,6 +600,7 @@ end;
 procedure TFormNote.NoteToMemo();
 var
     i : integer;
+    f : TFont;
 begin
 
    Trlog('NoteToMemo');
@@ -624,7 +625,6 @@ begin
 
 
    // KMEMO
-   //TRlog('Dealing with content');
    KMemo1.Blocks.LockUpdate;
    KMemo1.Clear;
 
@@ -632,18 +632,19 @@ begin
 
    TextToMemo(note^.Content, false, false, false, false, false, false, false, false,false,false,TFontRange.FontNormal,0);
 
-   if(hasdata) then KMemo1.Blocks.Delete(0);
-
-   {
-   i:=0;
-   while(i<KMemo1.Blocks.Count)
-   do begin
-      TRlog('BLOCK('+IntToStr(i)+') '+KMemo1.Blocks[i].ClassName+' (size='+IntToStr(TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Size)+' '+TKMemoTextBlock(KMemo1.Blocks[i]).TextStyle.Font.Name+') : "'+KMemo1.Blocks[i].Text+'"');
-      inc(i);
+   if(hasdata)
+   then begin
+     KMemo1.Blocks.Delete(0);
+     i := KMemo1.Blocks.Count;
+     if(KMemo1.Blocks[i-1].ClassNameIs('TKMemoParagraph'))
+     then begin
+          f := TFont.Create();
+          f.Style := [];
+          f.Color := TextColour;
+          f.Size:= FontSizeNormal;
+          TKMemoParagraph(KMemo1.Blocks[i-1]).TextStyle.Font := f;
+     end;
    end;
-
-   TRlog('Dealing with content end : blocks = '+IntToStr(Kmemo1.Blocks.Count));
-   }
 
    Dirty := False;
 
