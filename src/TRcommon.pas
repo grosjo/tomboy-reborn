@@ -173,6 +173,7 @@ var
     ConfigDir : UTF8String;
     NotesDir : UTF8String;
     ConfigFile : UTF8String;
+    MainErrorString : UTF8String;
 
     ManyNoteBooks, Autostart, SearchAtStart, UseTrayIcon : boolean;
 
@@ -1363,7 +1364,7 @@ begin
     Client.HTTPMethod('PUT',u,res,[]);
     Result := res.DataString;
   except on E:Exception do begin
-    ShowMessage(E.message);
+    MainErrorString := E.message;
     Result := '';
     end;
   end;
@@ -1392,7 +1393,7 @@ begin
   try
     Result := Client.Get(u);
   except on E:Exception do begin
-    ShowMessage(E.message);
+    MainErrorString := E.message;
     Result :='';
     end;
   end;
@@ -1428,7 +1429,7 @@ begin
     Client.FormPost(u,p,res);
     Result := res.DataString;
   except on E:Exception do begin
-    ShowMessage(E.message);
+    MainErrorString := E.message;
     Result := '';
     end;
   end;

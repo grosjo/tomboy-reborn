@@ -66,7 +66,6 @@ end;
 
 destructor TTomboyTrans.Destroy;
 begin
-  writeln('Destroying trans' + getPrefix());
   FreeAndNil(names);
   FreeAndNil(values);
   inherited Destroy;
@@ -78,8 +77,6 @@ procedure TTomboyTrans.setParam(p : UTF8String; v : UTF8String);
 var
   i : LongInt;
 begin
-  writeln('SetParams( '+p+' , '+v+' )');
-
   i := names.IndexOf(p);
   if(i<0) then begin
      names.add(p);
@@ -96,7 +93,6 @@ begin
   i := names.IndexOf(p);
   if(i<0) then v := ''
   else v := values.strings[i];
-  writeln('GetParams( '+p+' ) => '+v);
   Result := v;
 end;
 

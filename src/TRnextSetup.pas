@@ -77,7 +77,7 @@ procedure TRServer.Execute;
 begin
   try
      server.Active := True;
-  except on E: Exception do writeln(E.Message);
+  except on E: Exception do TRlog(E.Message);
   end;
 end;
 
@@ -224,12 +224,13 @@ begin
         web.Setup(8000,@DoHandleRequest);
         listening :=true;
         openUrl(u);
-     end;
+     end
+     else ShowMessage(MainErrorString);
+
   except on E:Exception do
     ShowMessage(E.message);
   end;
   NCAuth.Enabled := true;
-
 end;
 
 procedure TFormNCSetup.DoHandleRequest(Sender: TObject; var ARequest: TFPHTTPConnectionRequest; var AResponse: TFPHTTPConnectionResponse);

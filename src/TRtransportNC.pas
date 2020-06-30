@@ -53,7 +53,6 @@ var
   sid : UTF8String;
   rev : integer;
 begin
-    WriteLn('Next-TestTransport');
     Token := getParam('TOKEN');
     TokenSecret := getParam('SECRET');
     Key := getParam('KEY');
@@ -68,7 +67,7 @@ begin
     TRlog(res);
     FreeAndNil(p);
 
-    if (res = '') then begin ErrorString :=  'Next-TestTransport: Unable to et initial data'; exit(SyncBadError); end;
+    if (res = '') then begin ErrorString :=  'Next-TestTransport: Unable to et initial data ('+MainErrorString+')'; exit(SyncBadError); end;
 
     ok := true;
     ErrorString := '';
@@ -145,8 +144,6 @@ var
   NoteInfo : PNoteInfo;
   d : double;
 begin
-    WriteLn('Next-GetNotes');
-
     if NoteMeta = Nil then begin
         ErrorString := 'Passed an uncreated list to GetNotes()';
         exit(False);
@@ -163,7 +160,7 @@ begin
     res := WebGet(res,p);
     FreeAndNil(p);
 
-    if (res = '') then begin ErrorString :=  'Next-GetNotes: Unable to get initial data'; exit(false); end;
+    if (res = '') then begin ErrorString :=  'Next-GetNotes: Unable to get initial data ('+MainErrorString+')'; exit(false); end;
 
     ok := true;
     ErrorString := '';
@@ -355,7 +352,7 @@ begin
 
     TRlog('RES PUSH = '+res);
 
-    if (res = '') then begin ErrorString :=  'Push CHanges: Unable to push data'; exit(false); end;
+    if (res = '') then begin ErrorString :=  'Push CHanges: Unable to push data ('+MainErrorString+')'; exit(false); end;
 
     try
        json := GetJSON(res);
@@ -372,8 +369,8 @@ end;
 
 function TNextSync.DoRemoteManifest(const RemoteManifest: TStringList): boolean;
 begin
-	WriteLn('Next-DoRemoteManifest');
-    result := True;
+   //WriteLn('Next-DoRemoteManifest');
+   result := True;
 end;
 
 function TNextSync.IDLooksOK() : boolean;
