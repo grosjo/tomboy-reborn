@@ -2,9 +2,8 @@ Source: tomboy-reborn
 Section: x11
 Priority: extra
 Maintainer: Joan Moreau <jom@grosjo.net>
-Build-Depends: debhelper-compat (= 12), lazarus
-Standards-Version: 4.4.1
-Homepage: https://github.com/grojo/tomboy-reborn
+Build-Depends: lazarus
+Homepage: https://github.com/grosjo/tomboy-reborn
 
 Package: tomboy-reborn
 Architecture: amd64

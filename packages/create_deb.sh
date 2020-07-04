@@ -1,9 +1,20 @@
 #!/bin/bash
-echo "DEBIAN"
-checkinstall --pkgname=tomboy-reborn --maintainer="\"Joan Moreau <jom@grosjo.net>\""  --requires=libcanberra-gtk-module --pkggroup=x11 --pkgversion=1.0.beta5 --pkgsource="https://github.com/grosjo/tomboy-reborn" --pkgrelease=2
-echo "RPM"
-alien -r -c -v tomboy-reborn_1.0.beta5-2_amd64.deb
-echo "ARCH"
-makepkg --printsrcinfo > .SRCINFO
-makepkg
+echo "Create DEBIAN package"
+V=1.0.0
+P=tomboy-reborn
+D=${P}-${V}
+rm -rf ${D}*
+rm ${P}_${V}*
+mkdir -p ${D}/src
+cp ../LICENSE ./$D/
+# cp ../src/*.pas ../src/*.lfm ../src/*.lpr ../src/*.lpi ../src/*.res ../src/*.ico ./$D/src/
+cp ../src/Makefile ./$D/
+cp ../src/tomboy-reborn ./$D/
+cp ../tomboy-reborn.desktop ./$D/
+cp ../tomboy-reborn.png ./$D/
+tar -czvf $D.tar.gz $D
+cp -a debian $D/
+cd $D/
+#debmake
+#debuild -d
 
