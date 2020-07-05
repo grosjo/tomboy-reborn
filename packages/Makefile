@@ -1,5 +1,11 @@
 all: 
-#	lazbuild -B tomboy-reborn.lpi
+	git clone https://github.com/blikblum/luipack.git
+	lazbuild --add-package-link ./luipack/uniqueinstance/uniqueinstance_package.lpk
+	git clone https://github.com/kryslt/KControls.git
+	lazbuild --add-package-link ./KControls/packages/kcontrols/kcontrolsbase.lpk
+	lazbuild --add-package-link ./KControls/packages/kcontrols/kcontrolslaz.lpk
+	lazbuild --build-ide=
+	lazbuild -B tomboy-reborn.lpi
 
 install:
 	mkdir -p $(DESTDIR)/usr/bin/

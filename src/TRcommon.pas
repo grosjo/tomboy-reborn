@@ -8,9 +8,11 @@ uses
     cmem,
     {$endif}
     Classes, Forms, SysUtils, Dialogs, StdCtrls, LazFileUtils, laz2_DOM,
-    ExtCtrls, laz2_XMLRead, DateUtils, sslbase, openssl, fphttpclient,
-    ssockets, hmac, strutils, IniFiles, LazLogger, Graphics,
-    {$ifdef LINUX} Unix, {$endif} LazUTF8, opensslsockets,
+    ExtCtrls, laz2_XMLRead, DateUtils,
+    {$ifdef VER3_2} sslbase, openssl, fphttpclient, ssockets, opensslsockets, {$endif}
+    {$ifndef VER3_2} fphttpclient, ssockets, sslsockets, fpopenssl, openssl, {$endif}
+    hmac, strutils, IniFiles, LazLogger, Graphics,
+    {$ifdef LINUX} Unix, {$endif} LazUTF8,
     FileInfo, TRAutoStartCtrl, Trtexts;
 
 
@@ -1279,8 +1281,10 @@ end;
 procedure TRSockecktHandler.HttpClientGetSocketHandler(Sender: TObject; const UseSSL: Boolean; out AHandler: TSocketHandler);
 begin
   If UseSSL then begin
-    AHandler:=TOpenSSLSocketHandler.Create;
-    TOpenSSLSocketHandler(AHandler).SSLType := stTLSv1_2;
+     {$ifdef VER3_2} AHandler:=TOpenSSLSocketHandler.Create;
+     TOpenSSLSocketHandler(AHandler).SSLType := stTLSv1_2; {$endif}
+     {$ifndef VER3_2} AHandler:=TSSLSocketHandler.Create;
+     TSSLSocketHandler(AHandler).SSLType := stTLSv1_2; {$endif}
 
   end else AHandler := TSocketHandler.Create;
 end;

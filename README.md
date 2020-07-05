@@ -38,9 +38,9 @@ You will need to install the "Grauphel" plugin in your ownCloud/NextCloud instan
 
 Status
 ------
-- NextCloud sync working. Need further testing
-- Daily usage working
-- This is a beta release - do NOT use in production for now
+- First production release
+- Nextcloud and Folder sync working properly
+- I am personally using it everyday
 
 Debugging/Support
 -----------------

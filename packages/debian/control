@@ -6,6 +6,6 @@ Build-Depends: lazarus
 Homepage: https://github.com/grosjo/tomboy-reborn
 
 Package: tomboy-reborn
-Architecture: amd64
+Architecture: any
 Depends: libgtk2.0-0 (>= 2.6), libc6 (>= 2.14), libcanberra-gtk-module
 Description: A drop-in, straightforward, replacement of deprecated, but extremely usefull, Gnome Tomboy
