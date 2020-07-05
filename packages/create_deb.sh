@@ -17,4 +17,10 @@ cp -a debian $D/
 cd $D/
 debmake
 debuild 
-
+cd ..
+rm -rf ${D}*
+rm *.buildinfo
+rm *.build
+rm *.gz
+rm *.changes
+alien -r -c -v tomboy-reborn_${V}-1_amd64.deb
